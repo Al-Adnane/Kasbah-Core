@@ -1,8 +1,8 @@
-version: "3.9"
-
 services:
   kasbah-api:
     build: ./apps/api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
 
