@@ -4,3 +4,5 @@ pydantic
 python-dotenv
 cryptography
 pyjwt
+
+pyyaml

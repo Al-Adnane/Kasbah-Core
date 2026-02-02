@@ -1,0 +1,12 @@
+always_approval:
+  - shell.exec
+  - net.post
+  - wallet.send
+  - fs.delete
+  - fs.write
+
+deny_risk_above: 80
+
+integrity_min: 0.7
+threat_max: 0.6
+
