@@ -11,6 +11,8 @@ import os
 from typing import Optional
 import jwt  # PyJWT
 import json
+import time
+import time
 import hashlib
 from pathlib import Path
 ALWAYS_APPROVAL_TOOLS = {"shell.exec"}
@@ -566,6 +568,7 @@ async def rtp_decide(payload: dict = Body(...)):
     ticket = _rtp_gate.generate_ticket(
         tool_name=tool,
         args=args,
+        system_stable=system_stable,
     )
 
     append_audit({
