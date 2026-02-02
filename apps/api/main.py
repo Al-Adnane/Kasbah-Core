@@ -10,8 +10,13 @@ import os
 from typing import Optional
 import jwt  # PyJWT
 import json
+import time
+from rtp.audit import append_audit
 import hashlib
 from pathlib import Path
+ALWAYS_APPROVAL_TOOLS = {"shell.exec"}
+RISK_DENY = 80
+
 
 app = FastAPI(title="Kasbah Core", version="0.2.0")
 
@@ -495,40 +500,96 @@ from rtp import KernelGate, KernelEnforcer
 _rtp_gate = KernelGate(tpm_enabled=False, policy={"shell.exec": "allow"})
 _rtp_enforcer = KernelEnforcer(_rtp_gate)
 
+from rtp.audit import append_audit
+import time
+
 @app.post("/api/rtp/decide")
 async def rtp_decide(payload: dict = Body(...)):
     tool = payload.get("tool", "unknown.tool")
     args = payload.get("args", {})
+    risk = int(payload.get("risk", 0))
     system_stable = bool(payload.get("system_stable", False))
     limits = payload.get("limits", {"maxTokens": 2000, "maxCostCents": 500})
 
+    # ---- POLICY CONSTANTS (local to avoid touching other files)
+    ALWAYS_APPROVAL_TOOLS = {"shell.exec"}
+    RISK_DENY = 80
+
+    # ---- 1) HARD TOOL GATE (always first)
+    if tool in ALWAYS_APPROVAL_TOOLS:
+        append_audit({
+            "ts": time.time(),
+            "event": "DENY",
+            "tool": tool,
+            "reason": "needs_approval",
+            "rule_id": "RTP-TOOL-001",
+        })
+        return {
+            "decision": "DENY",
+            "reason": "needs_approval",
+            "rule_id": "RTP-TOOL-001",
+            "explain": f"{tool} requires human approval.",
+            "ticket": None,
+        }
+
+    # ---- 2) SYSTEM STABILITY
+    if not system_stable:
+        append_audit({
+            "ts": time.time(),
+            "event": "DENY",
+            "tool": tool,
+            "reason": "system_unstable",
+            "rule_id": "RTP-SYS-001",
+        })
+        return {
+            "decision": "DENY",
+            "reason": "system_unstable",
+            "rule_id": "RTP-SYS-001",
+            "explain": "System flagged unstable.",
+            "ticket": None,
+        }
+
+    # ---- 3) RISK THRESHOLD
+    if risk >= RISK_DENY:
+        append_audit({
+            "ts": time.time(),
+            "event": "DENY",
+            "tool": tool,
+            "reason": "risk_threshold",
+            "rule_id": "RTP-RISK-001",
+        })
+        return {
+            "decision": "DENY",
+            "reason": "risk_threshold",
+            "rule_id": "RTP-RISK-001",
+            "explain": f"Risk score {risk} exceeds threshold.",
+            "ticket": None,
+        }
+
+    # ---- 4) OTHERWISE: ALLOW + ISSUE TICKET (existing gate)
     ticket = _rtp_gate.generate_ticket(
         tool_name=tool,
         args=args,
-        system_stable=system_stable,
-        resource_limits=limits,
+        limits=limits,
     )
 
-    if not ticket:
-        return {"decision": "DENY", "ticket": None}
-
-    _rtp_enforcer.store_ticket(ticket)
+    append_audit({
+        "ts": time.time(),
+        "event": "ALLOW",
+        "tool": tool,
+        "reason": "ok",
+        "rule_id": "RTP-ALLOW-001",
+        "jti": ticket.get("jti") if isinstance(ticket, dict) else None,
+    })
 
     return {
         "decision": "ALLOW",
-        "ticket": {
-            "jti": ticket.jti,
-            "tool": ticket.tool_name,
-            "ttl_ms": ticket.ttl / 1_000_000,
-            "issued_at_ns": ticket.timestamp,
-            "binary_hash": ticket.binary_hash,
-            "signature": ticket.signature,
-            "limits": {
-                "maxTokens": ticket.resource_limits.get("maxTokens"),
-                "maxCostCents": ticket.resource_limits.get("maxCostCents"),
-            }
-        }
+        "reason": "ok",
+        "rule_id": "RTP-ALLOW-001",
+        "explain": "Policy checks passed.",
+        "ticket": ticket,
     }
+
 @app.post("/api/rtp/consume")
 async def rtp_consume(payload: dict = Body(...)):
     tool = payload.get("tool")
@@ -545,4 +606,13 @@ async def rtp_consume(payload: dict = Body(...)):
         "reason": res.reason,
         "remaining_budget": res.remaining_budget,
     }
+
+# -----------------------
+# RTP Audit Endpoint
+# -----------------------
+from rtp.audit import read_audit
+
+@app.get("/api/rtp/audit")
+def rtp_audit(limit: int = 200):
+    return read_audit(limit)
 
