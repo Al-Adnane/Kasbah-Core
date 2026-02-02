@@ -570,7 +570,6 @@ async def rtp_decide(payload: dict = Body(...)):
     ticket = _rtp_gate.generate_ticket(
         tool_name=tool,
         args=args,
-        limits=limits,
     )
 
     append_audit({
