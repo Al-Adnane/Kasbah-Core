@@ -211,3 +211,9 @@ __pycache__/
 .env
 
 
+
+# Python venvs
+.venv/
+.venv-*/
+**/.venv/
+**/.venv-*/
