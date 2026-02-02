@@ -15,7 +15,7 @@ import time
 import time
 import hashlib
 from pathlib import Path
-ALWAYS_APPROVAL_TOOLS = {"shell.exec"}
+ALWAYS_APPROVAL_TOOLS = {"shell.exec","net.post","wallet.send","fs.delete","fs.write"}
 RISK_DENY = 80
 
 
@@ -510,7 +510,7 @@ async def rtp_decide(payload: dict = Body(...)):
     limits = payload.get("limits", {"maxTokens": 2000, "maxCostCents": 500})
 
     # ---- POLICY CONSTANTS (local to avoid touching other files)
-    ALWAYS_APPROVAL_TOOLS = {"shell.exec"}
+    ALWAYS_APPROVAL_TOOLS = {"shell.exec","net.post","wallet.send","fs.delete","fs.write"}
     RISK_DENY = 80
 
     # ---- 1) HARD TOOL GATE (always first)
