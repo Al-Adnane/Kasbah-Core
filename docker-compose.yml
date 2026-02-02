@@ -1,8 +1,13 @@
 services:
-  kasbah-api:
-    build: ./apps/api
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     ports:
-      - "8000:8000"
-    env_file:
-      - .env
-
+      - "8002:8002"
+    environment:
+      - KASBAH_JWT_SECRET=dev-only-change-me
+      - KASBAH_SIGN_MODE=hs256
+      - KASBAH_TICKET_TTL_SECONDS=120
+    volumes:
+      - ./.kasbah:/app/.kasbah
