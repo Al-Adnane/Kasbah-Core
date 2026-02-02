@@ -524,10 +524,34 @@ async def rtp_decide(payload: dict = Body(...)):
     args = payload.get("args", {})
     risk = int(payload.get("risk", 0))
     system_stable = bool(payload.get("system_stable", False))
+    integrity = float(payload.get("integrity", 1.0))
+    threat = float(payload.get("threat", 0.0))
     limits = payload.get("limits", {"maxTokens": 2000, "maxCostCents": 500})
     # ---- POLICY (loaded from policy.yaml)
     always_approval = set(POLICY.get("always_approval", []))
     RISK_DENY = int(POLICY.get("deny_risk_above", 80))
+
+    integrity_min = float(POLICY.get("integrity_min", 0.7))
+    threat_max = float(POLICY.get("threat_max", 0.6))
+
+    # ---- Integrity gate
+    if integrity < integrity_min or threat > threat_max:
+        append_audit({
+            "event": "DENY",
+            "tool": tool,
+            "reason": "integrity_gate",
+            "rule_id": "RTP-INTEGRITY-001",
+            "integrity": integrity,
+            "threat": threat,
+        })
+        return {
+            "decision": "DENY",
+            "reason": "integrity_gate",
+            "rule_id": "RTP-INTEGRITY-001",
+            "explain": "Integrity below threshold or threat too high.",
+            "ticket": None,
+        }
+
 
     # ---- 1) HARD TOOL GATE (always first)
     if tool in always_approval:
