@@ -529,3 +529,20 @@ async def rtp_decide(payload: dict = Body(...)):
             }
         }
     }
+@app.post("/api/rtp/consume")
+async def rtp_consume(payload: dict = Body(...)):
+    tool = payload.get("tool")
+    jti = payload.get("jti")
+    usage = payload.get("usage", {"tokens": 0, "cost": 0})
+
+    if not tool or not jti:
+        return {"valid": False, "reason": "tool and jti required"}
+
+    res = _rtp_enforcer.intercept_execution(tool, jti, usage)
+
+    return {
+        "valid": res.valid,
+        "reason": res.reason,
+        "remaining_budget": res.remaining_budget,
+    }
+
