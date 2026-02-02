@@ -1,0 +1,20 @@
+# ---- Python virtualenvs ----
+.venv/
+venv/
+ENV/
+env/
+.venv-ci/
+.python-version
+
+# ---- Python cache ----
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- build outputs ----
+build/
+dist/
+*.egg-info/
+
