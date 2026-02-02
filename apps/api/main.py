@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
+from apps.api.rtp.audit import append_audit, read_audit
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
@@ -10,8 +11,6 @@ import os
 from typing import Optional
 import jwt  # PyJWT
 import json
-import time
-from apps.api.rtp.audit import append_audit
 import hashlib
 from pathlib import Path
 ALWAYS_APPROVAL_TOOLS = {"shell.exec"}
@@ -494,14 +493,11 @@ def compact_logs():
         tmp2.replace(USED_JTI_LOG_PATH)
 
     return {"ok": True}
-from fastapi import Body
 from apps.api.rtp.kernel_gate import KernelGate, KernelEnforcer
 
 _rtp_gate = KernelGate(tpm_enabled=False, policy={"shell.exec": "allow"})
 _rtp_enforcer = KernelEnforcer(_rtp_gate)
 
-from apps.api.rtp.audit import append_audit
-import time
 
 @app.post("/api/rtp/decide")
 async def rtp_decide(payload: dict = Body(...)):
@@ -609,7 +605,6 @@ async def rtp_consume(payload: dict = Body(...)):
 # -----------------------
 # RTP Audit Endpoint
 # -----------------------
-from apps.api.rtp.audit import read_audit
 
 @app.get("/api/rtp/audit")
 def rtp_audit(limit: int = 200):
