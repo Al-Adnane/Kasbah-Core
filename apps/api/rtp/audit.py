@@ -20,6 +20,8 @@ def append_audit(event: Dict[str, Any]) -> None:
     """
     if "ts" not in event:
         event["ts"] = time.time()
+    if "ts_iso" not in event:
+        event["ts_iso"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(event["ts"]))
 
     # 1) In-memory buffer (best effort)
     _AUDIT.append(event)
