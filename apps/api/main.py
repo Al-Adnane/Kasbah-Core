@@ -11,7 +11,7 @@ from typing import Optional
 import jwt  # PyJWT
 import json
 import time
-from rtp.audit import append_audit
+from apps.api.rtp.audit import append_audit
 import hashlib
 from pathlib import Path
 ALWAYS_APPROVAL_TOOLS = {"shell.exec"}
@@ -495,12 +495,12 @@ def compact_logs():
 
     return {"ok": True}
 from fastapi import Body
-from rtp import KernelGate, KernelEnforcer
+from apps.api.rtp.kernel_gate import KernelGate, KernelEnforcer
 
 _rtp_gate = KernelGate(tpm_enabled=False, policy={"shell.exec": "allow"})
 _rtp_enforcer = KernelEnforcer(_rtp_gate)
 
-from rtp.audit import append_audit
+from apps.api.rtp.audit import append_audit
 import time
 
 @app.post("/api/rtp/decide")
@@ -609,7 +609,7 @@ async def rtp_consume(payload: dict = Body(...)):
 # -----------------------
 # RTP Audit Endpoint
 # -----------------------
-from rtp.audit import read_audit
+from apps.api.rtp.audit import read_audit
 
 @app.get("/api/rtp/audit")
 def rtp_audit(limit: int = 200):
