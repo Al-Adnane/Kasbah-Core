@@ -12,6 +12,23 @@ from typing import Optional
 import jwt  # PyJWT
 import json
 import time
+import yaml
+
+# --- Policy loading (v0.3)
+POLICY_PATH = os.getenv("KASBAH_POLICY_PATH", "policy.yaml")
+
+def load_policy() -> dict:
+    try:
+        with open(POLICY_PATH, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        if not isinstance(data, dict):
+            return {}
+        return data
+    except Exception:
+        return {}
+
+POLICY = load_policy()
+
 import time
 import hashlib
 from pathlib import Path
@@ -508,13 +525,12 @@ async def rtp_decide(payload: dict = Body(...)):
     risk = int(payload.get("risk", 0))
     system_stable = bool(payload.get("system_stable", False))
     limits = payload.get("limits", {"maxTokens": 2000, "maxCostCents": 500})
-
-    # ---- POLICY CONSTANTS (local to avoid touching other files)
-    ALWAYS_APPROVAL_TOOLS = {"shell.exec","net.post","wallet.send","fs.delete","fs.write"}
-    RISK_DENY = 80
+    # ---- POLICY (loaded from policy.yaml)
+    always_approval = set(POLICY.get("always_approval", []))
+    RISK_DENY = int(POLICY.get("deny_risk_above", 80))
 
     # ---- 1) HARD TOOL GATE (always first)
-    if tool in ALWAYS_APPROVAL_TOOLS:
+    if tool in always_approval:
         append_audit({
             "ts": time.time(),
             "event": "DENY",
