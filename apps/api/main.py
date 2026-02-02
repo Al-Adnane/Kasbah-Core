@@ -492,7 +492,7 @@ def compact_logs():
 from fastapi import Body
 from rtp import KernelGate, KernelEnforcer
 
-_rtp_gate = KernelGate(tpm_enabled=False)
+_rtp_gate = KernelGate(tpm_enabled=False, policy={"shell.exec": "allow"})
 _rtp_enforcer = KernelEnforcer(_rtp_gate)
 
 @app.post("/api/rtp/decide")

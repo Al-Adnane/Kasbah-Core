@@ -1,12 +1,17 @@
 """
-Kasbah RTP - One Product Runtime Gate
+Kasbah RTP - One Product Runtime Gate (Policy + Tickets)
 
-Demo-grade serious:
-- Sub-100ms TTL execution tickets
-- Monotonic time TTL enforcement (clock-skew safe)
-- Deterministic signature generation AND verification in simulation mode
+Buyer-grade additions:
+- Default-deny policy for tools (explicit allow list)
+- Modes: "allow" | "deny" | "human_approval"
+- "human_approval" currently behaves like deny (no ticket) in MVP
+- Global kill switch (deny all)
+
+Core properties retained:
+- Monotonic TTL enforcement (clock-skew safe)
+- Deterministic signature generation + verification (demo-safe)
 - One-time use tickets via jti (replay protection)
-- In-memory enforcer simulating kernel enforcement (ready to swap to eBPF later)
+- In-memory enforcer (swap to kernel/eBPF later)
 
 This module does NOT execute commands.
 """
@@ -46,8 +51,21 @@ class KernelGate:
     MAX_TTL_NS = 100_000_000
     DEFAULT_TTL_NS = 75_000_000
 
-    def __init__(self, tpm_enabled: bool = False):
+    def __init__(self, tpm_enabled: bool = False, policy: Optional[Dict[str, str]] = None):
         self.tpm_enabled = bool(tpm_enabled)
+
+        # Global kill-switch: when True => deny all tickets
+        self.global_lock = False
+
+        # Tool policy: "allow" | "deny" | "human_approval"
+        # Default is deny unless explicitly allowed.
+        self.policy: Dict[str, str] = policy or {}
+
+    def policy_mode(self, tool_name: str) -> str:
+        mode = self.policy.get(tool_name, "deny")
+        if mode not in ("allow", "deny", "human_approval"):
+            return "deny"
+        return mode
 
     def _canonical_json(self, obj: Dict) -> str:
         return json.dumps(obj, sort_keys=True, separators=(",", ":"))
@@ -76,13 +94,16 @@ class KernelGate:
         }
 
     def _compute_binary_hash(self, tool_name: str) -> str:
+        # Demo-safe deterministic “binary” hash. Production would hash on-disk binary.
         return hashlib.sha256(f"binary-{tool_name}".encode("utf-8")).hexdigest()
 
     def _sign_with_tpm(self, payload: Dict) -> str:
+        # Production: TPM signature. Demo: deterministic sha256 signature over canonical payload.
         data_str = self._canonical_json(payload)
         return hashlib.sha256(f"tpm-signature-{data_str}".encode("utf-8")).hexdigest()
 
     def _verify_signature(self, ticket: ExecutionTicket) -> bool:
+        # Demo performs REAL verification by recomputing expected signature.
         try:
             payload = self._signing_payload({
                 "jti": ticket.jti,
@@ -107,7 +128,18 @@ class KernelGate:
         resource_limits: Optional[Dict] = None,
         ttl_ns: Optional[int] = None,
     ) -> Optional[ExecutionTicket]:
+        # Kill switch
+        if self.global_lock:
+            return None
+
+        # System stability gate
         if not system_stable:
+            return None
+
+        # Policy gate (default deny)
+        mode = self.policy_mode(tool_name)
+        if mode != "allow":
+            # In MVP, "human_approval" behaves like deny (no ticket).
             return None
 
         ttl = int(ttl_ns or self.DEFAULT_TTL_NS)
@@ -174,11 +206,16 @@ class KernelGate:
 
 
 class KernelEnforcer:
+    """
+    In-memory simulation of enforcement.
+    Tickets are one-time use. Replay is blocked by jti.
+    """
+
     def __init__(self, kernel_gate: KernelGate):
         self.gate = kernel_gate
         self.ticket_map: Dict[str, ExecutionTicket] = {}
         self.used_jtis: Dict[str, int] = {}
-        self.used_ttl_ns = 5_000_000_000
+        self.used_ttl_ns = 5_000_000_000  # keep used markers for 5s (demo-safe)
 
     def _gc_used(self) -> None:
         now = time.monotonic_ns()
@@ -208,3 +245,4 @@ class KernelEnforcer:
             del self.ticket_map[ticket_jti]
             self.used_jtis[ticket_jti] = time.monotonic_ns()
         return res
+
