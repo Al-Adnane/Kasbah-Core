@@ -3,3 +3,4 @@ uvicorn
 pydantic
 PyJWT
 
+PyJWT>=2.8.0
