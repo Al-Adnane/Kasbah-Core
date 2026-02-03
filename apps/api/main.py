@@ -514,7 +514,7 @@ def compact_logs():
     return {"ok": True}
 from apps.api.rtp.kernel_gate import KernelGate, KernelEnforcer
 
-_rtp_gate = KernelGate(tpm_enabled=False, policy={"shell.exec": "allow"})
+_rtp_gate = KernelGate(tpm_enabled=False, policy={"*": "allow"})
 _rtp_enforcer = KernelEnforcer(_rtp_gate)
 
 
@@ -652,4 +652,37 @@ async def rtp_consume(payload: dict = Body(...)):
 @app.get("/api/rtp/audit")
 def rtp_audit(limit: int = 200):
     return read_audit(limit)
+
+
+# -----------------------
+# RTP Execute (mock executor)
+# -----------------------
+@app.post("/api/rtp/execute")
+async def rtp_execute(ticket: dict = Body(...)):
+    try:
+        verdict = _rtp_enforcer.verify(ticket)
+    except Exception as e:
+        append_audit({
+            "event": "EXECUTE_DENY",
+            "reason": "verify_exception",
+            "rule_id": "RTP-EXEC-000",
+            "error": str(e),
+        })
+        raise HTTPException(status_code=403, detail={"ok": False, "reason": "verify_exception"})
+
+    if not verdict.get("ok"):
+        append_audit({
+            "event": "EXECUTE_DENY",
+            "reason": "invalid_ticket",
+            "rule_id": "RTP-EXEC-001",
+        })
+        raise HTTPException(status_code=403, detail=verdict)
+
+    append_audit({
+        "event": "EXECUTE_ALLOW",
+        "tool": ticket.get("tool"),
+        "rule_id": "RTP-EXEC-002",
+    })
+
+    return {"status": "executed", "tool": ticket.get("tool")}
 
