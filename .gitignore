@@ -217,3 +217,10 @@ __pycache__/
 .venv-*/
 **/.venv/
 **/.venv-*/
+.env
+*.env
+*.pem
+*.key
+*.private
+.kasbah/*.pem
+.kasbah/*.key
