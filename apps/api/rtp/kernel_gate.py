@@ -1,3 +1,5 @@
+from __future__ import annotations
+from pathlib import Path
 """
 Kasbah RTP - Runtime Policy Gate + Audit
 
@@ -12,7 +14,6 @@ Features:
 - Append-only audit log
 """
 
-from __future__ import annotations
 
 from typing import Dict, Optional
 from dataclasses import dataclass
@@ -20,9 +21,11 @@ import hashlib
 import hmac
 import json
 import time
+import os
 import uuid
 
 from .audit import append_audit
+from apps.api.rtp.integrity import geometric_integrity
 
 
 @dataclass
@@ -46,8 +49,8 @@ class TicketValidationResult:
 
 
 class KernelGate:
-    MAX_TTL_NS = 100_000_000
-    DEFAULT_TTL_NS = 75_000_000
+    MAX_TTL_NS = 3600 * 1_000_000_000  # 1 hour
+    DEFAULT_TTL_NS = int(os.getenv("KASBAH_TICKET_TTL_SECONDS", "120")) * 1_000_000_000
 
     def __init__(self, tpm_enabled: bool = False, policy: Optional[Dict[str, str]] = None):
         self.tpm_enabled = bool(tpm_enabled)
@@ -134,19 +137,23 @@ class KernelGate:
 
         sig = self._sign_with_tpm(payload)
 
-        append_audit({"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool": tool_name, "jti": jti})
+        append_audit({"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": tool_name,
+            "tool": tool_name, "jti": jti})
 
-        return ExecutionTicket(
-            jti=jti,
-            tool_name=tool_name,
-            args=args,
-            timestamp=ts_wall,
-            issued_mono_ns=ts_mono,
-            ttl=ttl,
-            binary_hash=binary_hash,
-            signature=sig,
-            resource_limits=limits,
-        )
+        return {
+            "jti": jti,
+            "tool_name": tool_name,
+            "tool": tool_name,
+            "args": args,
+            "timestamp": ts_wall,
+            "timestamp_ns": ts_wall,
+            "issued_mono_ns": ts_mono,
+            "ttl_ns": ttl,
+            "ttl_seconds": ttl / 1_000_000_000,
+            "binary_hash": binary_hash,
+            "signature": sig,
+            "resource_limits": limits,
+        }
 
     def validate_ticket(self, ticket: ExecutionTicket, current_usage: Dict):
         now = time.monotonic_ns()
@@ -167,13 +174,48 @@ class KernelGate:
 
 class KernelEnforcer:
 
-    def __init__(self, gate: KernelGate):
+    def __init__(self, gate: KernelGate, used_log_path: str = "/app/.kasbah/rtp_used_jti.jsonl"):
         self.gate = gate
         self.ticket_map = {}
         self.used = {}
 
+        self.used_log_path = Path(used_log_path)
+        self.used_log_path.parent.mkdir(parents=True, exist_ok=True)
+        self._load_used()
     def store_ticket(self, ticket: ExecutionTicket):
         self.ticket_map[ticket.jti] = ticket
+
+    def _load_used(self):
+        # Load previously used JTIs to survive restarts (tolerate partial/corrupt lines)
+        if not getattr(self, "used_log_path", None) or not self.used_log_path.exists():
+            return
+        try:
+            for line in self.used_log_path.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    jti = obj.get("jti")
+                    ts = obj.get("ts")
+                    if jti:
+                        self.used[jti] = ts or time.time()
+                except Exception:
+                    continue
+        except Exception:
+            return
+
+    def _persist_used(self, jti: str):
+        try:
+            obj = {"jti": jti, "ts": time.time()}
+            line = json.dumps(obj, separators=(",", ":")) + "\n"
+            with self.used_log_path.open("a") as f:
+                f.write(line)
+                f.flush()
+                os.fsync(f.fileno())
+        except Exception:
+            pass
+
 
     def intercept_execution(self, tool_name: str, jti: str, usage: Dict):
 
@@ -191,6 +233,7 @@ class KernelEnforcer:
         res = self.gate.validate_ticket(ticket, usage)
         if res.valid:
             self.used[jti] = time.time()
+            self._persist_used(jti)
             del self.ticket_map[jti]
             append_audit({"event": "CONSUME", "tool": tool_name, "jti": jti})
 
