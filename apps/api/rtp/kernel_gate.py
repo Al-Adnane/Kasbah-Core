@@ -26,6 +26,10 @@ import uuid
 
 from .audit import append_audit
 from apps.api.rtp.integrity import geometric_integrity
+from apps.api.rtp.signals import SignalTracker
+
+_signal_tracker = SignalTracker()
+
 
 
 @dataclass
@@ -58,7 +62,7 @@ class KernelGate:
         self.policy = policy or {}
 
     def policy_mode(self, tool_name: str) -> str:
-        mode = self.policy.get(tool_name, "deny")
+        mode = self.policy.get(tool_name, self.policy.get("*", "deny"))
         if mode not in ("allow", "deny", "human_approval"):
             return "deny"
         return mode
@@ -229,6 +233,31 @@ class KernelEnforcer:
 
         if ticket.tool_name != tool_name:
             return TicketValidationResult(False, "tool mismatch")
+
+
+        # --- behavior integrity: provenance + decay + geometry ---
+        agent_id = usage.get("agent_id") or usage.get("session_id") or "anon"
+        raw_signals = usage.get("signals", {}) or {}
+
+        eff_signals = _signal_tracker.update(agent_id, raw_signals) if raw_signals else {}
+        append_audit({"event":"GEOMETRY_SEEN","agent_id":agent_id,"jti":jti,"raw":raw_signals,"eff":eff_signals})
+
+        signals_for_gate = eff_signals or raw_signals
+        if signals_for_gate:
+            gi = geometric_integrity(signals_for_gate)
+            threshold = float(os.getenv("KASBAH_GEOMETRY_THRESHOLD", "70"))
+            if gi < threshold:
+                append_audit({
+                    "event": "GEOMETRY_BLOCK",
+                    "jti": jti,
+                    "agent_id": agent_id,
+                    "score": gi,
+                    "threshold": threshold,
+                    "signals_raw": raw_signals,
+                    "signals_eff": eff_signals,
+                })
+                return TicketValidationResult(False, "geometry_block")
+        # --- end behavior integrity ---
 
         res = self.gate.validate_ticket(ticket, usage)
         if res.valid:
