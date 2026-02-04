@@ -3183,3 +3183,39 @@
 {"event": "GEOMETRY_SEEN", "agent_id": "test-agent", "jti": "0ef250a6-ec14-4818-a184-dda098ddec2a", "raw": {}, "eff": {}, "ts": 1770165722.0720134, "ts_iso": "2026-02-04T00:42:02Z"}
 {"event": "CONSUME", "tool": "read.me", "jti": "0ef250a6-ec14-4818-a184-dda098ddec2a", "ts": 1770165722.0812252, "ts_iso": "2026-02-04T00:42:02Z"}
 {"event": "REPLAY", "jti": "0ef250a6-ec14-4818-a184-dda098ddec2a", "ts": 1770165729.9017415, "ts_iso": "2026-02-04T00:42:09Z"}
+{"ts": 1770166291.9917634, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T00:51:31Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "551e8508-acf5-4c41-afd2-46b95f9b0d96", "ts": 1770166292.0045328, "ts_iso": "2026-02-04T00:51:32Z"}
+{"ts": 1770166292.0075579, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "551e8508-acf5-4c41-afd2-46b95f9b0d96", "ts_iso": "2026-02-04T00:51:32Z"}
+{"event": "GEOMETRY_SEEN", "agent_id": "stress-agent", "jti": "551e8508-acf5-4c41-afd2-46b95f9b0d96", "raw": {}, "eff": {}, "ts": 1770166292.0491865, "ts_iso": "2026-02-04T00:51:32Z"}
+{"event": "CONSUME", "tool": "read.me", "jti": "551e8508-acf5-4c41-afd2-46b95f9b0d96", "ts": 1770166292.0506957, "ts_iso": "2026-02-04T00:51:32Z"}
+{"event": "REPLAY", "jti": "551e8508-acf5-4c41-afd2-46b95f9b0d96", "ts": 1770166301.741747, "ts_iso": "2026-02-04T00:51:41Z"}
+{"ts": 1770166308.2075229, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T00:51:48Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ebbf2c6c-092f-4d68-a518-c73cc47eb4b6", "ts": 1770166308.2126832, "ts_iso": "2026-02-04T00:51:48Z"}
+{"ts": 1770166308.2137942, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ebbf2c6c-092f-4d68-a518-c73cc47eb4b6", "ts_iso": "2026-02-04T00:51:48Z"}
+{"ts": 1770166627.06621, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.085811, "ts_iso": "2026-02-04T00:57:07Z"}
+{"ts": 1770166627.0883615, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "GEOMETRY_SEEN", "agent_id": "race-agent", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "raw": {}, "eff": {}, "ts": 1770166627.1432002, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "CONSUME", "tool": "read.me", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1554453, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.157706, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1616454, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1637952, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1661768, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.168441, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.171988, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1733017, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1755505, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1770983, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1790593, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1806824, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1832774, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1848912, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1862738, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.190184, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1908524, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.192243, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1939087, "ts_iso": "2026-02-04T00:57:07Z"}
+{"event": "REPLAY", "jti": "6f802c22-4a9a-42e9-82e7-005cd7772d40", "ts": 1770166627.1945028, "ts_iso": "2026-02-04T00:57:07Z"}
+{"ts": 1770166635.3760657, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T00:57:15Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7599c403-8678-49f2-ab04-51bd3f6c86ab", "ts": 1770166635.3792896, "ts_iso": "2026-02-04T00:57:15Z"}
+{"ts": 1770166635.380552, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7599c403-8678-49f2-ab04-51bd3f6c86ab", "ts_iso": "2026-02-04T00:57:15Z"}

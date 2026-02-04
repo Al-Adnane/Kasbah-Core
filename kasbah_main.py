@@ -5,15 +5,15 @@ from datetime import datetime
 # --- IMPORT REAL ENGINES ---
 from core.integrity_engine import GeometricMeanIntegrityController
 from core.adaptive_defense import AdaptiveDefenseController
-from core.atp import AdversarialTrainingPipeline # NEW
+from core.atp import AdversarialTrainingPipeline
 from crypto.secure_core import CryptoSecureCore
-from crypto.homomorphic_state import HomomorphicControlState # NEW
-from crypto.zk_verifier import VerifiableStateMachine # NEW
+from crypto.homomorphic_state import HomomorphicControlState
+from crypto.zk_verifier import VerifiableStateMachine
 
 # --- IMPORT EXISTING ADVANCED & BUSINESS LAYERS ---
 from advanced.defense_layer import ThermodynamicDefense, SovereignReputation, TopologyAnalyzer
 from business_logic.revenue_features import RevenueFeatures
-from runtime.srk import SelfRewritingKernel # NEW
+from runtime.srk import SelfRewritingKernel
 
 class KasbahEngine:
     def __init__(self):
@@ -83,9 +83,11 @@ class KasbahEngine:
         self.tau = self.iic.modulate_tau(self.tau, I_t)
 
         # --- LAYER 4: DEFENSE TRANSFORMATION (Moat #3: QIFT) ---
+        # Rotate features pre-emptively
         transformed_data = self.adaptive.apply_qift(payload_data, P_threat)
 
         # --- LAYER 5: CRYPTO VERIFICATION (CCB) ---
+        # Every modulaton of Tau must be signed
         sig = self.crypto.sign_command("MOD_TAU", {"val": self.tau})
         is_valid = self.crypto.verify_command("MOD_TAU", {"val": self.tau}, sig)
         
@@ -93,7 +95,7 @@ class KasbahEngine:
             print("[CRYPTO] SECURITY ALERT: Signature Invalid!")
             return
 
-        # --- BACKGROUND PROCESSING (NEW MOATS) ---
+        # --- LAYER 6: BACKGROUND PROCESSING (NEW MOATS) ---
         
         # 1. Adversarial Training (ATP)
         self.atp.self_train(payload_data, P_threat)
@@ -104,10 +106,11 @@ class KasbahEngine:
         # 3. Homomorphic Control (HCS)
         self.hcs.get_control_signal(I_t)
         
-        # 4. Verifiable State (VSM)
-        self.vsm.transition({"src": src_ip, "tau": self.tau})
+        # 4. Verifiable State Machine (VSM)
+        proof = self.vsm.transition({"src": src_ip, "tau": self.tau})
+        print(f"[VSM] State Transitioned. Proof Hash: {proof}")
 
-        # --- LAYER 6: DETECTION (Fixed Logic) ---
+        # --- LAYER 7: DETECTION (Fixed Logic) ---
         detected = (P_threat > 0.6)
 
         if detected:
