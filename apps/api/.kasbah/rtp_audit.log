@@ -1,0 +1,3 @@
+{"ts": 1770021916.483271, "event": "DENY", "tool": "shell.exec", "reason": "needs_approval", "rule_id": "RTP-TOOL-001"}
+{"ts": 1770066186.019428, "event": "DENY", "tool": "shell.exec", "reason": "needs_approval", "rule_id": "RTP-TOOL-001"}
+{"ts": 1770068358.216345, "event": "DENY", "tool": "shell.exec", "reason": "needs_approval", "rule_id": "RTP-TOOL-001"}
