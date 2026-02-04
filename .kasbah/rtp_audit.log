@@ -1,0 +1,1023 @@
+{"ts": 1770170974.4402573, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.4530854, "ts_iso": "2026-02-04T02:09:34Z"}
+{"ts": 1770170974.4594083, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "GEOMETRY_SEEN", "agent_id": "race", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "raw": {}, "eff": {}, "ts": 1770170974.5772493, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "CONSUME", "tool": "read.me", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5794249, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5835412, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5859632, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5884168, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5899332, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5915966, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5925345, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.594966, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5975518, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.5987377, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6007445, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.602086, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6032898, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.60551, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6065798, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.608098, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.609913, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6149054, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6156113, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6219757, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6235142, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6282232, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6304343, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6387265, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6399996, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6453803, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6472301, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6491702, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6505625, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6525319, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6547515, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6583147, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6626775, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.672185, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6798098, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6805627, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6834688, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.6915243, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7003834, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7026796, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7037556, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7085423, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7109773, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.712412, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.714415, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7162097, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7175357, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.723437, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7302356, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7322018, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7354336, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.736619, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7419105, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7432342, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7479715, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7559662, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7667809, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7748864, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7766201, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.78881, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7902074, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7922752, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7932951, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.7950144, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.796866, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.800949, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8020294, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.805407, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8085907, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.816716, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8295157, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8327641, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8343942, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8394978, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.841316, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8430488, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.849671, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.85117, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.853455, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8570135, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8619807, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8633447, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8705084, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8716743, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.878475, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8795264, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8905802, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8915565, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8954706, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.8967102, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.898221, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.9050095, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.908124, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.909388, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.91329, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.9148207, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.9165094, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.918171, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.9194286, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "304fe11d-38f4-4c0c-9832-2f5242819507", "ts": 1770170974.926721, "ts_iso": "2026-02-04T02:09:34Z"}
+{"ts": 1770170974.936062, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "217b8094-beaf-4671-9d72-b94cc35a52f4", "ts": 1770170974.9364727, "ts_iso": "2026-02-04T02:09:34Z"}
+{"ts": 1770170974.9366899, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "217b8094-beaf-4671-9d72-b94cc35a52f4", "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "GEOMETRY_SEEN", "agent_id": "restart", "jti": "217b8094-beaf-4671-9d72-b94cc35a52f4", "raw": {}, "eff": {}, "ts": 1770170974.9391522, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "CONSUME", "tool": "read.me", "jti": "217b8094-beaf-4671-9d72-b94cc35a52f4", "ts": 1770170974.939715, "ts_iso": "2026-02-04T02:09:34Z"}
+{"event": "REPLAY", "jti": "217b8094-beaf-4671-9d72-b94cc35a52f4", "ts": 1770170977.903623, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9074728, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "0164daae-cad2-4249-869b-7f2b202393f9", "ts": 1770170977.907896, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.90811, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "0164daae-cad2-4249-869b-7f2b202393f9", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "GEOMETRY_SEEN", "agent_id": "mismatch", "jti": "0164daae-cad2-4249-869b-7f2b202393f9", "raw": {}, "eff": {}, "ts": 1770170977.9127285, "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "CONSUME", "tool": "read.me", "jti": "0164daae-cad2-4249-869b-7f2b202393f9", "ts": 1770170977.9132922, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9175239, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "abe2de16-2b47-47e1-abeb-094e6c3c05cf", "ts": 1770170977.918114, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9185793, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "abe2de16-2b47-47e1-abeb-094e6c3c05cf", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9225848, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "4d6157cc-cd9e-4c1d-997b-7aba70b73808", "ts": 1770170977.9229505, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9231563, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "4d6157cc-cd9e-4c1d-997b-7aba70b73808", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "GEOMETRY_SEEN", "agent_id": "geom", "jti": "4d6157cc-cd9e-4c1d-997b-7aba70b73808", "raw": {"entropy": 0.0, "loop_count_10s": 9999, "error": true}, "eff": {"consistency": 0.95, "pred_accuracy": 0.95, "normality": 0.95}, "ts": 1770170977.926035, "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "GEOMETRY_BLOCK", "jti": "4d6157cc-cd9e-4c1d-997b-7aba70b73808", "agent_id": "geom", "score": 95.0, "threshold": 70.0, "signals_raw": {"entropy": 0.0, "loop_count_10s": 9999, "error": true}, "signals_eff": {"consistency": 0.95, "pred_accuracy": 0.95, "normality": 0.95}, "ts": 1770170977.9262376, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.928586, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "9f0283a8-2959-432f-bee4-c343b004f571", "ts": 1770170977.9288805, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9291844, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "9f0283a8-2959-432f-bee4-c343b004f571", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9311738, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "72c830e1-ea83-4227-b0bd-39a8f0c64fa7", "ts": 1770170977.9314656, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9316244, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "72c830e1-ea83-4227-b0bd-39a8f0c64fa7", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9334366, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6a208382-b659-431b-af88-16e0c317b75c", "ts": 1770170977.933654, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.933815, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6a208382-b659-431b-af88-16e0c317b75c", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9361782, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d4058db1-d318-4d27-8c29-af4672616f68", "ts": 1770170977.9364433, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.936961, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d4058db1-d318-4d27-8c29-af4672616f68", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9392078, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fe9d2310-adc8-4e9b-9e43-528a6764d31a", "ts": 1770170977.9397495, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.941194, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fe9d2310-adc8-4e9b-9e43-528a6764d31a", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.946089, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c985ef87-48f3-4dfe-bc2e-44b5b08e67ba", "ts": 1770170977.9468384, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9472988, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c985ef87-48f3-4dfe-bc2e-44b5b08e67ba", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9527147, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "34a10df2-f0b7-4a61-ae92-888b4856afac", "ts": 1770170977.9532528, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9538245, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "34a10df2-f0b7-4a61-ae92-888b4856afac", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9563608, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "90debd46-7f11-4e9f-82a8-92b26fa1be7f", "ts": 1770170977.956754, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9569478, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "90debd46-7f11-4e9f-82a8-92b26fa1be7f", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9586978, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f2cda54b-784a-4a66-abfa-49be01d8fc32", "ts": 1770170977.9589925, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9591894, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f2cda54b-784a-4a66-abfa-49be01d8fc32", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9613156, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d2a5ff34-1836-498a-9aee-ff9df978d908", "ts": 1770170977.961625, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9618096, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d2a5ff34-1836-498a-9aee-ff9df978d908", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9640973, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "13aa4eaa-e64c-4e42-9eef-6cf2b7ba988e", "ts": 1770170977.9644032, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9646032, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "13aa4eaa-e64c-4e42-9eef-6cf2b7ba988e", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9668427, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "bbe1788d-e719-4e82-b3fa-cee733616e42", "ts": 1770170977.9672801, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9675653, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "bbe1788d-e719-4e82-b3fa-cee733616e42", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9694195, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "92defeef-88c5-4f0e-96b9-9cc7bf7097e8", "ts": 1770170977.9697082, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9699013, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "92defeef-88c5-4f0e-96b9-9cc7bf7097e8", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9719193, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "203c9fac-fa2d-40b1-8535-847bdab11e83", "ts": 1770170977.9722533, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9724193, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "203c9fac-fa2d-40b1-8535-847bdab11e83", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.99016, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "eeb72e65-60c4-4179-b5ff-f2b41a9f0038", "ts": 1770170977.9906554, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9909055, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "eeb72e65-60c4-4179-b5ff-f2b41a9f0038", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.994653, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fcb16e6c-a02a-4628-aa6b-61a116ef0088", "ts": 1770170977.9950292, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.995247, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fcb16e6c-a02a-4628-aa6b-61a116ef0088", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9974697, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:37Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e9a1879e-7ea0-4f34-a7af-6e9372a8ddfa", "ts": 1770170977.9977846, "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170977.9979684, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e9a1879e-7ea0-4f34-a7af-6e9372a8ddfa", "ts_iso": "2026-02-04T02:09:37Z"}
+{"ts": 1770170978.0000594, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5eb8fd41-324e-4931-ac89-afb66dc9dd84", "ts": 1770170978.0004098, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0006, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5eb8fd41-324e-4931-ac89-afb66dc9dd84", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0026577, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "dea2aac4-d7b4-4b7a-90b6-ce3bb80635f7", "ts": 1770170978.002976, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.003139, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "dea2aac4-d7b4-4b7a-90b6-ce3bb80635f7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0051608, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "72505f10-4515-4dbf-a2b7-177134810b15", "ts": 1770170978.005426, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0055826, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "72505f10-4515-4dbf-a2b7-177134810b15", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0077803, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f91331d2-1721-49eb-9f58-180ed418d277", "ts": 1770170978.0082366, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0085323, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f91331d2-1721-49eb-9f58-180ed418d277", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0113144, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8f11d670-8000-4c04-b40a-232c7d7f5980", "ts": 1770170978.0116887, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0118506, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8f11d670-8000-4c04-b40a-232c7d7f5980", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0132394, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ead54663-a9f7-44db-8427-313ca2618ac7", "ts": 1770170978.0134308, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0135798, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ead54663-a9f7-44db-8427-313ca2618ac7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.015231, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c661c26b-5c26-4600-8b7d-72f83bdf7ed1", "ts": 1770170978.015487, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0156493, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c661c26b-5c26-4600-8b7d-72f83bdf7ed1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.016926, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f5f61502-8f8a-4968-9d83-2c320a5f029a", "ts": 1770170978.0171232, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0172758, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f5f61502-8f8a-4968-9d83-2c320a5f029a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.018553, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5141c58f-47ae-4942-ab19-330c64723691", "ts": 1770170978.0187767, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0189805, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5141c58f-47ae-4942-ab19-330c64723691", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0206616, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "081925ff-9a5c-4ece-b5fe-46a4368c05a9", "ts": 1770170978.0209858, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0212004, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "081925ff-9a5c-4ece-b5fe-46a4368c05a9", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.022962, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "194d2c00-b619-470a-bd1c-f1e86928b311", "ts": 1770170978.0231566, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0233052, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "194d2c00-b619-470a-bd1c-f1e86928b311", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0245671, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "27e9e2d6-174f-4719-a60e-80cc79eafbe5", "ts": 1770170978.0247154, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0249152, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "27e9e2d6-174f-4719-a60e-80cc79eafbe5", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0262177, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "eeaca82d-3aec-4826-9185-06af92410af7", "ts": 1770170978.0264003, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0265787, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "eeaca82d-3aec-4826-9185-06af92410af7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0303469, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "560753e2-48c4-411b-87e2-411d80ed5f29", "ts": 1770170978.0339801, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0341904, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "560753e2-48c4-411b-87e2-411d80ed5f29", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0361218, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "eca59868-e297-4703-b8be-76c4113d3886", "ts": 1770170978.0363376, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0365257, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "eca59868-e297-4703-b8be-76c4113d3886", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0383894, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "505eb8aa-aea4-4d9f-a05f-1b5327c01389", "ts": 1770170978.0386806, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.038848, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "505eb8aa-aea4-4d9f-a05f-1b5327c01389", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0402892, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5e9ba848-ac35-443d-9776-11cf2229e5e3", "ts": 1770170978.0404918, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0406597, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5e9ba848-ac35-443d-9776-11cf2229e5e3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0429473, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a4ec8544-6b65-4615-a6fd-96035323f9cb", "ts": 1770170978.043166, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0433447, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a4ec8544-6b65-4615-a6fd-96035323f9cb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0449858, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "bff7c9a5-9cee-416c-8606-c57962001461", "ts": 1770170978.0452785, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0454426, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "bff7c9a5-9cee-416c-8606-c57962001461", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0471964, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6923af08-f43f-4f13-933a-c6c1bd2092fc", "ts": 1770170978.047395, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0475826, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6923af08-f43f-4f13-933a-c6c1bd2092fc", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.049084, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "392683af-df35-422e-bf6d-a8888c1c222a", "ts": 1770170978.04931, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0495088, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "392683af-df35-422e-bf6d-a8888c1c222a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0514605, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "36cd8b79-38cc-44dd-85f1-faee3f83e26d", "ts": 1770170978.0518434, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0520394, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "36cd8b79-38cc-44dd-85f1-faee3f83e26d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0547862, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "83cdf122-bf64-4367-b3ff-c1cc7d6b3448", "ts": 1770170978.0551307, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.055322, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "83cdf122-bf64-4367-b3ff-c1cc7d6b3448", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0576248, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "87551ada-663b-4bc9-a01f-a4f6916e630c", "ts": 1770170978.0578744, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.058057, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "87551ada-663b-4bc9-a01f-a4f6916e630c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.059409, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1113d9ec-1791-4e4c-90e3-a0a37424aeeb", "ts": 1770170978.0596135, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0598252, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1113d9ec-1791-4e4c-90e3-a0a37424aeeb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0617797, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b83d325a-d840-4d39-b600-09d07f7c029d", "ts": 1770170978.0621336, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.062328, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b83d325a-d840-4d39-b600-09d07f7c029d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0641317, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3157df61-c9c5-41db-a175-e9093ddba59e", "ts": 1770170978.0643382, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0645304, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3157df61-c9c5-41db-a175-e9093ddba59e", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0661902, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a30b475d-23c2-4577-861e-260eec44ef24", "ts": 1770170978.066398, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0665584, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a30b475d-23c2-4577-861e-260eec44ef24", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0681117, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "28276d67-77c7-490b-9097-6c77133d44c5", "ts": 1770170978.0683267, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0685055, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "28276d67-77c7-490b-9097-6c77133d44c5", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0701292, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "bcb85240-cc98-4b33-aa2b-56e25b683c26", "ts": 1770170978.0705404, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.070856, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "bcb85240-cc98-4b33-aa2b-56e25b683c26", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.072652, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6194f8a6-5e11-434d-95a8-9325e8c72322", "ts": 1770170978.0728729, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0730774, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6194f8a6-5e11-434d-95a8-9325e8c72322", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.075079, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "50d89c9d-2ab5-4558-8f63-46310c6c4099", "ts": 1770170978.0753589, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0756462, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "50d89c9d-2ab5-4558-8f63-46310c6c4099", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0780296, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "336c6e0e-73d9-42fc-8334-78484834a7fb", "ts": 1770170978.0782793, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0784848, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "336c6e0e-73d9-42fc-8334-78484834a7fb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.080516, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fc41f043-ad6a-4b34-9611-cac05ef8ec37", "ts": 1770170978.080726, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.080909, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fc41f043-ad6a-4b34-9611-cac05ef8ec37", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0829473, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b2f1b20c-2192-4206-aa11-7b6590984ca1", "ts": 1770170978.0832677, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0834432, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b2f1b20c-2192-4206-aa11-7b6590984ca1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0849612, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fe014621-c3c3-4a99-92b2-15cf27af79e3", "ts": 1770170978.0851882, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.085393, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fe014621-c3c3-4a99-92b2-15cf27af79e3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0873494, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a9cd0bbe-0475-4e12-ac57-cc58c288cf4a", "ts": 1770170978.0878432, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0884528, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a9cd0bbe-0475-4e12-ac57-cc58c288cf4a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.090414, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3baaa990-8d0a-42b0-aa0c-cfc59bc842cd", "ts": 1770170978.09062, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.090772, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3baaa990-8d0a-42b0-aa0c-cfc59bc842cd", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0922287, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6f21c923-b12a-4725-a3cf-5921163b1b9d", "ts": 1770170978.0925262, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0926867, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6f21c923-b12a-4725-a3cf-5921163b1b9d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0944421, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "17e882f2-22d9-48e9-bfc9-c197c3dfe815", "ts": 1770170978.0947154, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.094939, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "17e882f2-22d9-48e9-bfc9-c197c3dfe815", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0966597, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "0d520a65-8095-481a-970e-2276d6dd6bb3", "ts": 1770170978.0968604, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.0970132, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "0d520a65-8095-481a-970e-2276d6dd6bb3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.098133, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1a246c23-6ac8-4806-a6b8-358fd1ba47f6", "ts": 1770170978.0983133, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.098485, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1a246c23-6ac8-4806-a6b8-358fd1ba47f6", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1001492, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "dfa487f8-d3b9-44aa-aec2-cbe156194808", "ts": 1770170978.100312, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1004531, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "dfa487f8-d3b9-44aa-aec2-cbe156194808", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1018548, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "254694dd-a714-496e-b17b-e6ca4e675f02", "ts": 1770170978.1020262, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1025493, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "254694dd-a714-496e-b17b-e6ca4e675f02", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.10365, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fbe6833d-c4eb-4b53-8777-2bec15708773", "ts": 1770170978.103827, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1040745, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fbe6833d-c4eb-4b53-8777-2bec15708773", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1054018, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7f887af7-5296-496a-bf2c-f7f816fd99cd", "ts": 1770170978.1055684, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1057096, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7f887af7-5296-496a-bf2c-f7f816fd99cd", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1068137, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a989e690-8005-4077-8987-c8856dd96332", "ts": 1770170978.106979, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.107123, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a989e690-8005-4077-8987-c8856dd96332", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1085725, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "4d213e55-bc82-4df6-8d12-26c4fb3db27a", "ts": 1770170978.1087213, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1088612, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "4d213e55-bc82-4df6-8d12-26c4fb3db27a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1105928, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "0e8f69ef-2ab8-4e18-85f8-e3c39b2fff43", "ts": 1770170978.110758, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1108992, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "0e8f69ef-2ab8-4e18-85f8-e3c39b2fff43", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1120584, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ebb9e508-d228-4f2c-82c1-b397754a2281", "ts": 1770170978.112206, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1123412, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ebb9e508-d228-4f2c-82c1-b397754a2281", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.113427, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3ce32e12-5e67-4511-95b7-f2a0b10f5679", "ts": 1770170978.1135828, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1137185, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3ce32e12-5e67-4511-95b7-f2a0b10f5679", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.114958, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fbc00a30-7e95-4f89-b84f-d4d462d89534", "ts": 1770170978.1151912, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.115434, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fbc00a30-7e95-4f89-b84f-d4d462d89534", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1170835, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "488e02a9-58af-4850-907b-bdd6684b1d9d", "ts": 1770170978.117256, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1173952, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "488e02a9-58af-4850-907b-bdd6684b1d9d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1197133, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "2c1e50c6-d605-4300-b0f3-8aeb13f07c21", "ts": 1770170978.1200304, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1202347, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "2c1e50c6-d605-4300-b0f3-8aeb13f07c21", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.123217, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6646ae76-d65e-4ac1-98c0-e8b560bab2d8", "ts": 1770170978.1235151, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1236753, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6646ae76-d65e-4ac1-98c0-e8b560bab2d8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1254587, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6602fecf-fd45-42e0-8dff-33317410929f", "ts": 1770170978.125686, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1258855, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6602fecf-fd45-42e0-8dff-33317410929f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1278627, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "51740de4-33dd-4937-8cdc-b9afa1ac69d7", "ts": 1770170978.1281703, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.12834, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "51740de4-33dd-4937-8cdc-b9afa1ac69d7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1296794, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "9989dbca-50e7-4d03-ae53-7a5fa4c16f4a", "ts": 1770170978.1298392, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1299715, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "9989dbca-50e7-4d03-ae53-7a5fa4c16f4a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1313996, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1406b49d-0304-4562-9e3c-6d01662dc0e8", "ts": 1770170978.131548, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.131674, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1406b49d-0304-4562-9e3c-6d01662dc0e8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1328182, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "bc90224a-5671-4139-b7e1-c8de55f270c6", "ts": 1770170978.1329632, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1331196, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "bc90224a-5671-4139-b7e1-c8de55f270c6", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1341596, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1cfe93e1-86fd-46b8-9989-7bba747e3524", "ts": 1770170978.134298, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1344395, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1cfe93e1-86fd-46b8-9989-7bba747e3524", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1355317, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "249875e2-6f73-4e28-b605-947b413106b8", "ts": 1770170978.1356823, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.135824, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "249875e2-6f73-4e28-b605-947b413106b8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.136906, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "eb1f6ee0-518d-4be2-abed-d1801adbd1e1", "ts": 1770170978.137061, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.137298, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "eb1f6ee0-518d-4be2-abed-d1801adbd1e1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1384706, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "03383534-cb49-4b3d-82df-c34f936bda2f", "ts": 1770170978.138661, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.138825, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "03383534-cb49-4b3d-82df-c34f936bda2f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1399293, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f3f105d8-3732-43a2-8005-4f0753930343", "ts": 1770170978.1401262, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1402833, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f3f105d8-3732-43a2-8005-4f0753930343", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1414275, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "317510a7-994f-4ce1-b9cf-0dca76803798", "ts": 1770170978.141581, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1417212, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "317510a7-994f-4ce1-b9cf-0dca76803798", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.143365, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "9cb98353-af01-4677-9370-4910d8702c76", "ts": 1770170978.1435173, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.143647, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "9cb98353-af01-4677-9370-4910d8702c76", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1448727, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ab67aab5-014b-4389-a361-30c49100e9aa", "ts": 1770170978.145016, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1451507, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ab67aab5-014b-4389-a361-30c49100e9aa", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1461825, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "66a63d24-3de7-4858-a32e-6c8f66c44249", "ts": 1770170978.1463175, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.146452, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "66a63d24-3de7-4858-a32e-6c8f66c44249", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.147509, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f945b8ec-9976-4b6c-8cad-0bcdbbdaaa61", "ts": 1770170978.147676, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1478393, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f945b8ec-9976-4b6c-8cad-0bcdbbdaaa61", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1489987, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "39e04888-7e5d-4c94-976a-db57027801a7", "ts": 1770170978.1491854, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1493196, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "39e04888-7e5d-4c94-976a-db57027801a7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.150459, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e9307b52-1d29-4ca8-949c-89be1a3cd07f", "ts": 1770170978.150628, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1508224, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e9307b52-1d29-4ca8-949c-89be1a3cd07f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1522174, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "18751277-cea2-44e7-9bc3-de053869dfb8", "ts": 1770170978.1524572, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1526268, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "18751277-cea2-44e7-9bc3-de053869dfb8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.154663, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b52605af-619c-4188-940b-cff60f714eb2", "ts": 1770170978.1549773, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1551764, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b52605af-619c-4188-940b-cff60f714eb2", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1571586, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "45e63416-8653-41d5-83bd-27d37c7b6a73", "ts": 1770170978.1574504, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1576588, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "45e63416-8653-41d5-83bd-27d37c7b6a73", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1695652, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e9a117c3-7972-4457-8909-862720412869", "ts": 1770170978.1699448, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1701849, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e9a117c3-7972-4457-8909-862720412869", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.172026, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "07ad6576-5eac-401a-abf1-daaa335ffe39", "ts": 1770170978.1722524, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1724267, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "07ad6576-5eac-401a-abf1-daaa335ffe39", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1739583, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e6b0a606-9b14-4491-972c-bc92a7524efa", "ts": 1770170978.174241, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1744146, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e6b0a606-9b14-4491-972c-bc92a7524efa", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1757283, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "eb2e4cbe-bf52-4f40-8931-f1f6108f2a48", "ts": 1770170978.1759698, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1761718, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "eb2e4cbe-bf52-4f40-8931-f1f6108f2a48", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1774447, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7c7c7251-1208-4cb2-8fc7-78024a5b339f", "ts": 1770170978.177659, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.177823, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7c7c7251-1208-4cb2-8fc7-78024a5b339f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1794615, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "419b6b26-7f15-4c34-bae7-dcc1f5cf4c0a", "ts": 1770170978.1797009, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1799068, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "419b6b26-7f15-4c34-bae7-dcc1f5cf4c0a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1825123, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "04e9f89a-0915-4978-9827-c39864d94ffb", "ts": 1770170978.1828856, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1831086, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "04e9f89a-0915-4978-9827-c39864d94ffb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1851046, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d6a92753-c23b-472c-9736-dfd80f1e2f2a", "ts": 1770170978.1855357, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1857176, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d6a92753-c23b-472c-9736-dfd80f1e2f2a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1883373, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "734cc865-b450-4ac4-8b7c-8d727fa7ca0a", "ts": 1770170978.1886828, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1888754, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "734cc865-b450-4ac4-8b7c-8d727fa7ca0a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.190815, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "da3ce3cf-d615-402e-8db4-02f841a8fcef", "ts": 1770170978.1910958, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.191283, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "da3ce3cf-d615-402e-8db4-02f841a8fcef", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1928837, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6eae28ab-0c18-4f32-9ebf-187ab0891e65", "ts": 1770170978.1931748, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.193482, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6eae28ab-0c18-4f32-9ebf-187ab0891e65", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.195807, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "94300d43-843f-4f73-b1cf-c4f6f8943536", "ts": 1770170978.19616, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.196345, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "94300d43-843f-4f73-b1cf-c4f6f8943536", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1979165, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "636ce473-a282-4e43-a450-cad761087045", "ts": 1770170978.1981351, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1982954, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "636ce473-a282-4e43-a450-cad761087045", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1994762, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c9818f23-f9f1-48a0-a306-850d1497d46f", "ts": 1770170978.1996455, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.1997998, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c9818f23-f9f1-48a0-a306-850d1497d46f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.200915, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e7c17c23-1047-4a77-a48c-2526901d0fdf", "ts": 1770170978.2010868, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2012224, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e7c17c23-1047-4a77-a48c-2526901d0fdf", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2022839, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c0aa1bd3-781c-4ee3-8e2f-13cdae535bc1", "ts": 1770170978.2024271, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2025545, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c0aa1bd3-781c-4ee3-8e2f-13cdae535bc1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.203616, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fba07e57-3080-4efc-b569-8106eb2f922e", "ts": 1770170978.203756, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.203881, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fba07e57-3080-4efc-b569-8106eb2f922e", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2050135, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "517c4f26-7bb2-44ac-beb6-f5a428432a9a", "ts": 1770170978.2052047, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2055585, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "517c4f26-7bb2-44ac-beb6-f5a428432a9a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2067661, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "42330e51-4d78-4923-abb7-73998a3ca19f", "ts": 1770170978.2069151, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2070987, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "42330e51-4d78-4923-abb7-73998a3ca19f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2081556, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fafb803f-2af7-4950-a99f-76a7e80cc57a", "ts": 1770170978.2082987, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2084236, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fafb803f-2af7-4950-a99f-76a7e80cc57a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2096536, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7bb51c64-bbf4-4238-a23f-2fb8a6ebf4dd", "ts": 1770170978.2098615, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2100327, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7bb51c64-bbf4-4238-a23f-2fb8a6ebf4dd", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2113256, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5d62a15a-8451-4493-8f29-2c90e4ece010", "ts": 1770170978.2114758, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.211603, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5d62a15a-8451-4493-8f29-2c90e4ece010", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2126734, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "2523c850-5a83-4cb2-8ec8-b71a76c034a2", "ts": 1770170978.2128162, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2129378, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "2523c850-5a83-4cb2-8ec8-b71a76c034a2", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2139812, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "4c56d05f-0634-48fa-bb17-e67b57157eee", "ts": 1770170978.2141242, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2142475, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "4c56d05f-0634-48fa-bb17-e67b57157eee", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2153203, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "2440eb5b-ab9b-4674-bee2-d9e9e16e679d", "ts": 1770170978.215463, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2156038, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "2440eb5b-ab9b-4674-bee2-d9e9e16e679d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2170775, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "661bdafd-7728-4bb0-8b4f-e6ddf98b5dc1", "ts": 1770170978.2173088, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2174413, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "661bdafd-7728-4bb0-8b4f-e6ddf98b5dc1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.219199, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "01ec436c-42ba-4baa-8e23-9b261508a50e", "ts": 1770170978.2194011, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2195425, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "01ec436c-42ba-4baa-8e23-9b261508a50e", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.221129, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "0b328ae6-84a5-4dda-b57e-cc493f39c79c", "ts": 1770170978.221372, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2215893, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "0b328ae6-84a5-4dda-b57e-cc493f39c79c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2235196, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "54d1de58-eaac-4673-b49f-89e934bbf34b", "ts": 1770170978.223722, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.223936, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "54d1de58-eaac-4673-b49f-89e934bbf34b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2309704, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "84a4f1d6-fe8b-431d-9497-abc7cf743c54", "ts": 1770170978.2312756, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.231442, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "84a4f1d6-fe8b-431d-9497-abc7cf743c54", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2330618, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "762e80c8-3de2-43b5-a7e7-09844b008fa0", "ts": 1770170978.233237, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2333791, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "762e80c8-3de2-43b5-a7e7-09844b008fa0", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2346754, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "04fcb3f1-1ea1-42f3-ae52-01d3365e14e0", "ts": 1770170978.2348294, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.234963, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "04fcb3f1-1ea1-42f3-ae52-01d3365e14e0", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2361116, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1da49451-aa15-4d64-8b46-d25fb686d199", "ts": 1770170978.2362623, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2363956, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1da49451-aa15-4d64-8b46-d25fb686d199", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2376018, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "99561698-4d75-49a0-983e-1dfb25b128af", "ts": 1770170978.2378032, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2379405, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "99561698-4d75-49a0-983e-1dfb25b128af", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2390792, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "30e3ac7e-a562-4b6d-ada0-0c548b7d8e27", "ts": 1770170978.2392313, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2393625, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "30e3ac7e-a562-4b6d-ada0-0c548b7d8e27", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.240509, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "84ac4ab1-48da-4d45-9aac-bf7a74efa716", "ts": 1770170978.240662, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.240802, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "84ac4ab1-48da-4d45-9aac-bf7a74efa716", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2419317, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f1bb9903-96cd-4192-9acd-15a7f2f3a6f7", "ts": 1770170978.24218, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.242495, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f1bb9903-96cd-4192-9acd-15a7f2f3a6f7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.243995, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b6be848d-b3d7-4579-ae61-0d181a4771f9", "ts": 1770170978.2441692, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2443128, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b6be848d-b3d7-4579-ae61-0d181a4771f9", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.245438, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "586d70e4-173a-4560-9b0f-fa6741627468", "ts": 1770170978.24559, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2457256, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "586d70e4-173a-4560-9b0f-fa6741627468", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2468202, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "15d2fa9a-88d3-4cb8-a666-75002ba5ae7a", "ts": 1770170978.246977, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.247216, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "15d2fa9a-88d3-4cb8-a666-75002ba5ae7a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.248683, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d4a95512-acf5-451e-a5ee-53c1c91cb717", "ts": 1770170978.2488785, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2490902, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d4a95512-acf5-451e-a5ee-53c1c91cb717", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2502244, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3575bee9-8f7b-47a3-bd51-cd1bd767851b", "ts": 1770170978.2503722, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2505004, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3575bee9-8f7b-47a3-bd51-cd1bd767851b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.251942, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1e6ae7b7-5fdf-4c7d-88a1-e8ab5b7d7b0a", "ts": 1770170978.2521424, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2522955, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1e6ae7b7-5fdf-4c7d-88a1-e8ab5b7d7b0a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2541564, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "03d2ef00-b683-4510-bb6a-5873afe3af1a", "ts": 1770170978.254504, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2546601, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "03d2ef00-b683-4510-bb6a-5873afe3af1a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2560656, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "406f77fd-a0da-44e3-9292-dceb1f3750ea", "ts": 1770170978.2562096, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2563396, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "406f77fd-a0da-44e3-9292-dceb1f3750ea", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2577717, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "36fef7c0-ac82-48ba-a43a-65c6beef0c6f", "ts": 1770170978.2579312, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2580912, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "36fef7c0-ac82-48ba-a43a-65c6beef0c6f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2595146, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "85c483e1-3124-4c28-872e-d5cef051621d", "ts": 1770170978.259708, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2598674, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "85c483e1-3124-4c28-872e-d5cef051621d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2611551, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "fdc78c22-63dc-4d11-9518-bd14e5408f51", "ts": 1770170978.2613215, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2614524, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "fdc78c22-63dc-4d11-9518-bd14e5408f51", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2627568, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "af77ab97-4dc0-4c74-acba-97a1861f39f4", "ts": 1770170978.2629318, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2630632, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "af77ab97-4dc0-4c74-acba-97a1861f39f4", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.264484, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e9634209-4aa9-4454-9077-2bdd699dbf4c", "ts": 1770170978.2646956, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2648354, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e9634209-4aa9-4454-9077-2bdd699dbf4c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2661276, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "12dfc377-1990-4daf-a8d8-fc53dd7ec98d", "ts": 1770170978.2662845, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.266416, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "12dfc377-1990-4daf-a8d8-fc53dd7ec98d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2675521, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b80362af-3a96-483e-8db1-2fc3c846cc22", "ts": 1770170978.2677054, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.267833, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b80362af-3a96-483e-8db1-2fc3c846cc22", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2693243, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d248f119-83f2-4f42-878f-2f8d4c343036", "ts": 1770170978.2695453, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2697024, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d248f119-83f2-4f42-878f-2f8d4c343036", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2711217, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8d82a9eb-c3d1-45a8-9f93-b07d3db769b7", "ts": 1770170978.2712986, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2714367, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8d82a9eb-c3d1-45a8-9f93-b07d3db769b7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.27269, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f46c7984-20e0-486a-96b4-69b2d97eb6bf", "ts": 1770170978.2729104, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2730944, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f46c7984-20e0-486a-96b4-69b2d97eb6bf", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2742677, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f1e95665-dc27-4dc9-a854-9f2029cf63f5", "ts": 1770170978.2744603, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2746499, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f1e95665-dc27-4dc9-a854-9f2029cf63f5", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2762053, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8adab0dc-d1d5-4af7-a1b3-17413f3dfbeb", "ts": 1770170978.2764885, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2766483, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8adab0dc-d1d5-4af7-a1b3-17413f3dfbeb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.278164, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5403f83e-61b2-4562-b93c-412bc7506ce6", "ts": 1770170978.27832, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2784543, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5403f83e-61b2-4562-b93c-412bc7506ce6", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2797008, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "741121c3-552d-49a0-92a1-5e1c1f328d86", "ts": 1770170978.2798846, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.280021, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "741121c3-552d-49a0-92a1-5e1c1f328d86", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2815945, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "17dfbd0b-b3ce-418a-8232-d0fb75a3325f", "ts": 1770170978.2817383, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2818685, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "17dfbd0b-b3ce-418a-8232-d0fb75a3325f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2829795, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "23932e6d-3f1d-4091-81b3-17d816c1900d", "ts": 1770170978.2831476, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2832828, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "23932e6d-3f1d-4091-81b3-17d816c1900d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2845829, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "bf9cb65f-68de-44dd-9a7c-a915bd5e9e41", "ts": 1770170978.2847838, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.284939, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "bf9cb65f-68de-44dd-9a7c-a915bd5e9e41", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2864115, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f60cccd2-0cab-4f54-8c55-492d3312e230", "ts": 1770170978.2867012, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2869747, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f60cccd2-0cab-4f54-8c55-492d3312e230", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2892644, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ee0e38d6-8788-4f8d-9419-412b5fbadb9f", "ts": 1770170978.2896569, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.28985, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ee0e38d6-8788-4f8d-9419-412b5fbadb9f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2966664, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "78d25990-825a-4f6a-a25f-c35d10b955d1", "ts": 1770170978.296899, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2970595, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "78d25990-825a-4f6a-a25f-c35d10b955d1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.298911, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "29024484-74e1-4724-a893-b3f04a11dd2d", "ts": 1770170978.2990868, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.2992387, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "29024484-74e1-4724-a893-b3f04a11dd2d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.300705, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f89dd574-6ffa-490b-856c-34721aa421c8", "ts": 1770170978.3009303, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.301238, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f89dd574-6ffa-490b-856c-34721aa421c8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.303189, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1ff5036d-8f1b-49f7-8c64-5b33524b4a27", "ts": 1770170978.3034427, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3035934, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1ff5036d-8f1b-49f7-8c64-5b33524b4a27", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3051364, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a6993aa6-1fc3-4e76-9dd6-a2fb367c55c2", "ts": 1770170978.3053095, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3054543, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a6993aa6-1fc3-4e76-9dd6-a2fb367c55c2", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3070183, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "efb62cad-f5c0-4b96-aa83-f2ffe1314cff", "ts": 1770170978.307191, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3073328, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "efb62cad-f5c0-4b96-aa83-f2ffe1314cff", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3089032, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "211b9b66-231a-46b9-b155-c33c4e2dae6c", "ts": 1770170978.3090882, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3092985, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "211b9b66-231a-46b9-b155-c33c4e2dae6c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3108757, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e0449d81-8f1b-4fb4-9335-c4bd5ea4edcf", "ts": 1770170978.3110569, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3112087, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e0449d81-8f1b-4fb4-9335-c4bd5ea4edcf", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.312838, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8ab37342-bffd-459b-a378-b11809530a32", "ts": 1770170978.3130565, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.313213, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8ab37342-bffd-459b-a378-b11809530a32", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.314846, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b7640a87-8f5c-4e90-accc-3e70eb497d03", "ts": 1770170978.3150768, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3152359, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b7640a87-8f5c-4e90-accc-3e70eb497d03", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3170128, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "9db80fa8-dfe3-4d35-8c36-25d269db2a4f", "ts": 1770170978.3173106, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.317478, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "9db80fa8-dfe3-4d35-8c36-25d269db2a4f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3193252, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "93db20da-a61d-45f4-9f0d-ffe0f2a67fb4", "ts": 1770170978.3196385, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3198435, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "93db20da-a61d-45f4-9f0d-ffe0f2a67fb4", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3226926, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "96ab8191-243f-41a8-8947-8c16a164e265", "ts": 1770170978.3230212, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3232007, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "96ab8191-243f-41a8-8947-8c16a164e265", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3260765, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d922661a-87ef-4772-97b5-cc7560031961", "ts": 1770170978.3264766, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3266852, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d922661a-87ef-4772-97b5-cc7560031961", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.328776, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5426ab13-1e85-4083-96b2-b23887c6eade", "ts": 1770170978.3290553, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3292778, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5426ab13-1e85-4083-96b2-b23887c6eade", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.33151, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "577da341-b063-4520-9135-6dd24e5f7703", "ts": 1770170978.331709, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3318796, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "577da341-b063-4520-9135-6dd24e5f7703", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3333607, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b830e219-efc1-4890-8c0a-a6a5d92fcdf2", "ts": 1770170978.3335407, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3336906, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b830e219-efc1-4890-8c0a-a6a5d92fcdf2", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3351543, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "33e6b01a-920c-49cb-8853-1c3177d7d84d", "ts": 1770170978.335327, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3354697, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "33e6b01a-920c-49cb-8853-1c3177d7d84d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.33676, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5c978299-c124-400e-944e-f9ef134b5bfb", "ts": 1770170978.336931, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3370667, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5c978299-c124-400e-944e-f9ef134b5bfb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3383617, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "18d1f589-2541-4798-90aa-8f26b892387a", "ts": 1770170978.33869, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.338837, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "18d1f589-2541-4798-90aa-8f26b892387a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3402395, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "15f6f820-99dd-46cb-bf05-4384284e12f7", "ts": 1770170978.3404076, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3405433, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "15f6f820-99dd-46cb-bf05-4384284e12f7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3415668, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b6e50a46-ba64-41e4-9cf7-757da8d58394", "ts": 1770170978.341744, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3418987, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b6e50a46-ba64-41e4-9cf7-757da8d58394", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3431263, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "517d23d0-13a6-4297-a581-710cd9a6d7f2", "ts": 1770170978.343271, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.343403, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "517d23d0-13a6-4297-a581-710cd9a6d7f2", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.344542, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "91f1f966-20e4-4b45-ba65-8a04676bb833", "ts": 1770170978.3446927, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.344832, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "91f1f966-20e4-4b45-ba65-8a04676bb833", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3458893, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "4256055e-f70d-444d-a153-f6f7ee96e2e8", "ts": 1770170978.3460567, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3462203, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "4256055e-f70d-444d-a153-f6f7ee96e2e8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3473074, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "484cd193-2487-48a1-99a6-92fc786e2ada", "ts": 1770170978.3474612, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3475995, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "484cd193-2487-48a1-99a6-92fc786e2ada", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3486753, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b3eac653-c196-461b-86b7-ab3067be7470", "ts": 1770170978.348833, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3489683, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b3eac653-c196-461b-86b7-ab3067be7470", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.35016, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "9035665f-7983-47b2-b110-37b931d7b12f", "ts": 1770170978.3503613, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3504944, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "9035665f-7983-47b2-b110-37b931d7b12f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3517034, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "da36dc50-fc7a-45bd-9c19-333a651d5c1b", "ts": 1770170978.35187, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.352013, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "da36dc50-fc7a-45bd-9c19-333a651d5c1b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3532357, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c25909cf-40fc-4cf9-9461-f8e12030bfa3", "ts": 1770170978.353385, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3535173, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c25909cf-40fc-4cf9-9461-f8e12030bfa3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3547714, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6f45df4b-03b3-4792-9d8b-ae619a88d85c", "ts": 1770170978.3549716, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3551335, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6f45df4b-03b3-4792-9d8b-ae619a88d85c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3573022, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3122f12f-76d2-4831-aa1f-b6029286f2eb", "ts": 1770170978.3575952, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3577497, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3122f12f-76d2-4831-aa1f-b6029286f2eb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3591993, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "89474805-eb9a-47c2-9166-60e43d3bdfbc", "ts": 1770170978.359369, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.359506, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "89474805-eb9a-47c2-9166-60e43d3bdfbc", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3608534, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7c2608e2-3864-442b-964c-88a1ddad84c4", "ts": 1770170978.3611085, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3612475, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7c2608e2-3864-442b-964c-88a1ddad84c4", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3626971, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "75cd045c-cba7-4cee-85ed-d1f40caff491", "ts": 1770170978.3628626, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3629942, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "75cd045c-cba7-4cee-85ed-d1f40caff491", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3645735, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "15403ac9-6d5a-40ed-876d-ea7c2789dc29", "ts": 1770170978.3647845, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3649387, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "15403ac9-6d5a-40ed-876d-ea7c2789dc29", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3666425, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "2937b737-ac0b-48ca-acb2-fbc459b0c205", "ts": 1770170978.366888, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.367038, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "2937b737-ac0b-48ca-acb2-fbc459b0c205", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3682034, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "92bfe0ea-a85d-4412-ac79-367ca0a5816d", "ts": 1770170978.3683548, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.368482, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "92bfe0ea-a85d-4412-ac79-367ca0a5816d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3696291, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "54220a5b-d586-4cc9-8ef6-8b805257a21b", "ts": 1770170978.3697822, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3699298, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "54220a5b-d586-4cc9-8ef6-8b805257a21b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3714974, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b04f2dec-2b72-48f9-a280-2342049e0160", "ts": 1770170978.3717484, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3719375, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b04f2dec-2b72-48f9-a280-2342049e0160", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.373721, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "53471989-4d2f-4290-ab8d-b6af803e05a0", "ts": 1770170978.3739755, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3741596, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "53471989-4d2f-4290-ab8d-b6af803e05a0", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3753774, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "39c49743-b5be-4b03-b73c-812d49793b3d", "ts": 1770170978.3755555, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3756878, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "39c49743-b5be-4b03-b73c-812d49793b3d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3770723, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "98dce291-b7ba-46b2-9c2e-39d8fb191c3d", "ts": 1770170978.3772442, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.377408, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "98dce291-b7ba-46b2-9c2e-39d8fb191c3d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3785143, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "089a6344-fea2-48ee-b1b3-241dad12d0a5", "ts": 1770170978.3786657, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3788157, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "089a6344-fea2-48ee-b1b3-241dad12d0a5", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3798668, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "4733c771-f6fd-4999-bc6e-3e23018ac634", "ts": 1770170978.3800583, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3802142, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "4733c771-f6fd-4999-bc6e-3e23018ac634", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3813283, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "cf0b4d4c-d0ef-4783-b7f5-844b395d3e4b", "ts": 1770170978.3815022, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3816414, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "cf0b4d4c-d0ef-4783-b7f5-844b395d3e4b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3828886, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "43776d1a-d79e-4fbc-b7bb-5a5924494732", "ts": 1770170978.383249, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3836503, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "43776d1a-d79e-4fbc-b7bb-5a5924494732", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3852415, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b23561cc-01b1-4ba2-abea-cbcf5c6fd2ff", "ts": 1770170978.3854535, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3856037, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b23561cc-01b1-4ba2-abea-cbcf5c6fd2ff", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.387542, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "db9c91e6-fd4d-44f3-be8a-e5a823ee8836", "ts": 1770170978.388226, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3884392, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "db9c91e6-fd4d-44f3-be8a-e5a823ee8836", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3902388, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a86ceebe-937d-4cb8-9652-43845dd2298a", "ts": 1770170978.3904848, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3906465, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a86ceebe-937d-4cb8-9652-43845dd2298a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.391903, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "0fab4542-e8b6-4afe-bcd1-3733e46e281f", "ts": 1770170978.3920712, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3922076, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "0fab4542-e8b6-4afe-bcd1-3733e46e281f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3934615, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6196a863-f0c0-4b69-941e-17bc7fbb12b4", "ts": 1770170978.3936129, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.393741, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6196a863-f0c0-4b69-941e-17bc7fbb12b4", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.395123, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7fa6fb4e-7c4d-45d0-9b31-60d911f6e702", "ts": 1770170978.3953385, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3954725, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7fa6fb4e-7c4d-45d0-9b31-60d911f6e702", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3967862, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "03445ba4-6ce6-420f-a8f6-e35008ac6bd0", "ts": 1770170978.3969467, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3971052, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "03445ba4-6ce6-420f-a8f6-e35008ac6bd0", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3985527, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "4695a7d9-7940-49a5-b869-ebe23a607687", "ts": 1770170978.398698, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3988338, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "4695a7d9-7940-49a5-b869-ebe23a607687", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.3999033, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "46cf5a90-c2cb-46b7-9a95-5dad9902758c", "ts": 1770170978.4000442, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4001677, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "46cf5a90-c2cb-46b7-9a95-5dad9902758c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4011784, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "de38c6f6-630b-445e-a7da-c489e6bbb896", "ts": 1770170978.4013202, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4014425, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "de38c6f6-630b-445e-a7da-c489e6bbb896", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4028697, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c3df1d2c-d18b-4391-b274-1ffefc873ede", "ts": 1770170978.4030063, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.403158, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c3df1d2c-d18b-4391-b274-1ffefc873ede", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.404188, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "62ae0744-59e0-46b0-9f79-98626e75b680", "ts": 1770170978.4043272, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4044685, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "62ae0744-59e0-46b0-9f79-98626e75b680", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4055543, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "43b4b4a8-10fb-4f72-8ac9-4a5bdd8a4900", "ts": 1770170978.4056892, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4058204, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "43b4b4a8-10fb-4f72-8ac9-4a5bdd8a4900", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.40701, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "41757389-57f4-4da5-83fc-15c6d5b0e20f", "ts": 1770170978.4073231, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.407455, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "41757389-57f4-4da5-83fc-15c6d5b0e20f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4086971, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "dfdd6a89-bdd4-4e30-bf7a-cc0a56f100e8", "ts": 1770170978.4088778, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.409027, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "dfdd6a89-bdd4-4e30-bf7a-cc0a56f100e8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4106495, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a96b1641-72f9-4f46-bf69-c7ceb9d7e5a6", "ts": 1770170978.4108179, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4109523, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a96b1641-72f9-4f46-bf69-c7ceb9d7e5a6", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4120724, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ab645262-cc9b-4abf-8ebf-c4be98fc0ed2", "ts": 1770170978.4122329, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4123812, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ab645262-cc9b-4abf-8ebf-c4be98fc0ed2", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4134917, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d56751e4-17d1-4009-a61c-d7f6b6696f63", "ts": 1770170978.4136336, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4137588, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d56751e4-17d1-4009-a61c-d7f6b6696f63", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.415236, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "77a56590-e640-4c7c-8d15-9488e0b0c0a7", "ts": 1770170978.415386, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4155133, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "77a56590-e640-4c7c-8d15-9488e0b0c0a7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.416696, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c6973479-aa86-45dd-a1ce-c4888691e323", "ts": 1770170978.4168773, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4170191, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c6973479-aa86-45dd-a1ce-c4888691e323", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4190147, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "570a0c98-7bde-4178-9460-32a729692630", "ts": 1770170978.4193366, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4195116, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "570a0c98-7bde-4178-9460-32a729692630", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4216325, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "593fd4bd-6afe-47b2-b571-6ba7061fa044", "ts": 1770170978.4219117, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.422102, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "593fd4bd-6afe-47b2-b571-6ba7061fa044", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4238164, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1a875182-e38b-4ac0-9c11-acb7f8a4757a", "ts": 1770170978.4240274, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4241726, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1a875182-e38b-4ac0-9c11-acb7f8a4757a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.42556, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5ef0bd46-fceb-4421-9757-e6cc6a559658", "ts": 1770170978.425746, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4258935, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5ef0bd46-fceb-4421-9757-e6cc6a559658", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4272609, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "554a7dbc-8854-4f18-aec0-9f105b3d445f", "ts": 1770170978.427437, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4275737, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "554a7dbc-8854-4f18-aec0-9f105b3d445f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4288838, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b52d495f-322b-45ad-a8b3-98eb5643548a", "ts": 1770170978.4290607, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4292023, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b52d495f-322b-45ad-a8b3-98eb5643548a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4307637, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3a822198-8fbd-4f89-a383-f02189691b9c", "ts": 1770170978.431038, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4311843, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3a822198-8fbd-4f89-a383-f02189691b9c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4326239, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "cb32c355-ccab-4d30-a5f4-95e71f2f3a96", "ts": 1770170978.4328382, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4329839, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "cb32c355-ccab-4d30-a5f4-95e71f2f3a96", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4341125, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b45b3d67-89dc-4cb5-bddf-d05cefa1c416", "ts": 1770170978.43429, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4344308, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b45b3d67-89dc-4cb5-bddf-d05cefa1c416", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4357078, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "eadfa9a9-e552-47ab-8922-732b23bc856f", "ts": 1770170978.4359207, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.436063, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "eadfa9a9-e552-47ab-8922-732b23bc856f", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4372504, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "08a8043d-aec6-4096-82af-2569caf7d496", "ts": 1770170978.4374015, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4375315, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "08a8043d-aec6-4096-82af-2569caf7d496", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4386525, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8aa17519-f1c9-43e2-bd1a-1f4d74d222d1", "ts": 1770170978.4388037, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4389536, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8aa17519-f1c9-43e2-bd1a-1f4d74d222d1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4400854, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3a5cfae0-a855-4e61-93b0-934173e2f86d", "ts": 1770170978.4402266, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4403484, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3a5cfae0-a855-4e61-93b0-934173e2f86d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4418764, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "25fff6b9-a401-4092-8c14-b7935987d097", "ts": 1770170978.4420218, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.442173, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "25fff6b9-a401-4092-8c14-b7935987d097", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4436874, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5d3003e0-f83d-416a-82a4-735215d6d6ca", "ts": 1770170978.4439144, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4440744, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5d3003e0-f83d-416a-82a4-735215d6d6ca", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4453647, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "eb625bcd-0805-4910-8032-0146ddf75deb", "ts": 1770170978.4455717, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4457338, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "eb625bcd-0805-4910-8032-0146ddf75deb", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4482992, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "40b960cb-8639-4bc1-b27c-560be91f7bdc", "ts": 1770170978.4484632, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4485977, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "40b960cb-8639-4bc1-b27c-560be91f7bdc", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4500926, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "92793ff6-53f9-4cf4-aa72-fcc6d1f31ab5", "ts": 1770170978.4502435, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4503744, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "92793ff6-53f9-4cf4-aa72-fcc6d1f31ab5", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4520323, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "2b607311-d04c-4410-9cb2-d1f9dfeb2242", "ts": 1770170978.4522662, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4524155, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "2b607311-d04c-4410-9cb2-d1f9dfeb2242", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.454383, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b7c5e51c-4e44-445d-8018-2ace77c3d871", "ts": 1770170978.4547064, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4549093, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b7c5e51c-4e44-445d-8018-2ace77c3d871", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4564297, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "263cde54-5c13-4fab-99a7-37f861aed6e7", "ts": 1770170978.4565907, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.456722, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "263cde54-5c13-4fab-99a7-37f861aed6e7", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4578516, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6b45751e-00b3-448c-b5c6-54ea8ac213e3", "ts": 1770170978.4580152, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4581475, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6b45751e-00b3-448c-b5c6-54ea8ac213e3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.459406, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "dc7429ff-685e-4a2b-b347-09f24eba7430", "ts": 1770170978.459701, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4598296, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "dc7429ff-685e-4a2b-b347-09f24eba7430", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.46124, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "bd39bb7c-9cf9-4f3c-ab05-ab549fe2fcfc", "ts": 1770170978.4613948, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.461523, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "bd39bb7c-9cf9-4f3c-ab05-ab549fe2fcfc", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4629211, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7a057f6c-2714-4825-9e3c-4cff534a7774", "ts": 1770170978.4630785, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4632132, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7a057f6c-2714-4825-9e3c-4cff534a7774", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4647813, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b0080f56-41fc-4b5e-aaae-97cb63dd0fcd", "ts": 1770170978.465003, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4651747, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b0080f56-41fc-4b5e-aaae-97cb63dd0fcd", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4663916, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "69ac6525-98ea-4e82-8620-8ba939af5403", "ts": 1770170978.4665365, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4666617, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "69ac6525-98ea-4e82-8620-8ba939af5403", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4677243, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "46389bda-3c96-4f0e-a6d9-0e266820a45a", "ts": 1770170978.4678607, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4679842, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "46389bda-3c96-4f0e-a6d9-0e266820a45a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4692345, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d15e13fe-4533-4785-9d64-ad3e694481ab", "ts": 1770170978.4693844, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4695342, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d15e13fe-4533-4785-9d64-ad3e694481ab", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4707265, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "45c6cb37-6d56-466c-974f-db000c1f3ade", "ts": 1770170978.4708672, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4709852, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "45c6cb37-6d56-466c-974f-db000c1f3ade", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4722502, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3dbbd8e4-2bbb-4bb7-97a8-db5d0912bb52", "ts": 1770170978.472394, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.472516, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3dbbd8e4-2bbb-4bb7-97a8-db5d0912bb52", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4737062, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8e5f8fb9-5f76-4ee3-a612-69c4d8817c2a", "ts": 1770170978.4738615, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4739828, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8e5f8fb9-5f76-4ee3-a612-69c4d8817c2a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4751067, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ad5d9dfd-a688-43d9-a18d-99e294afac4d", "ts": 1770170978.475255, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4753907, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ad5d9dfd-a688-43d9-a18d-99e294afac4d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4769719, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "bbe0dba6-3f57-4d05-a168-5a7bc24b7b73", "ts": 1770170978.477175, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4773023, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "bbe0dba6-3f57-4d05-a168-5a7bc24b7b73", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.478424, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "5240b5a5-7ae7-4632-98e4-23ed4db71ec3", "ts": 1770170978.478575, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4787014, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "5240b5a5-7ae7-4632-98e4-23ed4db71ec3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.479855, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "206a8066-d09b-4128-94c2-a94ee5856a44", "ts": 1770170978.4799955, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.480122, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "206a8066-d09b-4128-94c2-a94ee5856a44", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4812984, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ac3353d3-9665-43c8-a301-643a788562a3", "ts": 1770170978.4814374, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4815595, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ac3353d3-9665-43c8-a301-643a788562a3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4839504, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "92ca7fa2-e847-49fd-aef6-e20e5394942b", "ts": 1770170978.4841063, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4842334, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "92ca7fa2-e847-49fd-aef6-e20e5394942b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4858348, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "c7713f73-8e64-4380-92f9-b4205632d4a1", "ts": 1770170978.4860673, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4862366, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "c7713f73-8e64-4380-92f9-b4205632d4a1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4879494, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "af3d1166-a00a-45f7-a4b9-d6fccd192e05", "ts": 1770170978.4882143, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4883704, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "af3d1166-a00a-45f7-a4b9-d6fccd192e05", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4899817, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "d7b1abb3-8509-42d2-824a-c0142a6f873d", "ts": 1770170978.490222, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4903657, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "d7b1abb3-8509-42d2-824a-c0142a6f873d", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4915185, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "56543c93-e38b-4f89-b430-d609fd7db093", "ts": 1770170978.4916623, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4917839, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "56543c93-e38b-4f89-b430-d609fd7db093", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4932375, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1b2794dc-7f52-46d7-8ddf-700df8947db3", "ts": 1770170978.493394, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4935234, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1b2794dc-7f52-46d7-8ddf-700df8947db3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4947739, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "e74f949f-572e-43f2-a9cf-f2a9ab74e670", "ts": 1770170978.4949112, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.495054, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "e74f949f-572e-43f2-a9cf-f2a9ab74e670", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4962137, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8cc59195-1b3e-4f2d-a530-a3585f7bdd5a", "ts": 1770170978.4963582, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4964821, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8cc59195-1b3e-4f2d-a530-a3585f7bdd5a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4978175, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "2b713130-aa58-4390-8e0b-50e689c4e96c", "ts": 1770170978.497959, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4981146, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "2b713130-aa58-4390-8e0b-50e689c4e96c", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4995117, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1032d38b-1a71-41a5-8daf-479cfd3ebed9", "ts": 1770170978.4997237, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.4998627, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1032d38b-1a71-41a5-8daf-479cfd3ebed9", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.501074, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "942fe335-da8d-405a-b447-0385f01e49f5", "ts": 1770170978.5012274, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5013514, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "942fe335-da8d-405a-b447-0385f01e49f5", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5024018, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "837c3ea0-b525-4678-b83d-2933b3c4b5c4", "ts": 1770170978.5025423, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5026681, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "837c3ea0-b525-4678-b83d-2933b3c4b5c4", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5037756, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6da45e90-bd47-4971-a1d9-ff0ba60640d8", "ts": 1770170978.5039434, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5040889, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6da45e90-bd47-4971-a1d9-ff0ba60640d8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5052676, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1476814b-b55e-4dd1-8b38-24c658bf2a1b", "ts": 1770170978.5054092, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5055377, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1476814b-b55e-4dd1-8b38-24c658bf2a1b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5069196, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "f8b7bf74-663c-4de1-a641-36da2d2ff42b", "ts": 1770170978.5070717, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5072024, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "f8b7bf74-663c-4de1-a641-36da2d2ff42b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5087168, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "736c3930-e2da-441b-8941-ef4194b14cb2", "ts": 1770170978.508875, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5090053, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "736c3930-e2da-441b-8941-ef4194b14cb2", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5102487, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b20ddfe0-b902-415e-886e-724488d524b3", "ts": 1770170978.510391, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5105152, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b20ddfe0-b902-415e-886e-724488d524b3", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5116363, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "1cbb8f66-faf2-400b-989f-8b0a0e6c9585", "ts": 1770170978.5118372, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5120096, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "1cbb8f66-faf2-400b-989f-8b0a0e6c9585", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5131214, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b2c55182-5db4-4cd0-ad12-ed4733830dea", "ts": 1770170978.5132565, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5133784, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b2c55182-5db4-4cd0-ad12-ed4733830dea", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.514409, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b5d338fe-1447-4061-9e01-f9ee9abf9951", "ts": 1770170978.5145519, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.514674, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b5d338fe-1447-4061-9e01-f9ee9abf9951", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5158129, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8f24a068-88b4-429e-806d-e98f184e837a", "ts": 1770170978.515994, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5161762, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8f24a068-88b4-429e-806d-e98f184e837a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5172994, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "3193b1da-e960-4c42-a007-090af4861c7b", "ts": 1770170978.5174873, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5176218, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "3193b1da-e960-4c42-a007-090af4861c7b", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5189056, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "7a11ca7b-4370-4482-93cc-6df1d214eb74", "ts": 1770170978.5191624, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5193183, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "7a11ca7b-4370-4482-93cc-6df1d214eb74", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5215092, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "a8f416bc-512f-45f9-b2a6-c8f7bf16afbf", "ts": 1770170978.5218303, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5220258, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "a8f416bc-512f-45f9-b2a6-c8f7bf16afbf", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5237737, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "685070ad-0963-483e-8049-640e97997fe8", "ts": 1770170978.5240085, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5241401, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "685070ad-0963-483e-8049-640e97997fe8", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5257165, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "14beeac1-23cb-4f86-b732-ad6af57e71d4", "ts": 1770170978.5258932, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5260346, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "14beeac1-23cb-4f86-b732-ad6af57e71d4", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5273898, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "b08240bb-bffd-4954-9e18-8fe9d9cc94b9", "ts": 1770170978.527556, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5276904, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "b08240bb-bffd-4954-9e18-8fe9d9cc94b9", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5288656, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6801ab30-ec77-4a4a-9bee-5219817f15ed", "ts": 1770170978.529022, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5291536, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6801ab30-ec77-4a4a-9bee-5219817f15ed", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5303302, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "0146be20-7e20-4ba4-b2c8-aaf5d8ec3e7e", "ts": 1770170978.5304801, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5306315, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "0146be20-7e20-4ba4-b2c8-aaf5d8ec3e7e", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.531855, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "6a07a4bc-d925-4ef5-890a-317744d44083", "ts": 1770170978.5320008, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.532126, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "6a07a4bc-d925-4ef5-890a-317744d44083", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5338678, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "66237eeb-5754-467f-87e2-296240602e8e", "ts": 1770170978.534009, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5341287, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "66237eeb-5754-467f-87e2-296240602e8e", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.535762, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "72f71802-6c50-4972-8547-ee3c9ad6ffc1", "ts": 1770170978.5360641, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5362058, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "72f71802-6c50-4972-8547-ee3c9ad6ffc1", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5377247, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "ee99a7bf-dedd-4c59-a8ff-e4980dfe193a", "ts": 1770170978.5379176, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5381002, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "ee99a7bf-dedd-4c59-a8ff-e4980dfe193a", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.539494, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "28a561cc-afa4-4827-9c68-de2eaa1bd7d9", "ts": 1770170978.5396752, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5398283, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "28a561cc-afa4-4827-9c68-de2eaa1bd7d9", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5410306, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "cebb90b5-933f-49a9-b4b7-bed311969dda", "ts": 1770170978.541176, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.541302, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "cebb90b5-933f-49a9-b4b7-bed311969dda", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5424733, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "169a78db-323f-4919-9e17-183a5fa68f56", "ts": 1770170978.5426235, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5427501, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "169a78db-323f-4919-9e17-183a5fa68f56", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5439556, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "0fd9fc4e-e6da-4803-aa66-0dcff364d996", "ts": 1770170978.5441222, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5442457, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "0fd9fc4e-e6da-4803-aa66-0dcff364d996", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.54531, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "27e97f0d-ea65-449f-9d89-4b490ca657fd", "ts": 1770170978.5454528, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5500724, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "27e97f0d-ea65-449f-9d89-4b490ca657fd", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5521457, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "663362cd-6a5a-47cc-98a2-cfa6d59413bd", "ts": 1770170978.552397, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5525568, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "663362cd-6a5a-47cc-98a2-cfa6d59413bd", "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.5539966, "event": "SYSTEM_STABLE_OVERRIDE", "tool": "read.me", "rule_id": "RTP-SYS-OVERRIDE-001", "ts_iso": "2026-02-04T02:09:38Z"}
+{"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": "read.me", "tool": "read.me", "jti": "8d440237-ffe8-4241-bac6-1a62438d4f61", "ts": 1770170978.5542166, "ts_iso": "2026-02-04T02:09:38Z"}
+{"ts": 1770170978.554393, "event": "ALLOW", "tool": "read.me", "reason": "ok", "rule_id": "RTP-ALLOW-001", "jti": "8d440237-ffe8-4241-bac6-1a62438d4f61", "ts_iso": "2026-02-04T02:09:38Z"}
