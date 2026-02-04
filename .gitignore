@@ -1,31 +1,23 @@
-# Python
+# Python Virtual Environment
+venv/
+env/
+ENV/
+
+# Python Compiled Code
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
+*$py.class
 
-# OS / editors
-.DS_Store
-.idea/
-.vscode/
-
-# Logs
-*.log
-*.jsonl
-
-# Kasbah runtime + secrets
-.kasbah/
-**/.kasbah/
-*.pem
+# Environment Variables (Secrets)
+.env
+secrets/
 *.key
-*.crt
-*.env
-.env.*
 
-# Local compose overrides
-docker-compose.override.yml
+# MacOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor Files
+.vscode/
+.idea/
