@@ -1,71 +1,29 @@
-# kasbah runtime / secrets
+# Kasbah Runtime
 .kasbah/
 **/.kasbah/
 *.log
-rtp_audit.log
-used_jtis.jsonl
+
+# Secrets (NEVER COMMIT)
+.env
 *.pem
 *.key
-.env
 
-# Added by security fix
-.env  # Never commit .env
+# Cache
+__pycache__/
+*.pyc
+
+# Local quarantine
+_quarantine/
+
+# Local virtualenv
 venv/
-.venv/
-# Backup files generated during debugging
-*.bak
-*_BACKUP/
-.bak_rtp_
 
-# Local scripts and dev files
-fix_*.py
-stess_test.py
-verify_logic.py
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Backups
+*.bak_*
+
+# Kasbah runtime artifacts (do not commit)
+.kasbah/
+**/.kasbah/
+
+# Runtime logs
+*.log
