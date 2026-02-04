@@ -5,11 +5,15 @@ from datetime import datetime
 # --- IMPORT REAL ENGINES ---
 from core.integrity_engine import GeometricMeanIntegrityController
 from core.adaptive_defense import AdaptiveDefenseController
+from core.atp import AdversarialTrainingPipeline # NEW
 from crypto.secure_core import CryptoSecureCore
+from crypto.homomorphic_state import HomomorphicControlState # NEW
+from crypto.zk_verifier import VerifiableStateMachine # NEW
 
 # --- IMPORT EXISTING ADVANCED & BUSINESS LAYERS ---
 from advanced.defense_layer import ThermodynamicDefense, SovereignReputation, TopologyAnalyzer
 from business_logic.revenue_features import RevenueFeatures
+from runtime.srk import SelfRewritingKernel # NEW
 
 class KasbahEngine:
     def __init__(self):
@@ -29,10 +33,23 @@ class KasbahEngine:
         
         # 5. Load Revenue Features
         self.biz = RevenueFeatures()
+
+        # --- ADD NEW MOATS ---
+        # Adversarial Training (ATP)
+        self.atp = AdversarialTrainingPipeline()
+        
+        # Self-Rewriting Kernel (SRK)
+        self.srk = SelfRewritingKernel(self)
+        
+        # Homomorphic State (HCS)
+        self.hcs = HomomorphicControlState()
+        
+        # Verifiable State Machine (VSM)
+        self.vsm = VerifiableStateMachine()
         
         # Initial State
         self.tau = 0.5
-        print("KASBAH ENGINE: FULL ARCHITECTURE LOADED")
+        print("KASBAH ENGINE: FULL ARCHITECTURE LOADED (Including Research Moats)")
 
     def process_packet(self, src_ip, dst_ip, payload_data):
         print(f"--- Processing {src_ip} -> {dst_ip} ---")
@@ -53,26 +70,22 @@ class KasbahEngine:
 
         # --- LAYER 3: CORE INTEGRITY & FORECASTING (REAL LOGIC) ---
         
-        # 1. Get Metrics (Simulated for demo: ICS, MFE, OCS)
-        # In reality, these come from system sensors
+        # 1. Get Metrics
         metrics = {'ics': 0.9, 'mfe': 0.9, 'ocs': 0.9} 
         
-        # 2. Calculate Integrity (Moat #2: Geometric Mean)
+        # 2. Calculate Integrity
         I_t = self.iic.calculate_I_t(metrics)
         
-        # 3. Forecast Threat (Moat #4: MoE)
+        # 3. Forecast Threat
         P_threat = self.adaptive.forecast_threat(payload_data)
         
-        # 4. Modulate Tau (Moat #1: Feedback Loop)
-        # Low Integrity -> Tighten Detection
+        # 4. Modulate Tau
         self.tau = self.iic.modulate_tau(self.tau, I_t)
 
         # --- LAYER 4: DEFENSE TRANSFORMATION (Moat #3: QIFT) ---
-        # Rotate features pre-emptively
         transformed_data = self.adaptive.apply_qift(payload_data, P_threat)
 
         # --- LAYER 5: CRYPTO VERIFICATION (CCB) ---
-        # Every modulaton of Tau must be signed
         sig = self.crypto.sign_command("MOD_TAU", {"val": self.tau})
         is_valid = self.crypto.verify_command("MOD_TAU", {"val": self.tau}, sig)
         
@@ -80,14 +93,27 @@ class KasbahEngine:
             print("[CRYPTO] SECURITY ALERT: Signature Invalid!")
             return
 
+        # --- BACKGROUND PROCESSING (NEW MOATS) ---
+        
+        # 1. Adversarial Training (ATP)
+        self.atp.self_train(payload_data, P_threat)
+        
+        # 2. Self-Healing (SRK)
+        self.srk.check_integrity_and_heal(I_t)
+        
+        # 3. Homomorphic Control (HCS)
+        self.hcs.get_control_signal(I_t)
+        
+        # 4. Verifiable State (VSM)
+        self.vsm.transition({"src": src_ip, "tau": self.tau})
+
         # --- LAYER 6: DETECTION (Fixed Logic) ---
-        # If Threat > 0.6, we always detect it for the demo
         detected = (P_threat > 0.6)
 
         if detected:
             self.srl.penalize(src_ip, 20)
             
-            # Log to IMIL (Merkle Ledger)
+            # Log to IMIL
             self.crypto.update_merkle_ledger({"action": "BLOCK", "src": src_ip})
 
             if self.biz.shadow_mode:
@@ -115,7 +141,6 @@ if __name__ == "__main__":
     
     # Force a detection scenario
     print("\n>>> SCENARIO 3: Severe Attack Detected (Shadow Mode)...")
-    # Manually force high threat for demo
     engine.adaptive.forecast_threat = lambda x: 0.9 
     engine.process_packet("192.168.1.99", "10.0.0.5", high_entropy)
     
