@@ -1,32 +1,18 @@
-from typing import Any, Dict
+from __future__ import annotations
 
-def _ensure_dict(result: Any) -> Dict[str, Any]:
-    if isinstance(result, dict):
-        return result
-    if hasattr(result, "__dict__"):
-        return dict(result.__dict__)
-    return {"ok": False, "reason": "invalid_verifier_return", "detail": repr(result)}
-
-def rtp_verify(ticket: Dict[str, Any]) -> Dict[str, Any]:
+def rtp_verify(ticket):
     """
-    Stable public entrypoint for verifying/consuming RTP tickets.
-
-    Canonical path:
-      KernelEnforcer.store_ticket + KernelEnforcer.intercept_execution
+    Public verifier entrypoint (demo-safe).
+    Always routes through KernelEnforcer.intercept_execution so usage/signals are enforced.
     """
     from apps.api.main import _rtp_enforcer
     from apps.api.rtp.kernel_gate import ExecutionTicket
 
-    # 1) If a direct verifier exists, use it
-    for name in ("verify", "verify_ticket", "verify_and_consume", "consume", "consume_ticket", "enforce", "check"):
-        fn = getattr(_rtp_enforcer, name, None)
-        if callable(fn):
-            out = _ensure_dict(fn(ticket))
-            out["_verifier"] = "_rtp_enforcer.%s" % name
-            return out
+    usage_signals = ticket.get("signals") or {}
+    usage_agent_id = ticket.get("agent_id") or ticket.get("session_id") or "anon"
+    usage = {"tokens": 0, "cost": 0, "signals": usage_signals, "agent_id": usage_agent_id}
 
-    # 2) Canonical path: store + intercept
-    t = ExecutionTicket(
+    et = ExecutionTicket(
         jti=ticket.get("jti"),
         tool_name=ticket.get("tool_name") or ticket.get("tool"),
         args=ticket.get("args") or {},
@@ -38,11 +24,8 @@ def rtp_verify(ticket: Dict[str, Any]) -> Dict[str, Any]:
         resource_limits=ticket.get("resource_limits") or {},
     )
 
-    _rtp_enforcer.store_ticket(t)
-        usage_signals = ticket.get("signals") or {}
-    usage_agent_id = ticket.get("agent_id") or ticket.get("session_id") or "anon"
-    usage = {"tokens": 0, "cost": 0, "signals": usage_signals, "agent_id": usage_agent_id}
-    res = _rtp_enforcer.intercept_execution(t.tool_name, t.jti, usage)
+    _rtp_enforcer.store_ticket(et)
+    res = _rtp_enforcer.intercept_execution(et.tool_name, et.jti, usage)
 
     if hasattr(res, "valid"):
         return {
@@ -51,7 +34,4 @@ def rtp_verify(ticket: Dict[str, Any]) -> Dict[str, Any]:
             "remaining_budget": getattr(res, "remaining_budget", None),
             "_verifier": "_rtp_enforcer.intercept_execution",
         }
-
-    out = _ensure_dict(res)
-    out["_verifier"] = "_rtp_enforcer.intercept_execution"
-    return out
+    return res
