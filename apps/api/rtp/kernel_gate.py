@@ -26,9 +26,11 @@ import uuid
 
 from .audit import append_audit
 from apps.api.rtp.integrity import geometric_integrity
+from apps.api.rtp.replay_lock import ReplayLock
 from apps.api.rtp.signals import SignalTracker
 
 _signal_tracker = SignalTracker()
+_replay_lock = ReplayLock()
 
 
 
@@ -280,13 +282,25 @@ class KernelEnforcer:
 
     
 
-        # Atomic replay lock (only one concurrent consumer can win)
+        # Atomic replay lock (shared if redis enabled; else file)
 
-        if not self._atomic_mark_used(jti):
+        use_redis = (getattr(_replay_lock, "mode", "file") == "redis")
 
-            append_audit({"event": "REPLAY", "jti": jti})
+        if use_redis:
 
-            return TicketValidationResult(False, "replay")
+            if not _replay_lock.try_mark(jti):
+
+                append_audit({"event": "REPLAY", "jti": jti})
+
+                return TicketValidationResult(False, "replay")
+
+        else:
+
+            if not self._atomic_mark_used(jti):
+
+                append_audit({"event": "REPLAY", "jti": jti})
+
+                return TicketValidationResult(False, "replay")
 
     
 
@@ -379,6 +393,12 @@ class KernelEnforcer:
                 try:
 
                     os.remove(marker_path)
+
+                    # Redis rollback (best-effort)
+                    try:
+                        _replay_lock.rollback(jti)
+                    except Exception:
+                        pass
 
                 except Exception:
 
