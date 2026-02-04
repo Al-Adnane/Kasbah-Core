@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   api:
     build:
@@ -7,13 +6,8 @@ services:
       dockerfile: apps/api/Dockerfile
     ports:
       - "8002:8002"
+    env_file:
+      - .env
     environment:
-      # --- Core Config ---
-      - KASBAH_JWT_SECRET=REMOVED
-      - KASBAH_SIGN_MODE=hs256
-      - KASBAH_TICKET_TTL_SECONDS=120
-      # --- Demo Overrides ---
-      - KASBAH_SYSTEM_STABLE=1 # Force system stability for demos
+      - KASBAH_SYSTEM_STABLE=1
       - KASBAH_GEOMETRY_THRESHOLD=70
-    volumes:
-      - ./.kasbah:/app/.kasbah

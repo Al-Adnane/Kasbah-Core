@@ -1,28 +1,35 @@
-#!/usr/bin/env sh
+#!/bin/sh
 set -eu
 
-DIR="/app/.kasbah"
-MAX=$((10 * 1024 * 1024))  # 10MB
-KEEP=5
+KASBAH_DIR="${KASBAH_DIR:-/app/.kasbah}"
+MAX_MB="${KASBAH_LOG_MAX_MB:-10}"          # rotate threshold
+KEEP="${KASBAH_LOG_KEEP:-10}"              # keep N rotated copies
+DATE="$(date -u +%Y%m%dT%H%M%SZ)"
 
-rotate_one() {
+mkdir -p "$KASBAH_DIR"
+
+rotate_one () {
   f="$1"
   [ -f "$f" ] || return 0
-  sz="$(wc -c < "$f" | tr -d ' ')"
-  [ "$sz" -lt "$MAX" ] && return 0
+  # size in MB (portable-ish)
+  sz_bytes="$(wc -c < "$f" 2>/dev/null || echo 0)"
+  sz_mb=$(( (sz_bytes + 1048575) / 1048576 ))
+  if [ "$sz_mb" -lt "$MAX_MB" ]; then
+    return 0
+  fi
 
-  ts="$(date +%Y%m%d_%H%M%S)"
-  mv "$f" "${f}.${ts}"
+  mv "$f" "$f.$DATE"
   : > "$f"
 
-  # Keep only newest $KEEP rotated files
-  ls -1t "${f}."* 2>/dev/null | awk "NR>${KEEP}" | xargs -r rm -f
+  # keep newest KEEP files, delete older
+  # shellcheck disable=SC2012
+  ls -1t "$f".20* 2>/dev/null | awk "NR>$KEEP {print}" | xargs -r rm -f
 }
 
-rotate_one "$DIR/rtp_audit.log"
-rotate_one "$DIR/decisions.jsonl"
-rotate_one "$DIR/rtp_used_jti.jsonl"
-rotate_one "$DIR/rtp_signal_state.jsonl"
-rotate_one "$DIR/ledger.json"
+rotate_one "$KASBAH_DIR/rtp_audit.log"
+rotate_one "$KASBAH_DIR/rtp_used_jti.jsonl"
+rotate_one "$KASBAH_DIR/decisions.jsonl"
+rotate_one "$KASBAH_DIR/ledger.json"
+rotate_one "$KASBAH_DIR/rtp_signal_state.jsonl"
 
-echo "rotated"
+echo "[OK] rotation complete @ $DATE"

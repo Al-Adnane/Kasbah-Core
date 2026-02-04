@@ -1,217 +1,111 @@
-from __future__ import annotations
-from pathlib import Path
 """
-Kasbah RTP - Runtime Policy Gate + Audit
+Kernel Gate: The Core Orchestrator
+Integrates all 13 Moats (Implemented: 1, 2, 3, 5, 6, 7, 11, 13)
 """
-
-from typing import Dict, Optional
-from dataclasses import dataclass
-import hashlib
-import hmac
-import json
-import time
-import os
-import uuid
-import dataclasses
-
-from .audit import append_audit
-from apps.api.rtp.integrity import geometric_integrity
-from apps.api.rtp.signals import SignalTracker
-
-_signal_tracker = SignalTracker()
-
-@dataclass
-class ExecutionTicket:
-    jti: str
-    tool_name: str
-    args: Dict
-    timestamp: int
-    issued_mono_ns: int
-    ttl: int
-    binary_hash: str
-    signature: str
-    resource_limits: Dict
-
-@dataclass
-class TicketValidationResult:
-    valid: bool
-    reason: str
-    remaining_budget: Optional[int] = None
-
-class UsedJtiTracker:
-    def __init__(self, path: str):
-        self.path = path
-        self.used = {}
-        self._load()
-    
-    def _load(self):
-        if not Path(self.path).exists():
-            return
-        with open(self.path, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                self.used[data['jti']] = data['ts']
-    
-    def add(self, jti: str):
-        self.used[jti] = time.time()
-        self._persist()
-    
-    def _persist(self):
-        with open(self.path, 'w') as f:
-            for jti, ts in self.used.items():
-                f.write(json.dumps({"jti": jti, "ts": ts}) + "\n")
+from .integrity import GeometricIntegrityCalculator, BidirectionalFeedbackLoop
+from .signals import SignalTracker, QIFTProcessor, HyperGraphAnalyzer
+from .audit import AuditLogger
+from .policy import MoEHorizonFusion, ThermodynamicProtocol
 
 class KernelGate:
-    MAX_TTL_NS = 3600 * 1_000_000_000  # 1 hour
-    DEFAULT_TTL_NS = int(os.getenv("KASBAH_TICKET_TTL_SECONDS", "120")) * 1_000_000_000
+    def __init__(self):
+        # Initialize Moat Components
+        print("🔧 Initializing KernelGate Moats...")
+        
+        # Moat 2: Integrity
+        self.integrity_calc = GeometricIntegrityCalculator()
+        
+        # Moat 1: Feedback
+        self.feedback_loop = BidirectionalFeedbackLoop()
+        
+        # Moat 3: QIFT
+        self.qift = QIFTProcessor()
+        
+        # Moat 13: Topology
+        self.topology = HyperGraphAnalyzer()
+        
+        # Moat 7 & 5: Audit & Crypto
+        self.audit = AuditLogger()
+        
+        # Moat 6 & 11: Policy
+        self.moe = MoEHorizonFusion()
+        self.thermo = ThermodynamicProtocol()
+        
+        # Global state
+        self.signal_tracker = SignalTracker()
+        
+        print("✅ All Moats Initialized.")
 
-    def __init__(self, tpm_enabled: bool = False, policy: Optional[Dict[str, str]] = None, used_log_path: str = "/app/.kasbah/rtp_used_jti.jsonl"):
-        self.global_lock = False
-        self.policy = policy or {}
-        self.used_log_path = used_log_path
-        self.used_jti_tracker = UsedJtiTracker(used_log_path)
-        self.ticket_map = {}
-    
-    def policy_mode(self, tool_name: str) -> str:
-        mode = self.policy.get(tool_name, self.policy.get("*", "deny"))
-        if mode not in ("allow", "deny", "human_approval"):
-            return "deny"
-        return mode
-
-    def _canonical_json(self, obj: Dict) -> str:
-        return json.dumps(obj, sort_keys=True, separators=(",", ":"))
-
-    def _normalize_limits(self, resource_limits: Optional[Dict]) -> Dict:
-        limits = dict(resource_limits or {})
-        if "maxCostCents" not in limits:
-            limits["maxCostCents"] = 0
-        if "maxTokens" not in limits:
-            limits["maxTokens"] = 10**18
-        return limits
-
-    def _signing_payload(self, fields: Dict) -> Dict:
+    def decide(self, payload: dict) -> dict:
+        """
+        Main Decision Pipeline:
+        1. Analyze Topology (Moat 13)
+        2. Transform Signals (Moat 3)
+        3. Calculate Integrity (Moat 2)
+        4. Fuse Predictions (Moat 6)
+        5. Check Thermodynamics (Moat 11)
+        6. Apply Feedback Threshold (Moat 1)
+        7. Log Decision (Moat 7, 5)
+        """
+        
+        tool_name = payload.get("tool_name", "unknown")
+        agent_id = payload.get("agent_id", "anonymous")
+        raw_signals = payload.get("signals", {})
+        
+        # --- Moat 13: Topology Analysis ---
+        is_botnet = self.topology.log_interaction(agent_id, tool_name)
+        
+        # --- Moat 3: QIFT Transformation ---
+        transformed_signals = self.qift.transform(raw_signals)
+        
+        # --- Moat 2: Geometric Integrity ---
+        integrity_score = self.integrity_calc.calculate(transformed_signals)
+        
+        # --- Moat 6: MoE Horizon Fusion ---
+        prediction_confidence = self.moe.predict(transformed_signals)
+        
+        # --- Moat 11: Thermodynamic Check ---
+        # Simulate load based on request rate (simplified)
+        current_load = 0.6 # Placeholder
+        self.thermo.update_entropy(current_load, 1.0 - integrity_score)
+        defense_state = self.thermo.get_defense_state()
+        
+        # --- Decision Logic ---
+        # Base threshold adjusted by Feedback Loop (Moat 1)
+        threshold = self.feedback_loop.get_threshold()
+        
+        # If in LOCKDOWN, require higher score
+        if defense_state == "LOCKDOWN":
+            threshold += 0.2
+        
+        # Final Decision
+        allow = False
+        reason = ""
+        
+        if is_botnet:
+            allow = False
+            reason = "Moat 13: Suspicious topology pattern detected"
+        elif integrity_score >= threshold and prediction_confidence > 0.5:
+            allow = True
+            reason = f"Integrity {integrity_score:.2f} > Threshold {threshold:.2f}"
+        else:
+            allow = False
+            reason = f"Integrity {integrity_score:.2f} < Threshold {threshold:.2f}"
+        
+        decision_str = "ALLOW" if allow else "DENY"
+        
+        # --- Moat 1: Feedback Update ---
+        self.feedback_loop.update(integrity_score, decision_str)
+        
+        # --- Moat 7 & 5: Audit & Cryptography ---
+        audit_entry = self.audit.log(agent_id, tool_name, decision_str, integrity_score)
+        
         return {
-            "jti": fields["jti"],
-            "tool_name": fields["tool_name"],
-            "args": fields["args"],
-            "timestamp": fields["timestamp"],
-            "issued_mono_ns": fields["issued_mono_ns"],
-            "ttl": fields["ttl"],
-            "binary_hash": fields["binary_hash"],
-            "resource_limits": fields["resource_limits"],
+            "decision": decision_str,
+            "reason": reason,
+            "integrity_score": round(integrity_score, 4),
+            "threshold": round(threshold, 4),
+            "defense_state": defense_state,
+            "audit_signature": audit_entry["signature"],
+            "merkle_root": audit_entry["current_root"][:16] + "..."
         }
-
-    def _compute_binary_hash(self, tool_name: str) -> str:
-        return hashlib.sha256(f"binary-{tool_name}".encode()).hexdigest()
-
-    def _sign_with_tpm(self, payload: Dict) -> str:
-        data = self._canonical_json(payload)
-        return hashlib.sha256(f"kasbah-{data}".encode()).hexdigest()
-
-    def _verify_signature(self, ticket: ExecutionTicket) -> bool:
-        payload = self._signing_payload(ticket.__dict__)
-        expected = self._sign_with_tpm(payload)
-        return hmac.compare_digest(expected, ticket.signature)
-
-    def generate_ticket(self, tool_name: str, args: Dict, system_stable: bool, resource_limits=None, ttl_ns=None):
-        if self.global_lock:
-            append_audit({"event": "DENY", "reason": "global_lock", "rule_id": "RTP-SYS-LOCK-001", "tool": tool_name})
-            return None
-
-        if not system_stable:
-            append_audit({"event": "DENY", "reason": "system_unstable", "rule_id": "RTP-SYS-001", "tool": tool_name})
-            return None
-
-        mode = self.policy_mode(tool_name)
-        if mode != "allow":
-            append_audit({"event": "DENY", "reason": mode, "rule_id": "RTP-MODE-001", "tool": tool_name})
-            return None
-
-        ttl = int(ttl_ns or self.DEFAULT_TTL_NS)
-        now = time.time_ns()
-        jti = str(uuid.uuid4())
-        limits = self._normalize_limits(resource_limits)
-        
-        payload = {
-            "jti": jti,
-            "tool_name": tool_name,
-            "args": args,
-            "timestamp": now,
-            "issued_mono_ns": now,
-            "ttl": ttl,
-            "binary_hash": self._compute_binary_hash(tool_name),
-            "resource_limits": limits
-        }
-        
-        signature = self._sign_with_tpm(payload)
-        self.ticket_map[jti] = ExecutionTicket(**payload, signature=signature)
-        
-        # FIXED: Return dictionary to work with main.py
-        return vars(self.ticket_map[jti])
-
-    def validate_ticket(self, ticket: ExecutionTicket, usage: Optional[Dict] = None) -> TicketValidationResult:
-        if not self._verify_signature(ticket):
-            return TicketValidationResult(False, "invalid_signature")
-        
-        if usage:
-            limits = ticket.resource_limits
-            used = int(usage.get("tokens", 0))
-            max_tokens = int(limits.get("maxTokens", 10**18))
-            
-            if used >= max_tokens:
-                return TicketValidationResult(False, "token_limit_exceeded")
-            
-            return TicketValidationResult(True, "OK", max_tokens - used)
-        
-        return TicketValidationResult(True, "OK")
-
-    def _persist_used(self, jti: str):
-        self.used_jti_tracker.add(jti)
-
-    def intercept_execution(self, tool_name: str, jti: str, usage: Dict) -> TicketValidationResult:
-        if jti in self.used_jti_tracker.used:
-            return TicketValidationResult(False, "replay_attack")
-        
-        ticket = self.ticket_map.get(jti)
-        if not ticket:
-            return TicketValidationResult(False, "jti_not_found")
-        
-        if ticket.tool_name != tool_name:
-            return TicketValidationResult(False, "tool_mismatch")
-        
-        # --- behavior integrity: provenance + decay + geometry ---
-        agent_id = usage.get("agent_id") or usage.get("session_id") or "anon"
-        raw_signals = usage.get("signals", {}) or {}
-        
-        eff_signals = _signal_tracker.update(agent_id, raw_signals) if raw_signals else {}
-        append_audit({"event":"GEOMETRY_SEEN","agent_id":agent_id,"jti":jti,"raw":raw_signals,"eff":eff_signals})
-        
-        signals_for_gate = eff_signals or raw_signals
-        if signals_for_gate:
-            gi = geometric_integrity(signals_for_gate)
-            threshold = float(os.getenv("KASBAH_GEOMETRY_THRESHOLD", "70"))
-            if gi >= threshold:
-                append_audit({
-                    "event": "GEOMETRY_BLOCK",
-                    "jti": jti,
-                    "agent_id": agent_id,
-                    "score": gi,
-                    "threshold": threshold,
-                    "signals_raw": raw_signals,
-                    "signals_eff": eff_signals,
-                })
-                return TicketValidationResult(False, "geometry_block")
-            else:
-                # FIXED: Log GEOMETRY_ALLOW event
-                append_audit({"event":"GEOMETRY_ALLOW","jti":jti,"agent_id":agent_id,"score":gi,"threshold":threshold,"signals_raw":raw_signals,"signals_eff":eff_signals})
-        # --- end behavior integrity ---
-        
-        res = self.validate_ticket(ticket, usage)
-        if res.valid:
-            self.used_jti_tracker.add(jti)
-            del self.ticket_map[jti]
-            append_audit({"event": "CONSUME", "tool": tool_name, "jti": jti})
-        
-        return res
-
-KernelEnforcer = KernelGate

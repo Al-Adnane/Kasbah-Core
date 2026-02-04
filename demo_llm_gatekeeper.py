@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from kasbah_main import KasbahEngine
 
 # --- CONFIGURATION ---
-OPENAI_API_KEY = "" 
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 
 def prompt_to_vector(prompt_text):
     """
