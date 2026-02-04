@@ -635,49 +635,27 @@ async def rtp_decide(payload: dict = Body(...)):
     }
 
 async def rtp_consume(payload: dict = Body(...)):
+    pass
+
 @app.post("/api/rtp/consume")
 async def rtp_consume(payload: dict = Body(...)):
-    token = payload.get("ticket")
+    # Accept either:
+    #  - {"ticket": "<jwt>", "usage": {...}}
+    #  - {"tool": "...", "jti": "...", "usage": {...}}
+    tool = payload.get("tool") or payload.get("tool_name")
+    jti = payload.get("jti")
     usage = payload.get("usage", {"tokens": 0, "cost": 0})
 
-    if not token:
-        return {"valid": False, "reason": "ticket required"}
+    ticket = payload.get("ticket")
+    if ticket:
+        # Verify external JWT and extract jti/tool
+        claims = verify_ticket(ticket)  # raises HTTPException(401) on invalid
+        jti = claims.get("jti")
+        tool = tool or claims.get("tool")
 
-    # 1) Verify JWT
-    try:
-        claims = jwt.decode(
-            token,
-            JWT_SECRET,
-            algorithms=["HS256"],
-            issuer=JWT_ISSUER,
-        )
-    except Exception as e:
-        append_audit({"event": "DENY", "reason": "invalid_ticket", "rule_id": "RTP-JWT-001", "error": str(e)})
-        raise HTTPException(status_code=401, detail="Invalid ticket")
+    if not tool or not jti:
+        return {"valid": False, "reason": "tool and jti required"}
 
-    claim_tool = claims.get("tool")
-    jti = claims.get("jti")
-
-    if not claim_tool or not jti:
-        append_audit({"event": "DENY", "reason": "bad_claims", "rule_id": "RTP-JWT-002"})
-        raise HTTPException(status_code=401, detail="Invalid ticket")
-
-    # 2) Tool binding (THIS is the missing check)
-    requested_tool = payload.get("tool")
-    if requested_tool and requested_tool != claim_tool:
-        append_audit({
-            "event": "DENY",
-            "reason": "tool_mismatch",
-            "rule_id": "RTP-TOOL-MISMATCH-001",
-            "claimed_tool": claim_tool,
-            "requested_tool": requested_tool,
-            "jti": jti,
-        })
-        return {"valid": False, "reason": "tool_mismatch", "remaining_budget": None}
-
-    tool = claim_tool
-
-    # 3) Execute gate
     res = _rtp_enforcer.intercept_execution(tool, jti, usage)
 
     return {
@@ -685,6 +663,7 @@ async def rtp_consume(payload: dict = Body(...)):
         "reason": res.reason,
         "remaining_budget": res.remaining_budget,
     }
+
 
 @app.get("/api/rtp/audit")
 def rtp_audit(limit: int = 200):
