@@ -14,7 +14,6 @@ Features:
 - Append-only audit log
 """
 
-
 from typing import Dict, Optional
 from dataclasses import dataclass
 import hashlib
@@ -26,13 +25,9 @@ import uuid
 
 from .audit import append_audit
 from apps.api.rtp.integrity import geometric_integrity
-from apps.api.rtp.replay_lock import ReplayLock
 from apps.api.rtp.signals import SignalTracker
 
 _signal_tracker = SignalTracker()
-_replay_lock = ReplayLock()
-
-
 
 @dataclass
 class ExecutionTicket:
@@ -46,23 +41,46 @@ class ExecutionTicket:
     signature: str
     resource_limits: Dict
 
-
 @dataclass
 class TicketValidationResult:
     valid: bool
     reason: str
     remaining_budget: Optional[int] = None
 
+class UsedJtiTracker:
+    def __init__(self, path: str):
+        self.path = path
+        self.used = {}
+        self._load()
+    
+    def _load(self):
+        if not Path(self.path).exists():
+            return
+        with open(self.path, 'r') as f:
+            for line in f:
+                data = json.loads(line)
+                self.used[data['jti']] = data['ts']
+    
+    def add(self, jti: str):
+        self.used[jti] = time.time()
+        self._persist()
+    
+    def _persist(self):
+        with open(self.path, 'w') as f:
+            for jti, ts in self.used.items():
+                f.write(json.dumps({"jti": jti, "ts": ts}) + "\n")
 
 class KernelGate:
     MAX_TTL_NS = 3600 * 1_000_000_000  # 1 hour
     DEFAULT_TTL_NS = int(os.getenv("KASBAH_TICKET_TTL_SECONDS", "120")) * 1_000_000_000
 
-    def __init__(self, tpm_enabled: bool = False, policy: Optional[Dict[str, str]] = None):
-        self.tpm_enabled = bool(tpm_enabled)
+    def __init__(self, tpm_enabled: bool = False, policy: Optional[Dict[str, str]] = None, used_log_path: str = "/app/.kasbah/rtp_used_jti.jsonl"):
         self.global_lock = False
         self.policy = policy or {}
-
+        self.used_log_path = used_log_path
+        self.used_jti_tracker = UsedJtiTracker(used_log_path)
+        self.ticket_map = {}
+    
     def policy_mode(self, tool_name: str) -> str:
         mode = self.policy.get(tool_name, self.policy.get("*", "deny"))
         if mode not in ("allow", "deny", "human_approval"):
@@ -120,295 +138,92 @@ class KernelGate:
             return None
 
         ttl = int(ttl_ns or self.DEFAULT_TTL_NS)
-        if ttl <= 0 or ttl > self.MAX_TTL_NS:
-            ttl = self.DEFAULT_TTL_NS
-
-        ts_wall = time.time_ns()
-        ts_mono = time.monotonic_ns()
+        now = time.time_ns()
         jti = str(uuid.uuid4())
-
         limits = self._normalize_limits(resource_limits)
-        binary_hash = self._compute_binary_hash(tool_name)
-
-        payload = self._signing_payload({
+        
+        payload = {
             "jti": jti,
             "tool_name": tool_name,
             "args": args,
-            "timestamp": ts_wall,
-            "issued_mono_ns": ts_mono,
+            "timestamp": now,
+            "issued_mono_ns": now,
             "ttl": ttl,
-            "binary_hash": binary_hash,
-            "resource_limits": limits,
-        })
-
-        sig = self._sign_with_tpm(payload)
-
-        append_audit({"event": "ALLOW", "reason": "ok", "rule_id": "RTP-ALLOW-001", "tool_name": tool_name,
-            "tool": tool_name, "jti": jti})
-
-        return {
-            "jti": jti,
-            "tool_name": tool_name,
-            "tool": tool_name,
-            "args": args,
-            "timestamp": ts_wall,
-            "timestamp_ns": ts_wall,
-            "issued_mono_ns": ts_mono,
-            "ttl_ns": ttl,
-            "ttl_seconds": ttl / 1_000_000_000,
-            "binary_hash": binary_hash,
-            "signature": sig,
-            "resource_limits": limits,
+            "binary_hash": self._compute_binary_hash(tool_name),
+            "resource_limits": limits
         }
+        
+        signature = self._sign_with_tpm(payload)
+        self.ticket_map[jti] = ExecutionTicket(**payload, signature=signature)
+        return vars(self.ticket_map[jti])
 
-    def validate_ticket(self, ticket: ExecutionTicket, current_usage: Dict):
-        now = time.monotonic_ns()
-        if now - ticket.issued_mono_ns > ticket.ttl:
-            return TicketValidationResult(False, "expired")
-
+    def validate_ticket(self, ticket: ExecutionTicket, usage: Optional[Dict] = None) -> TicketValidationResult:
         if not self._verify_signature(ticket):
-            return TicketValidationResult(False, "bad signature")
-
-        used = int(current_usage.get("tokens", 0))
-        max_tokens = int(ticket.resource_limits.get("maxTokens", 10**18))
-
-        if used >= max_tokens:
-            return TicketValidationResult(False, "budget exceeded")
-
-        return TicketValidationResult(True, "OK", max_tokens - used)
-
-
-class KernelEnforcer:
-
-    def __init__(self, gate: KernelGate, used_log_path: str = "/app/.kasbah/rtp_used_jti.jsonl"):
-        self.gate = gate
-        self.ticket_map = {}
-        self.used = {}
-
-        self.used_log_path = Path(used_log_path)
-        self.used_log_path.parent.mkdir(parents=True, exist_ok=True)
-        self._load_used()
-    def store_ticket(self, ticket: ExecutionTicket):
-        self.ticket_map[ticket.jti] = ticket
-
-    def _load_used(self):
-        # Load previously used JTIs to survive restarts (tolerate partial/corrupt lines)
-        if not getattr(self, "used_log_path", None) or not self.used_log_path.exists():
-            return
-        try:
-            for line in self.used_log_path.read_text().splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = json.loads(line)
-                    jti = obj.get("jti")
-                    ts = obj.get("ts")
-                    if jti:
-                        self.used[jti] = ts or time.time()
-                except Exception:
-                    continue
-        except Exception:
-            return
+            return TicketValidationResult(False, "invalid_signature")
+        
+        if usage:
+            limits = ticket.resource_limits
+            used = int(usage.get("tokens", 0))
+            max_tokens = int(limits.get("maxTokens", 10**18))
+            
+            if used >= max_tokens:
+                return TicketValidationResult(False, "token_limit_exceeded")
+            
+            return TicketValidationResult(True, "OK", max_tokens - used)
+        
+        return TicketValidationResult(True, "OK")
 
     def _persist_used(self, jti: str):
-        try:
-            obj = {"jti": jti, "ts": time.time()}
-            line = json.dumps(obj, separators=(",", ":")) + "\n"
-            with self.used_log_path.open("a") as f:
-                f.write(line)
-                f.flush()
-                os.fsync(f.fileno())
-        except Exception:
-            pass
+        self.used_jti_tracker.add(jti)
 
-
-    def _atomic_mark_used(self, jti: str) -> bool:
-        """Concurrency-safe replay protection using atomic file create."""
-        used_dir = "/app/.kasbah/used"
-        try:
-            os.makedirs(used_dir, exist_ok=True)
-            p = os.path.join(used_dir, jti)
-            fd = os.open(p, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            try:
-                os.write(fd, b"1")
-            finally:
-                os.close(fd)
-            return True
-        except FileExistsError:
-            return False
-        except Exception:
-            # Fail closed if we cannot mark safely
-            return False
-
-
-    def intercept_execution(self, tool_name: str, jti: str, usage: Dict):
-
-        import os
-
-    
-
-        # Fast-path replay check (memory)
-
-        if jti in self.used:
-
-            append_audit({"event": "REPLAY", "jti": jti})
-
-            return TicketValidationResult(False, "replay")
-
-    
-
-        # Look up ticket first; if it's gone but the marker exists, treat as replay
-
+    def intercept_execution(self, tool_name: str, jti: str, usage: Dict) -> TicketValidationResult:
+        # 0. Replay protection
+        if jti in self.used_jti_tracker.used:
+            return TicketValidationResult(False, "replay_attack")
+        
         ticket = self.ticket_map.get(jti)
-
-        marker_path = os.path.join("/app/.kasbah/used", jti)
-
         if not ticket:
-
-            if os.path.exists(marker_path):
-
-                append_audit({"event": "REPLAY", "jti": jti})
-
-                return TicketValidationResult(False, "replay")
-
-            return TicketValidationResult(False, "missing")
-
-    
-
+            return TicketValidationResult(False, "jti_not_found")
+        
+        # 1. Tool match
         if ticket.tool_name != tool_name:
-
-            return TicketValidationResult(False, "tool mismatch")
-
-    
-
-        # Atomic replay lock (shared if redis enabled; else file)
-
-        use_redis = (getattr(_replay_lock, "mode", "file") == "redis")
-
-        if use_redis:
-
-            if not _replay_lock.try_mark(jti):
-
-                append_audit({"event": "REPLAY", "jti": jti})
-
-                return TicketValidationResult(False, "replay")
-
-        else:
-
-            if not self._atomic_mark_used(jti):
-
-                append_audit({"event": "REPLAY", "jti": jti})
-
-                return TicketValidationResult(False, "replay")
-
-    
-
-        # Keep in-memory cache for observability / fast checks
-
-        self.used[jti] = time.time()
-
-    
-
-        try:
-
-            # --- behavior integrity: provenance + decay + geometry ---
-
-            agent_id = usage.get("agent_id") or usage.get("session_id") or "anon"
-
-            raw_signals = usage.get("signals", {}) or {}
-
-    
-
-            eff_signals = _signal_tracker.update(agent_id, raw_signals) if raw_signals else {}
-
-            append_audit({"event":"GEOMETRY_SEEN","agent_id":agent_id,"jti":jti,"raw":raw_signals,"eff":eff_signals})
-
-    
-
-            signals_for_gate = eff_signals or raw_signals
-
-            if signals_for_gate:
-
-                gi = geometric_integrity(signals_for_gate)
-
-                threshold = float(os.getenv("KASBAH_GEOMETRY_THRESHOLD", "70"))
-
-                # Block when score indicates bad geometry
-
-                if gi >= threshold:
-
-                    append_audit({
-
-                        "event": "GEOMETRY_BLOCK",
-
-                        "jti": jti,
-
-                        "agent_id": agent_id,
-
-                        "score": gi,
-
-                        "threshold": threshold,
-
-                        "signals_raw": raw_signals,
-
-                        "signals_eff": eff_signals,
-
-                    })
-
-                    return TicketValidationResult(False, "geometry_block")
-
-            # --- end behavior integrity ---
-
-    
-
-            res = self.gate.validate_ticket(ticket, usage)
-
-            if res.valid:
-
-                self._persist_used(jti)
-
-                del self.ticket_map[jti]
-
-                append_audit({"event": "CONSUME", "tool": tool_name, "jti": jti})
-
-                return res
-
-    
-
-            # Validation failed: roll back so we don't burn the ticket
-
-            return res
-
-        finally:
-
-            # If not consumed successfully, remove marker + memory entry
-
-            # We detect success by presence/absence of ticket_map entry
-
-            # (it is deleted only on valid consume)
-
-            if jti in self.ticket_map:
-
-                try:
-
-                    os.remove(marker_path)
-
-                    # Redis rollback (best-effort)
-                    try:
-                        _replay_lock.rollback(jti)
-                    except Exception:
-                        pass
-
-                except Exception:
-
-                    pass
-
-                try:
-
-                    del self.used[jti]
-
-                except Exception:
-
-                    pass
-
+            return TicketValidationResult(False, "tool_mismatch")
+        
+        # --- behavior integrity: provenance + decay + geometry ---
+        agent_id = usage.get("agent_id") or usage.get("session_id") or "anon"
+        raw_signals = usage.get("signals", {}) or {}
+        
+        eff_signals = _signal_tracker.update(agent_id, raw_signals) if raw_signals else {}
+        append_audit({"event":"GEOMETRY_SEEN","agent_id":agent_id,"jti":jti,"raw":raw_signals,"eff":eff_signals})
+        
+        signals_for_gate = eff_signals or raw_signals
+        if signals_for_gate:
+            gi = geometric_integrity(signals_for_gate)
+            threshold = float(os.getenv("KASBAH_GEOMETRY_THRESHOLD", "70"))
+            if gi >= threshold:
+                append_audit({
+                    "event": "GEOMETRY_BLOCK",
+                    "jti": jti,
+                    "agent_id": agent_id,
+                    "score": gi,
+                    "threshold": threshold,
+                    "signals_raw": raw_signals,
+                    "signals_eff": eff_signals,
+                })
+                return TicketValidationResult(False, "geometry_block")
+            else:
+                append_audit({"event":"GEOMETRY_ALLOW","jti":jti,"agent_id":agent_id,"score":gi,"threshold":threshold,"signals_raw":raw_signals,"signals_eff":eff_signals})
+        # --- end behavior integrity ---
+        
+        res = self.validate_ticket(ticket, usage)
+        if res.valid:
+            self.used_jti_tracker.add(jti)
+            del self.ticket_map[jti]
+            append_audit({"event": "CONSUME", "tool": tool_name, "jti": jti})
+        
+        return res
+
+# -------------------------------------------------------------------
+# Backward-compat alias: older modules import KernelEnforcer
+# -------------------------------------------------------------------
+KernelEnforcer = KernelGate

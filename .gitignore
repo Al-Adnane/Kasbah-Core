@@ -1,23 +1,23 @@
-# Python Virtual Environment
-venv/
-env/
-ENV/
-
-# Python Compiled Code
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Environment Variables (Secrets)
-.env
-secrets/
+# kasbah runtime / secrets
+.kasbah/
+**/.kasbah/
+*.log
+rtp_audit.log
+used_jtis.jsonl
+*.pem
 *.key
+.env
 
-# MacOS System Files
-.DS_Store
-.AppleDouble
-.LSOverride
+# Added by security fix
+.env  # Never commit .env
+venv/
+.venv/
+# Backup files generated during debugging
+*.bak
+*_BACKUP/
+.bak_rtp_
 
-# Editor Files
-.vscode/
-.idea/
+# Local scripts and dev files
+fix_*.py
+stess_test.py
+verify_logic.py
