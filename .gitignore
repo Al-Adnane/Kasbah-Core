@@ -21,3 +21,51 @@ venv/
 fix_*.py
 stess_test.py
 verify_logic.py
+# Kasbah secrets & runtime
+.env
+*.env
+*.pem
+*.key
+*.private
+.kasbah/*.pem
+.kasbah/*.key
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Kasbah secrets & runtime
+.env
+*.env
+*.pem
+*.key
+*.private
+.kasbah/*.pem
+.kasbah/*.key
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Kasbah secrets & runtime
+.env
+*.env
+*.pem
+*.key
+*.private
+.kasbah/*.pem
+.kasbah/*.key
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Kasbah secrets & runtime
+.env
+*.env
+*.pem
+*.key
+*.private
+.kasbah/*.pem
+.kasbah/*.key
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
