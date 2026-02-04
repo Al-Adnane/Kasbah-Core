@@ -429,51 +429,12 @@ def ticket_issue(decision_id: str):
 
     return sign_ticket(d)
 @app.post("/ticket/verify")
-def ticket_verify(req: TicketVerifyRequest):
-    payload = verify_ticket(req.ticket)
-    decision_id = payload.get("decision_id")
-    if not decision_id:
-        raise HTTPException(status_code=401, detail="Missing decision_id")
-
-    d = get_decision(decision_id)
-
-    # Authorization: allow if decision is allow+approved OR requires_approval+approved
-    if d.decision == "block":
-        raise HTTPException(status_code=403, detail="Decision is blocked")
-
-    if d.decision == "requires_approval":
-        if d.approved is not True:
-            raise HTTPException(status_code=403, detail="Approval required")
-    elif d.decision == "allow":
-        if d.approved is not True:
-            raise HTTPException(status_code=403, detail="Decision is not approved")
-    else:
-        raise HTTPException(status_code=403, detail="Decision is not currently allowed")
-
-    # Mark one-time use ONLY AFTER authorization checks pass
-    USED_JTI.add(payload["jti"])
-    persist_used_jti(payload["jti"])
-
-    return {
-        "ok": True,
-        "decision_id": decision_id,
-        "agent": payload.get("agent"),
-        "action": payload.get("action"),
-        "exp": payload.get("exp"),
-    }
-@app.get("/audit/{decision_id}")
-def audit(decision_id: str):
-    if not DECISIONS_LOG_PATH.exists():
-        return []
-    events = []
-    for line in DECISIONS_LOG_PATH.read_text().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        obj = json.loads(line)
-        if obj.get("id") == decision_id:
-            events.append(obj)
-    return events
+async def ticket_verify(req: TicketVerifyRequest):
+    try:
+        claims = jwt.decode(req.ticket, JWT_SECRET, algorithms=["HS256"], issuer=JWT_ISSUER)
+        return {"ok": True, "claims": claims}
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid ticket")
 
 @app.post("/admin/compact")
 def compact_logs():
@@ -520,7 +481,7 @@ _rtp_enforcer = KernelEnforcer(_rtp_gate)
 
 @app.post("/api/rtp/decide")
 async def rtp_decide(payload: dict = Body(...)):
-    tool = payload.get("tool", "unknown.tool")
+    tool = payload.get("tool_name") or payload.get("tool") or "unknown.tool"
     args = payload.get("args", {})
     risk = int(payload.get("risk", 0))
     system_stable = bool(payload.get("system_stable", False))
@@ -570,6 +531,12 @@ async def rtp_decide(payload: dict = Body(...)):
             "ticket": None,
         }
 
+    # ---- 2) SYSTEM STABILITY (with explicit demo override)
+    force_stable = os.getenv("KASBAH_SYSTEM_STABLE", "0") == "1"
+    if force_stable and not system_stable:
+        append_audit({"ts": time.time(), "event": "SYSTEM_STABLE_OVERRIDE", "tool": tool, "rule_id": "RTP-SYS-OVERRIDE-001"})
+        system_stable = True
+
     # ---- 2) SYSTEM STABILITY
     if not system_stable:
         append_audit({
@@ -605,11 +572,50 @@ async def rtp_decide(payload: dict = Body(...)):
         }
 
     # ---- 4) OTHERWISE: ALLOW + ISSUE TICKET (existing gate)
+    # policy bootstrap (demo only)
+    if os.getenv("KASBAH_POLICY_BOOTSTRAP_ALLOW", "0") == "1":
+        _rtp_gate.policy["*"] = "allow"
+
     ticket = _rtp_gate.generate_ticket(
         tool_name=tool,
         args=args,
         system_stable=system_stable,
     )
+
+    # register ticket so /api/rtp/consume can find it
+    # RTP-TICKET-REGISTER-001
+    if isinstance(ticket, dict) and ticket.get("jti") and hasattr(_rtp_enforcer, "ticket_map"):
+        from apps.api.rtp.kernel_gate import ExecutionTicket
+        # create the object the enforcer expects
+        _rtp_enforcer.ticket_map[ticket["jti"]] = ExecutionTicket(
+            jti=ticket["jti"],
+            tool_name=tool,
+            args=ticket.get("args", {}),
+            timestamp=int(ticket.get("timestamp", 0)),
+            issued_mono_ns=int(ticket.get("issued_mono_ns", 0)),
+            ttl=int(ticket.get("ttl_ns", ticket.get("ttl", 0))),
+            binary_hash=ticket.get("binary_hash", ""),
+            signature=ticket.get("signature", ""),
+            resource_limits=ticket.get("resource_limits", {}),
+        )
+
+
+
+
+    # fail closed if gate refused to mint
+    if not ticket:
+        append_audit({"ts": time.time(), "event": "DENY", "tool": tool, "reason": "gate_refused", "rule_id": "RTP-GATE-REFUSE-001"})
+        return {"decision": "DENY", "reason": "gate_refused", "rule_id": "RTP-GATE-REFUSE-001", "explain": "Gate refused to mint ticket (policy/lock/unstable).", "ticket": None}
+
+    # issue external HS256 JWT token for API clients
+    payload = {
+        "iss": JWT_ISSUER,
+        "jti": ticket.get("jti"),
+        "tool": tool,
+        "exp": int(time.time()) + int(os.getenv("KASBAH_TICKET_TTL_SECONDS", "120")),
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+    ticket["ticket"] = token
 
     append_audit({
         "ts": time.time(),
@@ -630,12 +636,22 @@ async def rtp_decide(payload: dict = Body(...)):
 
 @app.post("/api/rtp/consume")
 async def rtp_consume(payload: dict = Body(...)):
-    tool = payload.get("tool")
-    jti = payload.get("jti")
+    token = payload.get("ticket")
     usage = payload.get("usage", {"tokens": 0, "cost": 0})
 
-    if not tool or not jti:
-        return {"valid": False, "reason": "tool and jti required"}
+    if not token:
+        return {"valid": False, "reason": "ticket required"}
+
+    # Verify JWT
+    try:
+        claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"], issuer=JWT_ISSUER)
+    except Exception:
+        return {"valid": False, "reason": "invalid_ticket"}
+
+    jti = claims.get("jti")
+    tool = claims.get("tool")
+    if not jti or not tool:
+        return {"valid": False, "reason": "invalid_ticket_claims"}
 
     res = _rtp_enforcer.intercept_execution(tool, jti, usage)
 
@@ -644,10 +660,6 @@ async def rtp_consume(payload: dict = Body(...)):
         "reason": res.reason,
         "remaining_budget": res.remaining_budget,
     }
-
-# -----------------------
-# RTP Audit Endpoint
-# -----------------------
 
 @app.get("/api/rtp/audit")
 def rtp_audit(limit: int = 200):
