@@ -70,6 +70,7 @@ class KasbahEngine:
         self.biz.track_savings(mode)
 
         # --- LAYER 3: CORE INTEGRITY & FORECASTING (REAL LOGIC) ---
+        
         # 1. Get Metrics
         metrics = {'ics': 0.9, 'mfe': 0.9, 'ocs': 0.9} 
         
@@ -151,7 +152,7 @@ if __name__ == "__main__":
     engine.biz.export_audit_report()
 
     # UPGRADE SCENARIO
-    print("\n>>> SCENARIO 4: Upgrading to PRO License...")
+    print("\n>>> SCENARIO 4: Isual Upgrade to PRO License...")
     engine.biz.toggle_shadow_mode(False)
     
     print("\n>>> SCENARIO 5: Same Attack Hits Again (Pro Mode BLOCKS it)...")
