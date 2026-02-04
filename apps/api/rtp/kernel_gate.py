@@ -2,16 +2,6 @@ from __future__ import annotations
 from pathlib import Path
 """
 Kasbah RTP - Runtime Policy Gate + Audit
-
-Features:
-- Default-deny policy
-- Explicit allowlist
-- Human approval mode (acts as deny for now)
-- Global kill switch
-- Monotonic TTL
-- Replay protection
-- Deterministic signature (demo-safe)
-- Append-only audit log
 """
 
 from typing import Dict, Optional
@@ -22,6 +12,7 @@ import json
 import time
 import os
 import uuid
+import dataclasses
 
 from .audit import append_audit
 from apps.api.rtp.integrity import geometric_integrity
@@ -123,7 +114,6 @@ class KernelGate:
         return hmac.compare_digest(expected, ticket.signature)
 
     def generate_ticket(self, tool_name: str, args: Dict, system_stable: bool, resource_limits=None, ttl_ns=None):
-
         if self.global_lock:
             append_audit({"event": "DENY", "reason": "global_lock", "rule_id": "RTP-SYS-LOCK-001", "tool": tool_name})
             return None
@@ -155,6 +145,8 @@ class KernelGate:
         
         signature = self._sign_with_tpm(payload)
         self.ticket_map[jti] = ExecutionTicket(**payload, signature=signature)
+        
+        # FIXED: Return dictionary to work with main.py
         return vars(self.ticket_map[jti])
 
     def validate_ticket(self, ticket: ExecutionTicket, usage: Optional[Dict] = None) -> TicketValidationResult:
@@ -177,7 +169,6 @@ class KernelGate:
         self.used_jti_tracker.add(jti)
 
     def intercept_execution(self, tool_name: str, jti: str, usage: Dict) -> TicketValidationResult:
-        # 0. Replay protection
         if jti in self.used_jti_tracker.used:
             return TicketValidationResult(False, "replay_attack")
         
@@ -185,7 +176,6 @@ class KernelGate:
         if not ticket:
             return TicketValidationResult(False, "jti_not_found")
         
-        # 1. Tool match
         if ticket.tool_name != tool_name:
             return TicketValidationResult(False, "tool_mismatch")
         
@@ -212,6 +202,7 @@ class KernelGate:
                 })
                 return TicketValidationResult(False, "geometry_block")
             else:
+                # FIXED: Log GEOMETRY_ALLOW event
                 append_audit({"event":"GEOMETRY_ALLOW","jti":jti,"agent_id":agent_id,"score":gi,"threshold":threshold,"signals_raw":raw_signals,"signals_eff":eff_signals})
         # --- end behavior integrity ---
         
@@ -223,7 +214,4 @@ class KernelGate:
         
         return res
 
-# -------------------------------------------------------------------
-# Backward-compat alias: older modules import KernelEnforcer
-# -------------------------------------------------------------------
 KernelEnforcer = KernelGate

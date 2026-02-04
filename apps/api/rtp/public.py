@@ -1,5 +1,18 @@
 from __future__ import annotations
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+from flask_cors import CORS
+
+# Enable CORS for all routes
+CORS(app)
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["100 per minute", "1000 per hour"],
+    storage_uri="memory://",
+)
 def rtp_verify(ticket):
     """
     Public verifier entrypoint (demo-safe).
