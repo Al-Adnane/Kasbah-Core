@@ -1,0 +1,10 @@
+{"agent_id":"smoke-agent","ts":1770146569.2708626,"signals":{"consistency":0.95,"pred_accuracy":0.95,"normality":0.95}}
+{"agent_id":"demo-agent-1","ts":1770148432.1688306,"signals":{"consistency":0.95,"pred_accuracy":0.95,"normality":0.95}}
+{"agent_id":"demo-agent-1","ts":1770148432.169815,"signals":{"consistency":0.9499999886274214,"pred_accuracy":0.9499999658822645,"normality":0.9499989764679379}}
+{"agent_id":"demo-agent-1","ts":1770148432.1703825,"signals":{"consistency":0.9499999820721508,"pred_accuracy":0.9499999462164526,"normality":0.9499989305816621}}
+{"agent_id":"demo-agent-1","ts":1770148807.728932,"signals":{"consistency":0.9464800035019154,"pred_accuracy":0.9394400105057463,"normality":0.6332006677422883}}
+{"agent_id":"demo-agent-1","ts":1770149018.777663,"signals":{"consistency":0.9450779518234274,"pred_accuracy":0.9352338554702818,"normality":0.5070159403942572}}
+{"agent_id":"demo-agent-1","ts":1770149546.202185,"signals":{"consistency":0.942761028610813,"pred_accuracy":0.9282830858324393,"normality":0.29849272519772296}}
+{"agent_id":"demo-agent-1","ts":1770154200.2853339,"signals":{"consistency":0.9400127655595747,"pred_accuracy":0.9200382966787243,"normality":0.05114890105628579}}
+{"agent_id":"demo-agent-1","ts":1770154224.9778411,"signals":{"consistency":0.9400124065552656,"pred_accuracy":0.9200372196657972,"normality":0.05111659064894179}}
+{"agent_id":"demo-agent-1","ts":1770154270.2072468,"signals":{"consistency":0.9400117749444827,"pred_accuracy":0.9200353248334485,"normality":0.05105974564411332}}

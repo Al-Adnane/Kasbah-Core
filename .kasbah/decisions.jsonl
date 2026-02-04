@@ -1,0 +1,2 @@
+{"id": "bb5b5571-03e4-4bb5-9e72-7f94d9b5b315", "timestamp": "2026-02-03T14:55:00.700060+00:00", "agent": "demo", "action": "read.me", "risk": 10, "brittleness_score": 10.0, "decision": "allow", "reason": "Risk acceptable", "stage": "rooting", "approved": true}
+{"id": "18356154-36eb-47be-8f2f-2037c485efef", "timestamp": "2026-02-03T14:59:18.766473+00:00", "agent": "demo", "action": "read.me", "risk": 10, "brittleness_score": 10.0, "decision": "allow", "reason": "Risk acceptable", "stage": "rooting", "approved": true}
