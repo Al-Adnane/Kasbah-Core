@@ -62,6 +62,7 @@ class KasbahEngine:
         # --- LAYER 1: REPUTATION (SRL) ---
         if self.srl.is_blacklisted(src_ip):
             print(f"[SRL] BLOCKED (Blacklisted Identity)")
+            self.biz.log_decision("BLOCKED", f"Identity score < 20 ({src_ip})")
             return
 
         # --- LAYER 2: PHYSICS (TDP) ---
@@ -69,7 +70,6 @@ class KasbahEngine:
         self.biz.track_savings(mode)
 
         # --- LAYER 3: CORE INTEGRITY & FORECASTING (REAL LOGIC) ---
-        
         # 1. Get Metrics
         metrics = {'ics': 0.9, 'mfe': 0.9, 'ocs': 0.9} 
         
