@@ -47,7 +47,7 @@ def _load_state():
 # Config (MVP)
 # -----------------------
 JWT_SECRET = os.getenv("KASBAH_JWT_SECRET", "REMOVED")
-JWT_ISSUER = "kasbah-core"
+JWT_ISSUER = os.environ.get("JWT_ISSUER", "kasbah")
 SIGN_MODE = os.getenv("KASBAH_SIGN_MODE", "hs256")  # hs256 | ed25519
 ED25519_PRIVATE_KEY_PATH = Path(os.getenv("KASBAH_ED25519_PRIVATE_KEY_PATH", ".kasbah/ed25519_private.pem"))
 ED25519_PUBLIC_KEY_PATH = Path(os.getenv("KASBAH_ED25519_PUBLIC_KEY_PATH", ".kasbah/ed25519_public.pem"))
@@ -481,6 +481,9 @@ _rtp_enforcer = KernelEnforcer(_rtp_gate)
 
 @app.post("/api/rtp/decide")
 async def rtp_decide(payload: dict = Body(...)):
+    def _tget(t, k, default=None):
+        return t.get(k, default) if isinstance(t, dict) else getattr(t, k, default)
+
     tool = payload.get("tool_name") or payload.get("tool") or "unknown.tool"
     args = payload.get("args", {})
     risk = int(payload.get("risk", 0))
@@ -584,19 +587,19 @@ async def rtp_decide(payload: dict = Body(...)):
 
     # register ticket so /api/rtp/consume can find it
     # RTP-TICKET-REGISTER-001
-    if isinstance(ticket, dict) and ticket.get("jti") and hasattr(_rtp_enforcer, "ticket_map"):
+    if isinstance(ticket, dict) and ticket["jti"] and hasattr(_rtp_enforcer, "ticket_map"):
         from apps.api.rtp.kernel_gate import ExecutionTicket
         # create the object the enforcer expects
         _rtp_enforcer.ticket_map[ticket["jti"]] = ExecutionTicket(
             jti=ticket["jti"],
             tool_name=tool,
-            args=ticket.get("args", {}),
-            timestamp=int(ticket.get("timestamp", 0)),
-            issued_mono_ns=int(ticket.get("issued_mono_ns", 0)),
-            ttl=int(ticket.get("ttl_ns", ticket.get("ttl", 0))),
-            binary_hash=ticket.get("binary_hash", ""),
-            signature=ticket.get("signature", ""),
-            resource_limits=ticket.get("resource_limits", {}),
+            args=_tget(ticket,"args", {}),
+            timestamp=int(_tget(ticket,"timestamp", 0)),
+            issued_mono_ns=int(_tget(ticket,"issued_mono_ns", 0)),
+            ttl=int(_tget(ticket,"ttl_ns", _tget(ticket,"ttl", 0))),
+            binary_hash=_tget(ticket,"binary_hash", ""),
+            signature=_tget(ticket,"signature", ""),
+            resource_limits=_tget(ticket,"resource_limits", {}),
         )
 
 
@@ -610,7 +613,7 @@ async def rtp_decide(payload: dict = Body(...)):
     # issue external HS256 JWT token for API clients
     payload = {
         "iss": JWT_ISSUER,
-        "jti": ticket.get("jti"),
+        "jti": ticket["jti"],
         "tool": tool,
         "exp": int(time.time()) + int(os.getenv("KASBAH_TICKET_TTL_SECONDS", "120")),
     }
@@ -623,7 +626,7 @@ async def rtp_decide(payload: dict = Body(...)):
         "tool": tool,
         "reason": "ok",
         "rule_id": "RTP-ALLOW-001",
-        "jti": ticket.get("jti") if isinstance(ticket, dict) else None,
+        "jti": ticket["jti"] if isinstance(ticket, dict) else None,
     })
 
     return {

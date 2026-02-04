@@ -1,33 +1,26 @@
-from __future__ import annotations
-from typing import Dict
+import numpy as np
 
-def geometric_integrity(signals: Dict[str, float]) -> float:
+def geometric_integrity(signals: dict) -> float:
     """
-    Weighted geometric mean integrity score in [0,100].
-
-    signals keys (0..1):
-      - consistency
-      - pred_accuracy
-      - normality
-
-    Floors each signal at 0.01 to avoid zeroing the product.
+    Calculates Geometric Integrity Index (GI).
+    Low GI = High Risk.
     """
-    keys = ["consistency", "pred_accuracy", "normality"]
-    weights = [0.50, 0.30, 0.20]
-
-    scores = []
-    for k in keys:
-        v = float(signals.get(k, 0.95))
-        if v < 0.01:
-            v = 0.01
-        if v > 1.0:
-            v = 1.0
-        scores.append(v)
-
-    prod = 1.0
-    for s, w in zip(scores, weights):
-        prod *= s ** w
-
-    # weights sum to 1.0, but keep it general
-    score = (prod ** (1.0 / sum(weights))) * 100.0
-    return round(score, 1)
+    # Extract signal values, default to 1.0 if missing
+    vals = [
+        signals.get("consistency", 0.95),
+        signals.get("pred_accuracy", 0.95),
+        signals.get("normality", 0.95)
+    ]
+    
+    # Avoid division by zero or log of zero
+    vals = [max(v, 0.001) for v in vals]
+    
+    # Geometric mean
+    product = 1.0
+    for v in vals:
+        product *= v
+        
+    gi = product ** (1.0 / len(vals))
+    
+    # Scale to 0-100
+    return gi * 100.0
