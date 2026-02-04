@@ -1,3 +1,4 @@
+import os
 import hashlib
 import json
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -6,14 +7,44 @@ from cryptography.hazmat.primitives import serialization
 class CryptoSecureCore:
     """
     Implements New Code #2 (CryptoBoundCommandBus) and New Code #4 (IMIL).
+    WITH PERSISTENCE (Fixes Restart Bug).
     """
     def __init__(self):
         # Generate Keys
         self.private_key = ed25519.Ed25519PrivateKey.generate()
         self.public_key = self.private_key.public_key()
         
-        # Merkle Tree State
-        self.leaves = []
+        # Merkle Tree State (Persistent)
+        self.storage_file = ".kasbah/ledger.json"
+        self.ledger_path = os.path.dirname(self.storage_file)
+        
+        # Create dir if missing
+        if not os.path.exists(self.ledger_path):
+            os.makedirs(self.ledger_path)
+            
+        # Load existing leaves
+        self.leaves = self._load_ledger()
+
+    def _load_ledger(self):
+        if os.path.exists(self.storage_file):
+            try:
+                with open(self.storage_file, 'r') as f:
+                    # Hashes are bytes, json stores strings. We need to decode back.
+                    hashes_str = json.load(f)
+                    return [bytes.fromhex(h) for h in hashes_str]
+            except Exception as e:
+                print(f"[SECURE_CORE] Warning: Could not load ledger: {e}")
+                return []
+        return []
+
+    def _save_ledger(self):
+        try:
+            # Convert bytes back to hex strings for JSON storage
+            hashes_str = [h.hex() for h in self.leaves]
+            with open(self.storage_file, 'w') as f:
+                json.dump(hashes_str, f)
+        except Exception as e:
+            print(f"[SECURE_CORE] Critical: Failed to save ledger: {e}")
 
     def sign_command(self, command_type, payload):
         """
@@ -42,10 +73,7 @@ class CryptoSecureCore:
         leaf_hash = hashlib.sha256(data_str.encode()).digest()
         self.leaves.append(leaf_hash)
         
-        # Simplified Root calculation
-        if not self.leaves:
-            return b'\x00'*32
-        else:
-            # Just return the last hash for this simple demo
-            # (Real implementation would reduce the tree)
-            return leaf_hash
+        # PERSISTENCE: Write to disk immediately
+        self._save_ledger()
+        
+        return leaf_hash

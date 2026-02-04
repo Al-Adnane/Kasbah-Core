@@ -241,154 +241,50 @@ class KernelEnforcer:
 
 
     def intercept_execution(self, tool_name: str, jti: str, usage: Dict):
-
-        import os
-
-    
-
-        # Fast-path replay check (memory)
-
-        if jti in self.used:
-
-            append_audit({"event": "REPLAY", "jti": jti})
-
-            return TicketValidationResult(False, "replay")
-
-    
-
-        # Look up ticket first; if it's gone but the marker exists, treat as replay
-
-        ticket = self.ticket_map.get(jti)
-
-        marker_path = os.path.join("/app/.kasbah/used", jti)
-
-        if not ticket:
-
-            if os.path.exists(marker_path):
-
-                append_audit({"event": "REPLAY", "jti": jti})
-
-                return TicketValidationResult(False, "replay")
-
-            return TicketValidationResult(False, "missing")
-
-    
-
-        if ticket.tool_name != tool_name:
-
-            return TicketValidationResult(False, "tool mismatch")
-
-    
-
-        # Atomic replay lock (only one concurrent consumer can win)
-
         if not self._atomic_mark_used(jti):
-
             append_audit({"event": "REPLAY", "jti": jti})
-
             return TicketValidationResult(False, "replay")
-
-    
-
-        # Keep in-memory cache for observability / fast checks
 
         self.used[jti] = time.time()
 
-    
+        ticket = self.ticket_map.get(jti)
+        if not ticket:
+            return TicketValidationResult(False, "missing")
 
-        try:
+        if ticket.tool_name != tool_name:
+            return TicketValidationResult(False, "tool mismatch")
 
-            # --- behavior integrity: provenance + decay + geometry ---
 
-            agent_id = usage.get("agent_id") or usage.get("session_id") or "anon"
+        # --- behavior integrity: provenance + decay + geometry ---
+        agent_id = usage.get("agent_id") or usage.get("session_id") or "anon"
+        raw_signals = usage.get("signals", {}) or {}
 
-            raw_signals = usage.get("signals", {}) or {}
+        eff_signals = _signal_tracker.update(agent_id, raw_signals) if raw_signals else {}
+        append_audit({"event":"GEOMETRY_SEEN","agent_id":agent_id,"jti":jti,"raw":raw_signals,"eff":eff_signals})
 
-    
+        signals_for_gate = eff_signals or raw_signals
+        if signals_for_gate:
+            gi = geometric_integrity(signals_for_gate)
+            threshold = float(os.getenv("KASBAH_GEOMETRY_THRESHOLD", "70"))
+            if gi >= threshold:
+                append_audit({
+                    "event": "GEOMETRY_BLOCK",
+                    "jti": jti,
+                    "agent_id": agent_id,
+                    "score": gi,
+                    "threshold": threshold,
+                    "signals_raw": raw_signals,
+                    "signals_eff": eff_signals,
+                })
+                return TicketValidationResult(False, "geometry_block")
+        # --- end behavior integrity ---
 
-            eff_signals = _signal_tracker.update(agent_id, raw_signals) if raw_signals else {}
+        res = self.gate.validate_ticket(ticket, usage)
+        if res.valid:
+            self.used[jti] = time.time()
+            self._persist_used(jti)
+            del self.ticket_map[jti]
+            append_audit({"event": "CONSUME", "tool": tool_name, "jti": jti})
 
-            append_audit({"event":"GEOMETRY_SEEN","agent_id":agent_id,"jti":jti,"raw":raw_signals,"eff":eff_signals})
-
-    
-
-            signals_for_gate = eff_signals or raw_signals
-
-            if signals_for_gate:
-
-                gi = geometric_integrity(signals_for_gate)
-
-                threshold = float(os.getenv("KASBAH_GEOMETRY_THRESHOLD", "70"))
-
-                # Block when score indicates bad geometry
-
-                if gi >= threshold:
-
-                    append_audit({
-
-                        "event": "GEOMETRY_BLOCK",
-
-                        "jti": jti,
-
-                        "agent_id": agent_id,
-
-                        "score": gi,
-
-                        "threshold": threshold,
-
-                        "signals_raw": raw_signals,
-
-                        "signals_eff": eff_signals,
-
-                    })
-
-                    return TicketValidationResult(False, "geometry_block")
-
-            # --- end behavior integrity ---
-
-    
-
-            res = self.gate.validate_ticket(ticket, usage)
-
-            if res.valid:
-
-                self._persist_used(jti)
-
-                del self.ticket_map[jti]
-
-                append_audit({"event": "CONSUME", "tool": tool_name, "jti": jti})
-
-                return res
-
-    
-
-            # Validation failed: roll back so we don't burn the ticket
-
-            return res
-
-        finally:
-
-            # If not consumed successfully, remove marker + memory entry
-
-            # We detect success by presence/absence of ticket_map entry
-
-            # (it is deleted only on valid consume)
-
-            if jti in self.ticket_map:
-
-                try:
-
-                    os.remove(marker_path)
-
-                except Exception:
-
-                    pass
-
-                try:
-
-                    del self.used[jti]
-
-                except Exception:
-
-                    pass
+        return res
 
