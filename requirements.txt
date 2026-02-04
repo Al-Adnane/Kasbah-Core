@@ -1,9 +1,8 @@
-fastapi
-uvicorn[standard]
-requests
-numpy
-cryptography
-pydantic
-python-dotenv
-python-multipart
-PyJWT>=2.8.0
+fastapi>=0.95.0
+uvicorn[standard]>=0.21.0
+pydantic>=1.10.0
+python-dotenv>=0.19.0
+numpy>=1.22.0
+cryptography>=3.4.0
+redis>=4.1.0
+python-jose>=2.4.0

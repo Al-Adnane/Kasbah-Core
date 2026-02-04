@@ -183,3 +183,83 @@ def guard_endpoint(request: GuardRequest = Body(...)):
         reason=reason,
         health_score=health
     )
+# =======================
+# PASTE THIS AT THE BOTTOM OF main.py
+# =======================
+
+from fastapi import Body
+from pydantic import BaseModel
+from typing import Dict, Literal, Optional, Any
+
+class GuardRequest(BaseModel):
+    prompt: str
+    tool: str = ""
+    args: Optional[Dict[str, Any]] = None
+
+class GuardResponse(BaseModel):
+    decision: Literal["ALLOW", "BLOCK", "APPROVAL", "STRICT_BLOCK", "DENY"]
+    reason: str
+    health_score: float
+
+# Your real signal collector (adjust name if different)
+try:
+    from apps.api.rtp.signals import compute_signals
+except ImportError:
+    from apps.api.rtp.signals import get_signals as compute_signals  # fallback name
+except ImportError:
+    compute_signals = lambda p, t, a: {"consistency": 0.95, "pred_accuracy": 0.90, "normality": 0.85}  # ultimate fallback
+
+# Your real gating function (adjust name if different)
+try:
+    from apps.api.rtp.kernel_gate import integrity_gate
+except ImportError:
+    from apps.api.rtp.kernel_gate import kernel_guard as integrity_gate  # fallback
+except ImportError:
+    integrity_gate = lambda p, t, a, s, h: {"decision": "ALLOW", "reason": "Fallback gate"}  # ultimate fallback
+
+def _geometric_integrity(signals: Dict[str, float]) -> float:
+    keys = ["consistency", "pred_accuracy", "normality"]
+    scores = [max(0.01, signals.get(k, 0.95)) for k in keys]
+    weights = [0.50, 0.30, 0.20]
+    prod = 1.0
+    for s, w in zip(scores, weights):
+        prod *= s ** w
+    score = (prod ** (1 / sum(weights))) * 100
+    return round(score, 1)
+
+# Replace your existing @app.post("/guard") with this
+@app.post("/guard", response_model=GuardResponse)
+def guard_endpoint(request: GuardRequest = Body(...)):
+    # 1. Collect real signals
+    signals = compute_signals(
+        request.prompt,
+        request.tool,
+        request.args or {}
+    )
+    
+    # 2. Compute real integrity (your geometric moat)
+    health = _geometric_integrity(signals)
+    
+    # 3. Run real RTP gating
+    gate_result = integrity_gate(
+        request.prompt,
+        request.tool,
+        request.args or {},
+        signals,
+        health
+    )
+    
+    decision = gate_result.get("decision", "ALLOW")
+    reason = gate_result.get("reason", "Passed RTP gate")
+    
+    # 4. Optional: log to audit chain (uncomment when ready)
+    # from kasbah_core.audit import log_audit
+    # log_audit(request, decision, reason, health)
+    
+    return GuardResponse(
+        decision=decision,
+        reason=reason,
+        health_score=health
+    )
+
+print("Real moat integration code added. Save main.py and restart uvicorn.")

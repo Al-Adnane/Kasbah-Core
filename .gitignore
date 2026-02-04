@@ -27,3 +27,12 @@ venv/
 
 # Runtime logs
 *.log
+
+# Local
+_quarantine/
+venv/
+.venv/
+
+# Runtime
+.kasbah/
+**/.kasbah/

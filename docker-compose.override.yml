@@ -1,9 +1,17 @@
 services:
   api:
+    environment:
+      KASBAH_REPLAY_LOCK_MODE: "redis"
+      KASBAH_REDIS_URL: "redis://redis:6379/0"
+      KASBAH_REPLAY_TTL_SECONDS: "600"
     volumes:
       - ./.kasbah:/app/.kasbah
       - ./scripts:/app/scripts
-    entrypoint: ["/app/scripts/entrypoint_with_loop.sh"]
+    entrypoint: ["/app/scripts/entrypoint_api.sh"]
+    ports:
+      - "8002:8002"
+    depends_on:
+      - redis
 
   redis:
     image: redis:7-alpine
