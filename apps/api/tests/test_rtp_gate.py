@@ -1,5 +1,6 @@
 import time
-from rtp import KernelGate, KernelEnforcer
+from apps.api.rtp.kernel_gate import KernelGate
+from apps.api.rtp.kernel_enforcer import KernelEnforcer
 
 def test_signature_verification_is_real():
     gate = KernelGate(tpm_enabled=False, policy={"shell.exec": "allow"})
