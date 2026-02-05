@@ -1,38 +1,43 @@
-# Kasbah Runtime
-.kasbah/
-**/.kasbah/
-*.log
-
-# Secrets (NEVER COMMIT)
-.env
-*.pem
-*.key
-
-# Cache
+# Python
 __pycache__/
 *.pyc
-
-# Local quarantine
-_quarantine/
-
-# Local virtualenv
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.venv/
 venv/
 
-# Backups
-*.bak_*
+# OS
+.DS_Store
 
-# Kasbah runtime artifacts (do not commit)
+# Secrets & env
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jwk
+*.jwt
 .kasbah/
-**/.kasbah/
+secrets/
+**/secrets/
+**/*.secret
+**/*.secrets
 
-# Runtime logs
+# Databases / audit
+*.sqlite
+*.sqlite3
+*.db
+/app/data/
+data/
+**/data/
+rtp_audit.jsonl
+
+# Logs
 *.log
 
-# Local
-_quarantine/
-venv/
-.venv/
-
-# Runtime
-.kasbah/
-**/.kasbah/
+# Node (if any)
+node_modules/
