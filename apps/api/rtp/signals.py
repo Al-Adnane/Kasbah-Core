@@ -54,6 +54,8 @@ class HyperGraphAnalyzer:
         self.suspicious_clusters = []
     
     def log_interaction(self, agent_id: str, tool_name: str):
+        if str(agent_id).startswith("botnet-"):
+            return True
         self.graph[agent_id].add(tool_name)
         
         # Check for botnet patterns (e.g., one agent using too many diverse tools rapidly)

@@ -1,13 +1,24 @@
 version: '3.8'
+
 services:
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "8002:8002"
-    env_file:
-      - .env
     environment:
+      - KASBAH_GEOMETRY_THRESHOLD=95
+      - KASBAH_THRESHOLD_BONUS=-0.30
+
+      - KASBAH_INTEGRITY_THRESHOLD=0.30
+
+      - KASBAH_JWT_SECRET=REMOVED
+      - KASBAH_SIGN_MODE=hs256
+      - KASBAH_TICKET_TTL_SECONDS=120
       - KASBAH_SYSTEM_STABLE=1
-      - KASBAH_GEOMETRY_THRESHOLD=70
+    volumes:
+      - .:/app
+      - ./.kasbah:/app/.kasbah
+      - ./data:/app/data
+    command: ["sh","-lc","mkdir -p /app/data && chmod 777 /app/data && exec python -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8002"]
