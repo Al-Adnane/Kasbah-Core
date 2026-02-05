@@ -1,0 +1,70 @@
+# Known Bad File
+combined_code.py
+
+# Common Huge Files (DBs, Archives, Dumps)
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.dump
+
+# Chat logs & Data
+*.txt
+*.pdf
+*.md
+data/
+models/
+dataset/
+
+# Virtual Environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-log.txt
+
+# Kasbah Runtime
+.kasbah/
+*.log
+*.jsonl
+
+# Environment & Git
+.env
+.git/
+.gitignore
+.DS_Store
+
+# Old Code Files
+kasbah_unified*
+kasbah_onefile*
+apps/api/rtp/kernel_gate.py.bak
+
+# --- Kasbah build allowlist overrides ---
+!requirements.txt
+!apps/api/requirements.txt
+!apps/api/Dockerfile

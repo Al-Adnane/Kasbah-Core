@@ -1,8 +1,11 @@
-fastapi>=0.95.0
-uvicorn[standard]>=0.21.0
-pydantic>=1.10.0
-python-dotenv>=0.19.0
-numpy>=1.22.0
-cryptography>=3.4.0
-redis>=4.1.0
-python-jose>=2.4.0
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+requests==2.31.0
+cryptography==42.0.0
+redis==5.0.1
+
+# math
+numpy==1.26.4
+
+redis>=5.0.0

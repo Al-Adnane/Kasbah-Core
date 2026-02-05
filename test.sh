@@ -1,0 +1,13 @@
+#!/bin/bash
+echo "🧪 Testing Kasbah Core..."
+echo "========================="
+echo "1. Health status:"
+curl -s "http://127.0.0.1:8002/health" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'   Status: {d.get(\"status\")}'); print(f'   Integrity: {d.get(\"system_integrity\", 0)}')"
+echo ""
+echo "2. Test decision:"
+curl -s -X POST "http://127.0.0.1:8002/api/rtp/decide" -H "Content-Type: application/json" -d '{"tool_name":"test","signals":{"normality":0.9}}' | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'   Decision: {d.get(\"decision\")}'); print(f'   Moats triggered: {len(d.get(\"moats_triggered\", []))}')"
+echo ""
+echo "3. System metrics:"
+curl -s "http://127.0.0.1:8002/api/system/metrics" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'   Total requests: {d.get(\"total_requests\", 0)}')"
+echo ""
+echo "✅ Test complete!"
