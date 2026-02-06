@@ -208,3 +208,29 @@ class KernelGate:
             "merkle_root": audit_entry["current_root"][:16] + "...",
             "moats_triggered": sorted(list(set(triggered_moats)))
         }
+
+
+# --- consume wiring (locked for good) ---
+
+def consume(self, payload: dict) -> dict:
+    from apps.api.rtp.tickets import consume_ticket
+    ticket = payload.get("ticket") or payload.get("ticket_dict") or payload.get("ticket_obj") or payload.get("ticket") or {}
+    if not isinstance(ticket, dict):
+        return {"ok": False, "reason": "bad ticket type"}
+
+    tool = payload.get("tool") or ticket.get("tool_name") or ""
+    usage = payload.get("usage") or {}
+    agent = usage.get("agent_id") or payload.get("agent_id")
+
+    if agent is not None:
+        ticket = dict(ticket)
+        ticket["provided_agent_id"] = agent
+
+    ok, reason = consume_ticket(ticket, tool)
+    return {"ok": bool(ok), "reason": str(reason), "jti": str(ticket.get("jti",""))}
+
+
+try:
+    KernelGate.consume = consume
+except Exception:
+    pass

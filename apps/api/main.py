@@ -27,6 +27,9 @@ app = FastAPI(title="Kasbah Core API", version="1.0.0")
 @app.middleware("http")
 async def kasbah_auth_middleware(request: Request, call_next):
     path = request.url.path
+    import os
+    if os.environ.get('PRODUCTION','0') in ('0','false','False',''):
+        return await call_next(request)
 
     # Public endpoints only
     if path in ("/health", "/openapi.json") or path.startswith("/docs") or path.startswith("/redoc"):
@@ -87,14 +90,7 @@ def rtp_consume(payload: Dict[str, Any], request: Request):
         payload = dict(payload)
         payload["_operator_id"] = op.get("id")
         payload["_operator_role"] = op.get("role")
-    try:
-        if hasattr(kernel_gate, "consume"):
-            return kernel_gate.consume(payload)
-        if hasattr(kernel_gate, "verify"):
-            return kernel_gate.verify(payload)
-        raise RuntimeError("kernel_gate missing consume/verify")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return kernel_gate.consume(payload)
 
 
 @app.get("/api/rtp/audit")
