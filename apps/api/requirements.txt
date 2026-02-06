@@ -1,9 +1,16 @@
+<<<<<<< HEAD
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 requests==2.31.0
 cryptography==42.0.0
 redis==5.0.1
+=======
+fastapi
+uvicorn
+pydantic
+PyJWT
+>>>>>>> 1457e5d (Add approval flow and signed execution tickets)
 
 # math
 numpy==1.26.4
