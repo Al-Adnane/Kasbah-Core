@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  kasbah-api:
+    build: .
+    container_name: kasbah-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - KASBAH_USE_REDIS=true
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "8002:8002"
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  
+  redis:
+    image: redis:7-alpine
+    container_name: kasbah-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  
+  caddy:
+    image: caddy:2-alpine
+    container_name: kasbah-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - kasbah-api
+
+volumes:
+  redis_data:
+  caddy_data:
+  caddy_config:

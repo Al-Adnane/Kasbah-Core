@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # Caddy reverse proxy with automatic TLS
+  caddy:
+    image: caddy:2-alpine
+    container_name: kasbah-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - kasbah-network
+    depends_on:
+      - kasbah-api
+  
+  # Main Kasbah API service
+  kasbah-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kasbah-api
+    restart: unless-stopped
+    expose:
+      - "8002"
+    environment:
+      - PRODUCTION=true
+      - REDIS_URL=redis://redis:6379/0
+      - REPLAY_LOCK_MODE=redis
+      - LOG_LEVEL=INFO
+      - KASBAH_VERSION=2.0.0
+    volumes:
+      - kasbah_data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - kasbah-network
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  
+  # Redis for state persistence
+  redis:
+    image: redis:7-alpine
+    container_name: kasbah-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - kasbah-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  
+  # PostgreSQL for audit and configuration (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: kasbah-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=kasbah
+      - POSTGRES_USER=kasbah
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kasbah-network
+    secrets:
+      - postgres_password
+
+volumes:
+  caddy_data:
+  caddy_config:
+  kasbah_data:
+  redis_data:
+  postgres_data:
+
+networks:
+  kasbah-network:
+    driver: bridge
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt

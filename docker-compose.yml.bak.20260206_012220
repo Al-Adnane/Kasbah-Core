@@ -1,0 +1,55 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kasbah-v3-ultimate-fix
+    entrypoint: ["/app/scripts/entrypoint_api.sh"]
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]
+    ports:
+      - "8002:8002"
+    environment:
+      - KASBAH_BOOTSTRAP_API_KEY=dev-bootstrap-admin
+      KASBAH_GEOMETRY_THRESHOLD: "70"
+      KASBAH_JWT_SECRET: dev-only-change-me-in-production
+      KASBAH_BOOTSTRAP_API_KEY: dev-master-key
+      KASBAH_REDIS_URL: redis://redis:6379/0
+      KASBAH_REPLAY_LOCK_MODE: redis
+      KASBAH_REPLAY_TTL_SECONDS: "600"
+      KASBAH_RL_CONSUME_LIMIT: "120"
+      KASBAH_RL_CONSUME_WINDOW: "60"
+      KASBAH_RL_DECIDE_LIMIT: "60"
+      KASBAH_RL_DECIDE_WINDOW: "60"
+      KASBAH_SIGN_MODE: hs256
+      KASBAH_SYSTEM_STABLE: "1"
+      KASBAH_TICKET_TTL_SECONDS: "120"
+      KASBAH_AUDIT_DB: /app/data/rtp_audit.sqlite
+      KASBAH_STATE_DB: /app/data/agent_state.db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./.kasbah:/app/.kasbah
+      - ./:/app
+      - ./scripts:/app/scripts
+      - ./data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - kasbah_redis:/data
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - api
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped

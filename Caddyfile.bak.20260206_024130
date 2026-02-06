@@ -1,0 +1,98 @@
+# Kasbah Production Caddyfile
+# Automatic HTTPS with Let's Encrypt
+
+{
+    # Global settings
+    email admin@kasbahcore.com
+    acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    
+    # Security headers (applied globally)
+    security {
+        # Enable the security headers API
+        headers {
+            # HSTS (force HTTPS for 1 year, include subdomains, preload)
+            Strict-Transport-Security max-age=31536000; includeSubDomains; preload
+            
+            # Prevent MIME type sniffing
+            X-Content-Type-Options nosniff
+            
+            # Clickjacking protection
+            X-Frame-Options DENY
+            
+            # XSS protection
+            X-XSS-Protection "1; mode=block"
+            
+            # Referrer policy
+            Referrer-Policy strict-origin-when-cross-origin
+            
+            # Content Security Policy
+            Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://api.kasbahcore.com; font-src 'self' https://cdn.jsdelivr.net;"
+        }
+    }
+}
+
+# Primary API endpoint
+api.kasbahcore.com {
+    # Rate limiting
+    rate_limit {
+        zone api_zone {
+            key {remote_host}
+            events 1000
+            window 1m
+            burst 100
+        }
+    }
+    
+    # Reverse proxy to Kasbah API
+    reverse_proxy kasbah-api:8002 {
+        # Load balancing (if multiple replicas)
+        lb_policy first
+        
+        # Health check
+        health_uri /health
+        health_interval 30s
+        health_timeout 5s
+        
+        # Timeouts
+        flush_interval -1
+        header_up Connection {>Connection}
+        header_up Upgrade {>Upgrade}
+    }
+    
+    # Logging
+    log {
+        output file /data/logs/access.log {
+            roll_size 100mb
+            roll_keep 10
+            roll_keep_for 720h
+        }
+    }
+}
+
+# Dashboard/Management UI (optional)
+dashboard.kasbahcore.com {
+    # Static dashboard files or separate service
+    root * /usr/share/caddy/dashboard
+    file_server
+    try_files {path} /index.html
+    
+    # API proxy for dashboard
+    handle_path /api/* {
+        reverse_proxy kasbah-api:8002
+    }
+}
+
+# Metrics endpoint (internal only)
+metrics.kasbahcore.com {
+    # IP-based access control
+    @blocked not remote_ip 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    respond @blocked "Access Denied" 403
+    
+    reverse_proxy kasbah-api:8002
+}
+
+# ACME challenge path
+/.well-known/acme-challenge/* {
+    root * /var/www/html
+    file_server
+}

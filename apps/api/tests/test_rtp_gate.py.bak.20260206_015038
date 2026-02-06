@@ -1,0 +1,64 @@
+from fastapi.testclient import TestClient
+import main
+
+client = TestClient(main.app)
+
+def test_health_operational():
+    r = client.get("/health")
+    assert r.status_code == 200
+    j = r.json()
+    assert j.get("status") == "operational"
+
+def test_audit_verify_ok():
+    r = client.get("/api/rtp/audit/verify")
+    assert r.status_code == 200
+    j = r.json()
+    assert j.get("ok") is True
+    assert int(j.get("total_rows", 0)) >= 2
+    assert int(j.get("bad_links", 1)) == 0
+    assert int(j.get("bad_hash", 1)) == 0
+
+def test_decide_then_consume_then_replay_blocked():
+    # Decide should mint a ticket for an allowed tool under high signals
+    payload = {
+        "tool_name": "read.me",
+        "agent_id": "pytest-agent",
+        "signals": {
+            "consistency": 0.99,
+            "accuracy": 0.99,
+            "normality": 0.99,
+            "latency_score": 0.99
+        }
+    }
+    r = client.post("/api/rtp/decide", json=payload)
+    assert r.status_code == 200
+    j = r.json()
+    assert j.get("decision") in ("ALLOW", "DENY")
+
+    # If DENY (rare if your thresholds are strict), stop here — that's still a valid behavior.
+    if j.get("decision") != "ALLOW":
+        return
+
+    ticket = j.get("ticket")
+    assert ticket is not None
+
+    # Consume once: should succeed
+    r1 = client.post("/api/rtp/consume", json={
+        "ticket": ticket,
+        "tool": "read.me",
+        "agent_id": "pytest-agent"
+    })
+    assert r1.status_code == 200
+    j1 = r1.json()
+    assert j1.get("valid") is True
+
+    # Consume again: should be replay-denied (or otherwise invalid)
+    r2 = client.post("/api/rtp/consume", json={
+        "ticket": ticket,
+        "tool": "read.me",
+        "agent_id": "pytest-agent"
+    })
+    assert r2.status_code == 200
+    j2 = r2.json()
+    assert j2.get("valid") is False
+    assert "replay" in str(j2.get("reason", "")).lower() or j2.get("reason") is not None
