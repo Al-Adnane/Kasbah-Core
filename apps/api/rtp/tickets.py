@@ -1,7 +1,6 @@
-import time, secrets
+import time, secrets, hashlib, json
 
 def _sign(payload: dict) -> str:
-    import hashlib, json
     data = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(data).hexdigest()
 
@@ -33,8 +32,20 @@ def _replay_lock_redis(jti: str, ttl_seconds: int) -> bool:
         import redis
         r = redis.Redis(host=host, port=port, db=0, socket_timeout=1, socket_connect_timeout=1)
         key = _replay_key(jti)
-        ok = r.set(name=key, value="1", nx=True, ex=max(1, int(ttl_seconds)))
-        return bool(ok)
+        ttl = max(1, int(ttl_seconds))
+        
+        lua_script = """
+        if redis.call('EXISTS', KEYS[1]) == 0 then
+            redis.call('SET', KEYS[1], '1')
+            redis.call('EXPIRE', KEYS[1], ARGV[1])
+            return 1
+        else
+            return 0
+        end
+        """
+        script = r.register_script(lua_script)
+        result = script(keys=[key], args=[ttl])
+        return bool(result)
     except Exception:
         return False
 
@@ -83,4 +94,4 @@ def consume_ticket(ticket: dict, tool_name: str):
     if _replay_lock_sqlite(jti, exp):
         return True, "consumed"
 
-    return False, "replay_or_store_failure"
+    return False, "replay"

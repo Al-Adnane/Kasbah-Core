@@ -326,14 +326,14 @@ def system_moats():
             {"name": "NEW_moat3_brittleness_patent_a", "enabled": True, "notes": "B(r) = usage(r)/Σusage"},
             {"name": "NEW_moat4_kernel_gating_patent_b", "enabled": True, "notes": "sub-100ms tickets"},
             {"name": "NEW_moat5_dynamic_threshold", "enabled": True, "notes": "τ modulation based on I(t)"},
-            {"name": "NEW_moat6_qift", "enabled": True, "notes": "quantum-inspired feature transformation"},
+            {"name": "NEW_moat6_qift", "enabled": True, "notes": "adaptive feature transformation"},
             {"name": "NEW_moat7_cail", "enabled": True, "notes": "context-aware integrity ledger"},
             {"name": "NEW_moat8_adversarial", "enabled": True, "notes": "FGSM/C&W/DeepFool detection"},
             {"name": "NEW_moat9_threat_forecast", "enabled": True, "notes": "predictive threat probability"},
             {"name": "NEW_moat10_crypto_signing", "enabled": SIGN_MODE != "none", "notes": f"mode={SIGN_MODE}"},
             {"name": "NEW_moat11_toctou", "enabled": True, "notes": "one-time ticket consumption"},
             {"name": "NEW_moat12_resource_monitoring", "enabled": True, "notes": f"{len(resources)} resources"},
-            {"name": "NEW_moat13_phase_lead", "enabled": True, "notes": "47% MTTD improvement"},
+            {"name": "NEW_moat13_phase_lead", "enabled": True, "notes": "significantly faster improvement"},
         ]
     }
 

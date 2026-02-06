@@ -1,0 +1,68 @@
+KASBAH MOAT ANALYSIS REPORT
+========================================
+
+Total moats found: 13/13
+
+✅ Moat 1: Bidirectional feedback (I(t)→τ, P_threat→θ)
+   - find_all_moats.py:16
+   - find_all_moats.py:33
+   - find_all_moats.py:33
+✅ Moat 2: Weighted geometric mean integrity
+   - find_all_moats.py:17
+   - find_all_moats.py:34
+   - find_all_moats.py:17
+✅ Moat 3: Brittleness calculation B(r) = usage/Σusage
+   - find_all_moats.py:18
+   - find_all_moats.py:35
+   - find_all_moats.py:18
+✅ Moat 4: Ticket generation (sub-100ms)
+   - find_all_moats.py:19
+   - find_all_moats.py:36
+   - find_all_moats.py:19
+✅ Moat 5: Dynamic threshold modulation
+   - find_all_moats.py:20
+   - find_all_moats.py:37
+   - find_all_moats.py:37
+✅ Moat 6: QIFT (adaptive Feature Transformation)
+   - find_all_moats.py:21
+   - find_all_moats.py:38
+   - find_all_moats.py:21
+✅ Moat 7: CAIL (audit ledger with hash chaining)
+   - find_all_moats.py:22
+   - find_all_moats.py:39
+   - find_all_moats.py:55
+✅ Moat 8: Adversarial pattern detection
+   - find_all_moats.py:23
+   - find_all_moats.py:40
+   - find_all_moats.py:40
+✅ Moat 9: Predictive threat forecasting
+   - find_all_moats.py:24
+   - find_all_moats.py:41
+   - find_all_moats.py:41
+✅ Moat 10: Cryptographic signing (HMAC-SHA256)
+   - find_all_moats.py:25
+   - find_all_moats.py:42
+   - find_all_moats.py:25
+✅ Moat 11: TOCTOU prevention (one-time use)
+   - find_all_moats.py:26
+   - find_all_moats.py:43
+   - find_all_moats.py:26
+✅ Moat 12: Resource monitoring (3 resources tracked)
+   - find_all_moats.py:27
+   - find_all_moats.py:44
+   - find_all_moats.py:44
+✅ Moat 13: Phase-lead compensation
+   - find_all_moats.py:28
+   - find_all_moats.py:45
+   - find_all_moats.py:45
+
+Audit files found: 9
+  - /Users/mac/Projects/kasbah-core/.local/quarantine/audit_ledger.py
+  - /Users/mac/Projects/kasbah-core/apps/api/audit_ledger.py
+  - /Users/mac/Projects/kasbah-core/apps/api/rtp/audit_ledger.py
+  - /Users/mac/Projects/kasbah-core/kasbah-core/audit.py
+  - /Users/mac/Projects/kasbah-core/find_all_moats.py
+  - /Users/mac/Projects/kasbah-core/check_audit.py
+  - /Users/mac/Projects/kasbah-core/kasbah_onefile_full.py
+  - /Users/mac/Projects/kasbah-core/main.py
+  - /Users/mac/Projects/kasbah-core/.local/quarantine/test_audit_trail_real.py

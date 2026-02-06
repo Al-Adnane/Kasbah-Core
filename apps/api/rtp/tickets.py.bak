@@ -1,0 +1,109 @@
+import os, time, secrets, json, hashlib
+from typing import Tuple
+
+_LOCAL_CONSUMED = set()
+
+def _sign(payload: dict) -> str:
+    data = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(data).hexdigest()
+
+def mint_ticket(tool_name: str, args: dict, ttl_seconds: int = 60, agent_id: str = "anonymous", ema: float = 0.0, geom: float = 0.0) -> dict:
+    now = int(time.time())
+    ticket = {
+        "jti": secrets.token_hex(16),
+        "tool_name": str(tool_name),
+        "agent_id": str(agent_id),
+        "ema": float(ema),
+        "geom": float(geom),
+        "args": args or {},
+        "iat": now,
+        "exp": now + max(1, int(ttl_seconds)),
+        "nonce": secrets.token_hex(16),
+        "v": 1,
+    }
+    ticket["sig"] = _sign({k: ticket[k] for k in ("jti","tool_name","agent_id","ema","geom","args","iat","exp","nonce","v")})
+    return ticket
+
+def _redis_client():
+    try:
+        import redis
+        host = os.environ.get("REDIS_HOST", "redis")
+        port = int(os.environ.get("REDIS_PORT", "6379"))
+        return redis.Redis(host=host, port=port, db=0)
+    except Exception:
+        return None
+
+def _sqlite_path():
+    return os.environ.get("KASBAH_REPLAY_DB", "/app/data/rtp_replay.sqlite")
+
+def _sqlite_ensure():
+    import sqlite3
+    db = _sqlite_path()
+    con = sqlite3.connect(db)
+    cur = con.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS consumed (jti TEXT PRIMARY KEY, exp INTEGER)")
+    con.commit()
+    con.close()
+
+def _sqlite_try_insert(jti: str, exp: int) -> bool:
+    import sqlite3
+    _sqlite_ensure()
+    con = sqlite3.connect(_sqlite_path())
+    cur = con.cursor()
+    try:
+        cur.execute("INSERT INTO consumed(jti, exp) VALUES (?, ?)", (jti, int(exp)))
+        con.commit()
+        ok = True
+    except Exception:
+        ok = False
+    con.close()
+    return ok
+
+def consume_ticket(ticket: dict, tool_name: str) -> Tuple[bool, str]:
+    now = int(time.time())
+
+    exp = int(ticket.get("exp", 0) or 0)
+    if now > exp:
+        return False, "expired"
+
+    if str(ticket.get("tool_name")) != str(tool_name):
+        return False, "tool mismatch"
+
+    expected_agent = ticket.get("agent_id")
+    provided_agent = ticket.get("provided_agent_id")
+    if expected_agent is not None and provided_agent is not None and str(expected_agent) != str(provided_agent):
+        return False, "agent mismatch"
+
+    need_keys = ("jti","tool_name","agent_id","ema","geom","args","iat","exp","nonce","v")
+    try:
+        expected = _sign({k: ticket[k] for k in need_keys})
+    except Exception:
+        return False, "bad ticket payload"
+    if expected != str(ticket.get("sig")):
+        return False, "bad signature"
+
+    jti = str(ticket.get("jti") or "")
+    if not jti:
+        return False, "missing jti"
+
+    ttl = max(1, exp - now)
+    key = f"kasbah:rtp:consumed:{jti}"
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            ok = r.set(key, "1", nx=True, ex=ttl)
+            if not ok:
+                return False, "replay"
+            return True, "consumed"
+        except Exception:
+            pass
+
+    if not _sqlite_try_insert(jti, exp):
+        return False, "replay"
+
+    if jti in _LOCAL_CONSUMED:
+        return False, "replay"
+    _LOCAL_CONSUMED.add(jti)
+
+    return True, "consumed"

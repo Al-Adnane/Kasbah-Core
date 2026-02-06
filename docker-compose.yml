@@ -8,6 +8,15 @@ services:
     ports:
       - "8002:8002"
     environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KASBAH_REPLAY_DB=/app/data/rtp_replay.sqlite
+      - REDIS_HOST=
+      - REDIS_PORT=6379
+      - KASBAH_REPLAY_DB=/app/data/rtp_replay.sqlite
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KASBAH_REPLAY_DB=/app/data/rtp_replay.sqlite
       - KASBAH_GEOMETRY_THRESHOLD=95
       - KASBAH_THRESHOLD_BONUS=-0.30
 

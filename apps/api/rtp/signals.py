@@ -1,64 +1,85 @@
 """
-Signals Moat: QIFT & Hyper-Graph Analysis
+Signals processing module.
+
+Exports required by kernel_gate imports:
+- SignalTracker
+- QIFTProcessor (must provide .transform() for legacy callers)
+- HyperGraphAnalyzer
+
+Deterministic, no external deps, robust to missing inputs.
 """
-import numpy as np
-from collections import defaultdict
 
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from time import time
+from typing import Any, Dict, Optional
+
+
+def _clip01(x: float) -> float:
+    if x < 0.0:
+        return 0.0
+    if x > 1.0:
+        return 1.0
+    return float(x)
+
+
+def _getf(d: Dict[str, Any], *keys: str, default: float = 0.0) -> float:
+    for k in keys:
+        if k in d:
+            try:
+                return float(d[k])
+            except Exception:
+                return float(default)
+    return float(default)
+
+
+@dataclass
 class SignalTracker:
-    """Tracks raw signals for analysis"""
-    
-    def __init__(self):
-        self.buffer = []
-        self.max_buffer = 100
-    
-    def add(self, signals: dict):
-        self.buffer.append(signals)
-        if len(self.buffer) > self.max_buffer:
-            self.buffer.pop(0)
-    
-    def get_trend(self, key: str):
-        vals = [s.get(key, 0) for s in self.buffer[-10:]]
-        if not vals: return 0
-        return sum(vals) / len(vals)
+    _last: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
+    def key(self, agent_id: str, tool_name: str) -> str:
+        return f"{agent_id or 'anonymous'}::{tool_name or '*'}"
+
+    def update(self, agent_id: str, tool_name: str, signals: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        k = self.key(agent_id, tool_name)
+        s = dict(signals or {})
+        s["_ts"] = time()
+        self._last[k] = s
+        return s
+
+    def last(self, agent_id: str, tool_name: str) -> Dict[str, Any]:
+        return dict(self._last.get(self.key(agent_id, tool_name), {}))
+
+
+@dataclass
 class QIFTProcessor:
-    """Moat 3: Anticipatory Feature Transformation"""
-    
-    def __init__(self):
-        self.rotation_matrix = np.eye(4) # Simplified rotation
-    
-    def transform(self, raw_signals: dict) -> dict:
-        """
-        Applies orthogonal transformation to features to anticipate attacks.
-        """
-        # In a real system, this would use complex linear algebra.
-        # Here we normalize and perturb slightly to simulate transformation.
-        
-        keys = ["consistency", "accuracy", "normality", "latency_score"]
-        transformed = {}
-        
-        for i, key in enumerate(keys):
-            val = raw_signals.get(key, 0.5)
-            # Simulate feature rotation based on index
-            new_val = val * 0.9 + (0.1 * (i % 2)) 
-            transformed[key] = max(0.0, min(1.0, new_val))
-            
-        return transformed
+    """
+    Minimal processor that normalizes raw signals.
 
+    IMPORTANT: legacy callers expect `.transform(signals)`.
+    We provide `.transform()` as an alias to `.process()`.
+    """
+
+    def process(self, signals: Optional[Dict[str, Any]]) -> Dict[str, float]:
+        s = signals or {}
+        out = {
+            "consistency": _clip01(_getf(s, "consistency", default=0.0)),
+            "pred_accuracy": _clip01(_getf(s, "pred_accuracy", "accuracy", default=0.0)),
+            "normality": _clip01(_getf(s, "normality", default=0.0)),
+            "latency_score": _clip01(_getf(s, "latency_score", "latency", default=1.0)),
+        }
+        out["threat"] = _clip01(1.0 - out["normality"])
+        return out
+
+    def transform(self, signals: Optional[Dict[str, Any]]) -> Dict[str, float]:
+        return self.process(signals)
+
+
+@dataclass
 class HyperGraphAnalyzer:
-    """Moat 13: Hyper-Graph Topology Analysis"""
-    
-    def __init__(self):
-        # Agent adjacency graph: agent_id -> set of connected tools
-        self.graph = defaultdict(set)
-        self.suspicious_clusters = []
-    
-    def log_interaction(self, agent_id: str, tool_name: str):
-        if str(agent_id).startswith("botnet-"):
-            return True
-        self.graph[agent_id].add(tool_name)
-        
-        # Check for botnet patterns (e.g., one agent using too many diverse tools rapidly)
-        if len(self.graph[agent_id]) > 20:
-            return True # Suspicious
-        return False
+    def risk(self, features: Dict[str, float]) -> float:
+        c = _clip01(features.get("consistency", 0.0))
+        a = _clip01(features.get("pred_accuracy", 0.0))
+        t = _clip01(features.get("threat", 0.0))
+        return _clip01(0.50 * t + 0.25 * (1.0 - c) + 0.25 * (1.0 - a))
