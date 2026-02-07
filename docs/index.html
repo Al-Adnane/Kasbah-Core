@@ -532,3 +532,30 @@ track('page_view', {
 // Debug: View session data in console
 console.log('📊 To view session data: localStorage.getItem("kasbah_last_session")');
 </script>
+
+<script>
+// Ultra-simple tracking - just console logs
+console.log('📊 Kasbah Analytics Active');
+
+// Track which demos people run
+['btn1','btn2','btn3','btn4'].forEach(id => {
+  const btn = document.getElementById(id);
+  if (btn && btn.onclick) {
+    const orig = btn.onclick;
+    btn.onclick = function() {
+      console.log('Demo clicked:', id);
+      return orig.apply(this, arguments);
+    };
+  }
+});
+
+// Track scroll depth
+let maxScroll = 0;
+window.addEventListener('scroll', () => {
+  const pct = Math.round((window.scrollY + window.innerHeight) / document.body.scrollHeight * 100);
+  if (pct > maxScroll) {
+    maxScroll = pct;
+    if (pct >= 75) console.log('Deep scroll:', pct + '%');
+  }
+});
+</script>
