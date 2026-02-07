@@ -790,6 +790,63 @@ Kasbah wasn’t created to sell enterprise software — it was built because our
 })();
 </script>
 
-</body>
+\n<script>
+/* KASBAH_TRY_FORCE_V3_NO_REGEX: force Try to scroll to demo */
+/* KASBAH_TRY_FORCE_V3_NO_REGEX */
+(function(){
+  function norm(t){ return (t||"").replace(/\s+/g," ").trim().toLowerCase(); }
+
+  function findDemoTarget(){
+    var a = document.getElementById("demo");
+    if (a) return a;
+
+    var nodes = Array.from(document.querySelectorAll("button,a,div,span"));
+    for (var i=0;i<nodes.length;i++){
+      var t = norm(nodes[i].textContent);
+      if (t === "run safe flow" || t.indexOf("run safe flow") === 0) return nodes[i];
+    }
+    for (var j=0;j<nodes.length;j++){
+      var tt = norm(nodes[j].textContent);
+      if (tt.indexOf("interactive demo") !== -1) return nodes[j];
+    }
+    return null;
+  }
+
+  function scrollToDemo(){
+    var target = findDemoTarget();
+    if (target){
+      target.scrollIntoView({behavior:"smooth", block:"start"});
+      return;
+    }
+    var d = document.getElementById("demo");
+    if (d){
+      d.scrollIntoView({behavior:"smooth", block:"start"});
+      return;
+    }
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  document.addEventListener("click", function(e){
+    var el = e.target;
+    if (!el) return;
+
+    for (var k=0; k<6 && el; k++, el = el.parentElement){
+      var t = norm(el.textContent);
+      if (!t) continue;
+      if (t === "try" || t.indexOf("try") === 0){
+        e.preventDefault();
+        e.stopPropagation();
+        scrollToDemo();
+        return false;
+      }
+    }
+  }, true);
+
+  document.querySelectorAll("a").forEach(function(a){
+    var t = norm(a.textContent);
+    if (t === "try" || t.indexOf("try") === 0) a.setAttribute("href", "#demo");
+  });
+})();
+</script>\n</body>
 </html>
 >
