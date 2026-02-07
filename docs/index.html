@@ -705,6 +705,56 @@ Kasbah wasn’t created to sell enterprise software — it was built because our
 })();
 </script>
 
+<section data-kasbah-premortem style="margin-top:28px;border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:18px 18px;background:rgba(255,255,255,0.05);">
+  <div style="font-weight:800;font-size:1.05em;margin-bottom:10px;">
+    How to test this demo (and what feedback helps)
+  </div>
+
+  <div style="line-height:1.55;opacity:0.95;">
+    <p>
+      This demo is designed to be evaluated quickly. Most people will spend
+      under two minutes here — that’s expected.
+    </p>
+
+    <p>
+      <strong>What we’re testing in this phase:</strong><br>
+      – Do you understand the failure mode (<em>after auth, before execution</em>)?<br>
+      – Do the runtime guarantees make sense?<br>
+      – Can you tell where this would plug into your system?
+    </p>
+
+    <p>
+      <strong>What we’re not testing:</strong><br>
+      – UX or configuration flexibility<br>
+      – Performance or scale<br>
+      – Completeness of the threat model
+    </p>
+
+    <p>
+      <strong>How people usually test this:</strong><br>
+      1) Skim the page and click 1–2 flows<br>
+      2) Read the runtime guarantees<br>
+      3) Decide if the mental model clicks
+    </p>
+
+    <p>
+      A smaller number of testers will read the README or inspect the API layer.
+      If you reach that point and want to run it locally, that’s a strong signal —
+      we’ll share a minimal CLI walkthrough on request.
+    </p>
+
+    <p>
+      <strong>Best feedback (even short):</strong><br>
+      – What confused you?<br>
+      – Where would this sit in your stack?<br>
+      – Would you trust this to gate a real action?
+    </p>
+
+    <p style="margin-bottom:0;">
+      Feedback is tracked via GitHub Issues to keep discussion concrete and auditable.
+    </p>
+  </div>
+</section>
 </body>
 </html>
 >
