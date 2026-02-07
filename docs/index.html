@@ -355,12 +355,16 @@
             once an AI agent has valid credentials, <strong style="color: #fff;">auth alone won’t protect you</strong>.<br>
             Kasbah is a runtime enforcement layer — <strong style="color: #fff;">after authentication, before execution</strong>.
         </p>
-      <section data-kasbah-about-demo style="margin-top: 18px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px 14px; background: rgba(255,255,255,0.03);">
-        <div style="font-weight: 700; margin-bottom: 6px;">About this demo</div>
-        <div style="line-height: 1.45; opacity: 0.92;">
-          .
-        </div>
-      </section>
+
+<section style="margin-top:20px;border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:14px;background:rgba(255,255,255,0.04);max-width:800px;margin-left:auto;margin-right:auto;text-align:left;">
+  <strong>About this demo</strong><br><br>
+  This page is a guided simulator to explain the threat model and failure modes.
+  It does not execute real cryptographic checks in the browser.<br><br>
+  Kasbah-Core enforces these guarantees cryptographically at runtime at the API layer
+  using signed, single-use execution tickets, stateful verification, and irreversible denials.
+</section>
+
+      
 
         
         <p class="story">
@@ -388,11 +392,7 @@ Kasbah wasn’t created to sell enterprise software — it was built because our
             </p>
         </div>
 
-        <div class="note-box">
-            <strong>Note:</strong> This page is a <em>simulated</em> demo to explain the threat model.
-            <br>
-            <span style="opacity:0.85"></span>
-        </div>
+        
 
     </section>
     
@@ -499,7 +499,7 @@ Kasbah wasn’t created to sell enterprise software — it was built because our
         <div class="container">
             <div class="footer-links">
                 <a href="https://github.com/Al-Adnane/Kasbah-Core">GitHub</a>
-                <a href="https://github.com/Al-Adnane/Kasbah-Core">Docs</a>
+                <a href="https://github.com/Al-Adnane/Kasbah-Core#readme">Docs</a>
                 <a href="https://github.com/Al-Adnane/Kasbah-Core/issues/new?title=Kasbah%20Demo%20Feedback&body=1)%20Which%20demo%20button%20confused%20you%20most%3F%0A%0A2)%20Where%20would%20this%20plug%20into%20your%20agent%20stack%3F%20(LangChain%2Ftools%2FCLI%2Fother)%0A%0A3)%20What%20guarantee%20is%20missing%20for%20you%20to%20trust%20it%3F%0A%0A-%20Browser%3A%0A-%20OS%3A%0A-%20Notes%3A">Contact</a>
                 <a href="https://github.com/Al-Adnane/Kasbah-Core/issues/new?title=Kasbah%20Demo%20Feedback&body=1)%20Which%20demo%20button%20confused%20you%20most%3F%0A%0A2)%20Where%20would%20this%20plug%20into%20your%20agent%20stack%3F%20(LangChain%2Ftools%2FCLI%2Fother)%0A%0A3)%20What%20guarantee%20is%20missing%20for%20you%20to%20trust%20it%3F%0A%0A-%20Browser%3A%0A-%20OS%3A%0A-%20Notes%3A">Give Feedback</a>
             </div>
@@ -674,18 +674,7 @@ Kasbah wasn’t created to sell enterprise software — it was built because our
         }
     </script>
 
-      <section data-kasbah-runtime-guarantees style="margin-top: 18px; border: 1px solid rgba(255,255,255,0.10); border-radius: 16px; padding: 16px 16px; background: rgba(255,255,255,0.04);">
-        <div style="font-weight: 800; margin-bottom: 10px;">Runtime guarantees Kasbah enforces</div>
-        <ul style="margin: 0; padding-left: 18px; line-height: 1.55; opacity: 0.95;">
-          <li><strong>Single-use tickets</strong>: replay is blocked.</li>
-          <li><strong>Tool binding</strong>: tool swapping is blocked.</li>
-          <li><strong>Time binding</strong>: expired actions are denied.</li>
-          <li><strong>Stateful enforcement</strong>: decisions affect future behavior (lockdown / incident semantics).</li>
-        </ul>
-        <div style="margin-top: 10px; opacity: 0.9; line-height: 1.45;">
-          This is enforced at execution time — not by prompts, not by “trusting the agent”.
-        </div>
-      </section>
+      
 
 <script>
 /* TRY_SCROLL_HANDLER: keep Try working even if markup changes */
@@ -705,56 +694,7 @@ Kasbah wasn’t created to sell enterprise software — it was built because our
 })();
 </script>
 
-<section data-kasbah-premortem style="margin-top:28px;border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:18px 18px;background:rgba(255,255,255,0.05);">
-  <div style="font-weight:800;font-size:1.05em;margin-bottom:10px;">
-    How to test this demo (and what feedback helps)
-  </div>
 
-  <div style="line-height:1.55;opacity:0.95;">
-    <p>
-      This demo is designed to be evaluated quickly. Most people will spend
-      under two minutes here — that’s expected.
-    </p>
-
-    <p>
-      <strong>What we’re testing in this phase:</strong><br>
-      – Do you understand the failure mode (<em>after auth, before execution</em>)?<br>
-      – Do the runtime guarantees make sense?<br>
-      – Can you tell where this would plug into your system?
-    </p>
-
-    <p>
-      <strong>What we’re not testing:</strong><br>
-      – UX or configuration flexibility<br>
-      – Performance or scale<br>
-      – Completeness of the threat model
-    </p>
-
-    <p>
-      <strong>How people usually test this:</strong><br>
-      1) Skim the page and click 1–2 flows<br>
-      2) Read the runtime guarantees<br>
-      3) Decide if the mental model clicks
-    </p>
-
-    <p>
-      A smaller number of testers will read the README or inspect the API layer.
-      If you reach that point and want to run it locally, that’s a strong signal —
-      we’ll share a minimal CLI walkthrough on request.
-    </p>
-
-    <p>
-      <strong>Best feedback (even short):</strong><br>
-      – What confused you?<br>
-      – Where would this sit in your stack?<br>
-      – Would you trust this to gate a real action?
-    </p>
-
-    <p style="margin-bottom:0;">
-      Feedback is tracked via GitHub Issues to keep discussion concrete and auditable.
-    </p>
-  </div>
-</section>
 </body>
 </html>
 >
