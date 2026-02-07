@@ -330,6 +330,8 @@
             .btn { width: 100%; }
         }
     </style>
+
+<!-- data-kasbah-demo-locked: do not add inputs/sliders; keep button-only guided simulator -->
 </head>
 <body>
     <div class="glow-bg"></div>
@@ -353,6 +355,14 @@
             once an AI agent has valid credentials, <strong style="color: #fff;">auth alone won’t protect you</strong>.<br>
             Kasbah is a runtime enforcement layer — <strong style="color: #fff;">after authentication, before execution</strong>.
         </p>
+      <section data-kasbah-about-demo style="margin-top: 18px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px 14px; background: rgba(255,255,255,0.03);">
+        <div style="font-weight: 700; margin-bottom: 6px;">About this demo</div>
+        <div style="line-height: 1.45; opacity: 0.92;">
+          This is a guided simulator to explain failure modes. It does not execute real cryptographic checks in the browser.<br>
+          The real enforcement lives in Kasbah-Core at the API layer (tickets, verification, state, and denial semantics).
+        </div>
+      </section>
+
         
         <p class="story">
             Built in Morocco, shipped globally. We're not selling enterprise software. 
@@ -422,6 +432,10 @@
                         <div class="dot red"></div>
                         <h3>Attack #1: Replay the ticket</h3>
                     </div>
+      <div data-kasbah-irreversible style="margin-top: 10px; font-size: 0.95em; opacity: 0.92;">
+        <strong>Note:</strong> A consumed or invalidated ticket can’t be reused — this denial is irreversible.
+      </div>
+
                     <p class="explain">
                         Intercepted a ticket? Try using it twice. Kasbah tracks every consumed ticket. 
                         Second attempt hits the walls.
@@ -657,6 +671,19 @@
             );
         }
     </script>
+
+      <section data-kasbah-runtime-guarantees style="margin-top: 18px; border: 1px solid rgba(255,255,255,0.10); border-radius: 16px; padding: 16px 16px; background: rgba(255,255,255,0.04);">
+        <div style="font-weight: 800; margin-bottom: 10px;">Runtime guarantees Kasbah enforces</div>
+        <ul style="margin: 0; padding-left: 18px; line-height: 1.55; opacity: 0.95;">
+          <li><strong>Single-use tickets</strong>: replay is blocked.</li>
+          <li><strong>Tool binding</strong>: tool swapping is blocked.</li>
+          <li><strong>Time binding</strong>: expired actions are denied.</li>
+          <li><strong>Stateful enforcement</strong>: decisions affect future behavior (lockdown / incident semantics).</li>
+        </ul>
+        <div style="margin-top: 10px; opacity: 0.9; line-height: 1.45;">
+          This is enforced at execution time — not by prompts, not by “trusting the agent”.
+        </div>
+      </section>
 </body>
 </html>
 <-la .git
