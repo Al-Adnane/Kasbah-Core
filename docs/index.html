@@ -418,3 +418,117 @@ if ticket.allowed:
   </script>
 </body>
 </html>
+<!-- Add this before </body> in docs/index.html -->
+<script>
+// Simple event tracking - no external dependencies
+const events = [];
+const sessionStart = Date.now();
+
+function track(event, data = {}) {
+  const entry = {
+    event,
+    data,
+    timestamp: Date.now(),
+    session_duration: Date.now() - sessionStart,
+    url: window.location.href
+  };
+  
+  events.push(entry);
+  console.log('📊 Event:', entry);
+  
+  // Send to your own endpoint (optional)
+  // fetch('https://api.kasbah.dev/track', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify(entry)
+  // }).catch(() => {});
+}
+
+// Track demo button clicks
+const demoButtons = {
+  'btn1': 'safe_flow',
+  'btn2': 'replay_attack',
+  'btn3': 'tool_swap',
+  'btn4': 'full_protocol'
+};
+
+Object.entries(demoButtons).forEach(([id, name]) => {
+  const btn = document.getElementById(id);
+  if (btn) {
+    const originalOnClick = btn.onclick;
+    btn.onclick = function() {
+      track('demo_run', { demo: name });
+      return originalOnClick.apply(this, arguments);
+    };
+  }
+});
+
+// Track CTA clicks
+document.querySelectorAll('.btn').forEach(btn => {
+  if (!btn.id) { // Don't double-track demo buttons
+    btn.addEventListener('click', () => {
+      track('cta_click', {
+        text: btn.textContent.trim(),
+        href: btn.href || null
+      });
+    });
+  }
+});
+
+// Track details/accordion expansions
+document.querySelectorAll('details').forEach(details => {
+  details.addEventListener('toggle', () => {
+    if (details.open) {
+      track('accordion_open', {
+        summary: details.querySelector('summary').textContent.trim()
+      });
+    }
+  });
+});
+
+// Track scroll depth
+let maxScroll = 0;
+let scrollTracked = new Set();
+
+window.addEventListener('scroll', () => {
+  const scrollPercent = Math.round(
+    (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100
+  );
+  
+  if (scrollPercent > maxScroll) {
+    maxScroll = scrollPercent;
+  }
+  
+  [25, 50, 75, 100].forEach(milestone => {
+    if (scrollPercent >= milestone && !scrollTracked.has(milestone)) {
+      scrollTracked.add(milestone);
+      track('scroll_depth', { percent: milestone });
+    }
+  });
+});
+
+// Track exit (when tab closes)
+window.addEventListener('beforeunload', () => {
+  track('session_end', {
+    duration: Date.now() - sessionStart,
+    max_scroll: maxScroll,
+    events_count: events.length
+  });
+  
+  // Store in localStorage for debugging
+  localStorage.setItem('kasbah_last_session', JSON.stringify({
+    events,
+    duration: Date.now() - sessionStart,
+    timestamp: new Date().toISOString()
+  }));
+});
+
+// On page load
+track('page_view', {
+  referrer: document.referrer,
+  viewport: `${window.innerWidth}x${window.innerHeight}`
+});
+
+// Debug: View session data in console
+console.log('📊 To view session data: localStorage.getItem("kasbah_last_session")');
+</script>
