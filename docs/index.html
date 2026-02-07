@@ -364,6 +364,55 @@
   using signed, single-use execution tickets, stateful verification, and irreversible denials.
 </section>
 
+<section style="margin-top:32px;max-width:860px;margin-left:auto;margin-right:auto;text-align:left;">
+  <!-- KASBAH_MUNDANE_EXAMPLE_V1 -->
+  <h3>A mundane failure mode (before → after)</h3>
+
+  <p><strong>Today (no Kasbah):</strong><br>
+  A support agent has valid access to tools like <code>db.query</code> and <code>billing.refund</code>.
+  A user asks: “refund my last invoice.” The agent tries to be helpful.</p>
+
+  <ul>
+    <li>It queries the database</li>
+    <li>It infers the wrong account (similar email, stale context, name collision)</li>
+    <li>It executes <code>billing.refund</code> on the wrong customer</li>
+    <li>You notice later, after finance or audit complains</li>
+  </ul>
+
+  <p><em>Nothing was hacked.</em> The agent had valid credentials.
+  It simply executed the wrong action at runtime.</p>
+
+  <p><strong>With Kasbah:</strong><br>
+  The agent cannot execute <code>billing.refund</code> directly.
+  It must first obtain a signed execution ticket bound to:</p>
+
+  <ul>
+    <li>the exact tool (<code>billing.refund</code>)</li>
+    <li>a short time window (TTL)</li>
+    <li>the immutable request context</li>
+  </ul>
+
+  <p>Kasbah enforces at runtime:</p>
+
+  <ul>
+    <li><strong>Tool binding</strong>: a refund ticket cannot be reused for anything else</li>
+    <li><strong>Single-use</strong>: retries and agent loops are blocked</li>
+    <li><strong>Time-bound execution</strong>: stale context cannot be executed later</li>
+    <li><strong>Stateful enforcement</strong>: repeated near-misses trigger lockdown</li>
+  </ul>
+
+  <p><strong>Result:</strong> the “helpful mistake” becomes a denied execution
+  unless the approved action matches exactly what was authorized.</p>
+
+  <p style="margin-top:12px;">
+    <strong>Kasbah doesn’t stop attackers first.</strong><br>
+    It stops trusted agents from doing the wrong thing <em>after auth</em>,
+    at the moment of execution.
+  </p>
+</section>
+
+
+
       
 
         
