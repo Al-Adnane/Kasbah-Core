@@ -349,8 +349,9 @@
         </h1>
         
         <p class="lead">
-            Last week an agent tried to <code style="color: var(--kasbah-red);">rm -rf /</code> in production.<br>
-            <strong style="color: #fff;">We caught it.</strong> Here's how.
+            The ClawDBot / Moltbook debate exposed a blind spot in agent security:<br>
+            once an AI agent has valid credentials, <strong style="color: #fff;">auth alone won’t protect you</strong>.<br>
+            Kasbah is a runtime enforcement layer — <strong style="color: #fff;">after authentication, before execution</strong>.
         </p>
         
         <p class="story">
@@ -369,12 +370,9 @@
         </div>
         
         <div class="warning-box">
-            <h3>The actual problem we solved:</h3>
+            <h3>The actual problem (and why this matters):</h3>
             <p>
-                Our Claude agent was helping customers with database queries. One day it hallucinated 
-                <code>DELETE FROM users WHERE 1=1</code> instead of <code>SELECT</code>. 
-                Traditional auth couldn't stop it – the agent already had credentials. 
-                Built Kasbah in 48 hours. Been running in production ever since.
+                Recent agent incidents — plus what many teams observe in testing — show the same failure mode: once an agent has valid creds, it can still execute unintended or destructive actions at runtime. Traditional auth can’t stop that. Kasbah adds cryptographic proof and stateful enforcement before each tool execution.
             </p>
         </div>
 
