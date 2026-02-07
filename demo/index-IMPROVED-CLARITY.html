@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasbah – Runtime gates for AI agents</title>
+    <meta name="description" content="Stop agents from executing dangerous actions. Add a decision gate before every tool call.">
+    
+    <style>
+        /* [SAME CSS AS BEFORE - keeping it short] */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --kasbah-red: #C1440E;
+            --desert-sky: #1E3A8A;
+            --fortress-stone: #D4C5B9;
+            --midnight: #0F172A;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: #fff;
+            line-height: 1.6;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 80px 24px;
+            text-align: center;
+        }
+        h1 {
+            font-size: clamp(32px, 6vw, 64px);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 32px;
+        }
+        .problem-code {
+            background: rgba(193, 68, 14, 0.15);
+            border: 2px solid var(--kasbah-red);
+            border-radius: 8px;
+            padding: 20px 28px;
+            margin: 32px auto;
+            max-width: 700px;
+            font-family: 'SF Mono', monospace;
+            font-size: 18px;
+            color: #ff8866;
+        }
+        .solution {
+            font-size: 22px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.9);
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+        .diagram {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(212, 197, 185, 0.2);
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 900px;
+            margin: 48px auto;
+            text-align: left;
+        }
+        .diagram h3 {
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 20px;
+            color: var(--fortress-stone);
+        }
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            font-family: 'SF Mono', monospace;
+            font-size: 14px;
+        }
+        .flow-item {
+            background: rgba(30, 58, 138, 0.3);
+            padding: 12px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--desert-sky);
+        }
+        .flow-arrow {
+            color: rgba(255,255,255,0.4);
+            font-size: 20px;
+        }
+        .flow.bad .flow-item {
+            background: rgba(193, 68, 14, 0.2);
+            border-color: var(--kasbah-red);
+        }
+        .flow-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .btn {
+            padding: 18px 36px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: var(--kasbah-red);
+            color: #fff;
+            margin: 0 8px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .integration {
+            padding: 100px 24px;
+            background: rgba(0,0,0,0.3);
+        }
+        .integration h2 {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 60px;
+        }
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 32px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .integration-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(212, 197, 185, 0.15);
+            border-radius: 12px;
+            padding: 32px;
+        }
+        .integration-card h3 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: var(--kasbah-red);
+        }
+        .integration-card pre {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--fortress-stone);
+        }
+        @media (max-width: 768px) {
+            .flow { flex-direction: column; }
+            .integration-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <h1>Your AI agent has your database password</h1>
+        
+        <div class="problem-code">
+            DELETE FROM users WHERE 1=1
+        </div>
+        
+        <p class="solution">
+            Your agent just hallucinated this. Traditional auth can't stop it —<br>
+            <strong>the agent already authenticated.</strong>
+        </p>
+        
+        <p class="solution">
+            Kasbah adds a <strong>decision gate</strong> before dangerous actions execute.<br>
+            Each action gets cryptographic proof. Single-use. Tool-bound. Auditable.
+        </p>
+        
+        <div>
+            <a href="#how" class="btn">See how it works →</a>
+            <a href="#integrate" class="btn" style="background: transparent; border: 2px solid var(--fortress-stone); color: var(--fortress-stone);">How to integrate</a>
+        </div>
+        
+        <div class="diagram">
+            <h3>The problem with traditional auth</h3>
+            
+            <div class="flow-label">❌ Without Kasbah</div>
+            <div class="flow bad">
+                <div class="flow-item">Agent</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">db.query()</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">💥 Database</div>
+            </div>
+            <p style="color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px;">
+                No gate. Agent has credentials. Hallucination executes immediately.
+            </p>
+            
+            <div class="flow-label">✅ With Kasbah</div>
+            <div class="flow">
+                <div class="flow-item">Agent</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">kasbah.decide()</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">db.query()</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">✓ Database</div>
+            </div>
+            <p style="color: rgba(255,255,255,0.6); font-size: 14px;">
+                Decision gate. Cryptographic ticket. Single-use enforcement. Audit trail.
+            </p>
+        </div>
+    </section>
+    
+    <section class="integration" id="integrate">
+        <div class="container">
+            <h2>Where this plugs into your stack</h2>
+            
+            <div class="integration-grid">
+                <div class="integration-card">
+                    <h3>LangChain / LangGraph</h3>
+                    <pre>from kasbah import protect_tool
+
+@protect_tool(kasbah_api_key="...")
+def run_sql_query(query: str):
+    return db.execute(query)
+
+# Kasbah gates this automatically
+agent.add_tool(run_sql_query)</pre>
+                </div>
+                
+                <div class="integration-card">
+                    <h3>Direct API wrapper</h3>
+                    <pre>async function safeSQLQuery(sql) {
+  // Ask permission first
+  const { ticket, allowed } = 
+    await kasbah.decide({
+      tool: 'db.query',
+      signals: await getSafetySignals()
+    });
+  
+  if (!allowed) throw new Error('Blocked');
+  
+  // Execute with proof
+  return db.query(sql, { 
+    kasbah_ticket: ticket 
+  });
+}</pre>
+                </div>
+                
+                <div class="integration-card">
+                    <h3>Anthropic Claude SDK</h3>
+                    <pre>// Wrap tool execution
+const tools = [{
+  name: "database_query",
+  execute: async (params) => {
+    // Gate with Kasbah
+    const gate = await kasbah.decide({
+      tool: 'db.query',
+      agent_id: 'claude-v4'
+    });
+    
+    if (!gate.allowed) return null;
+    
+    return db.query(params.sql);
+  }
+}];</pre>
+                </div>
+                
+                <div class="integration-card">
+                    <h3>Any agent framework</h3>
+                    <pre># Before dangerous action:
+ticket = kasbah.decide(
+    tool_name="shell.exec",
+    signals={
+        "consistency": 0.95,
+        "accuracy": 0.98
+    }
+)
+
+if ticket.allowed:
+    # Execute with proof
+    result = execute_tool(
+        kasbah_ticket=ticket.id
+    )</pre>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 60px;">
+                <a href="#demo" class="btn">Try the interactive demo →</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- REST OF YOUR DEMO SECTION STAYS THE SAME -->
+    
+</body>
+</html>
