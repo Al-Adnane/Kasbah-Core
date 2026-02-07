@@ -11,30 +11,91 @@
     body{font-family:Inter,system-ui,sans-serif;background:#0F172A;color:#fff;line-height:1.6}
     .wrap{max-width:1100px;margin:auto;padding:40px 20px}
     h1{font-size:clamp(34px,6vw,62px);font-weight:900;margin-bottom:12px;text-align:center}
-    .lead{text-align:center;font-size:20px;opacity:.78;max-width:760px;margin:0 auto 22px}
+    .lead{text-align:center;font-size:20px;opacity:.78;max-width:820px;margin:0 auto 18px}
+    .sublead{ text-align:center; font-size:14px; opacity:.62; max-width:860px; margin:0 auto 22px; }
     .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
-    .btn{padding:14px 22px;border-radius:10px;font-weight:700;cursor:pointer;border:none;background:#C1440E;color:#fff;text-decoration:none;display:inline-block}
+    .btn{padding:14px 22px;border-radius:10px;font-weight:800;cursor:pointer;border:none;background:#C1440E;color:#fff;text-decoration:none;display:inline-block}
     .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,.28)}
+    .btn.blue{background:#3B82F6}
     #demo{padding-top:24px}
     .grid{display:grid;gap:18px}
     @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
     .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:18px}
     .card h3{margin-bottom:8px}
-    .terminal{background:#000;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;white-space:pre-wrap;margin-top:10px;min-height:110px;border:1px solid rgba(255,255,255,.14)}
+    .hint{opacity:.68;font-size:13px;margin-top:4px}
+    .terminal{background:#000;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;white-space:pre-wrap;margin-top:10px;min-height:118px;border:1px solid rgba(255,255,255,.14)}
     details{margin-top:22px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px}
-    summary{cursor:pointer;font-weight:800}
+    summary{cursor:pointer;font-weight:900}
+    .opt{margin-top:10px;opacity:.84}
+    .story{
+      margin-top:12px;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.22);
+    }
+    .story h4{font-size:14px;margin-bottom:8px}
+    .story .row{display:grid;gap:12px}
+    @media(min-width:900px){.story .row{grid-template-columns:1fr 1fr}}
+    .pill{display:inline-block;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(193,68,14,.20);border:1px solid rgba(193,68,14,.35);margin-bottom:8px}
+    .box{
+      padding:12px;
+      border-radius:10px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .box b{color:#fff}
+    .box code{
+      background:rgba(0,0,0,.25);
+      padding:2px 6px;
+      border-radius:6px;
+      color:#ffb09a;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:.95em;
+    }
+    ul{margin:8px 0 0 18px}
+    li{margin:6px 0}
+    .integration-section{
+      margin-top:24px;
+      padding:20px;
+      border-radius:12px;
+      border:1px solid rgba(59, 130, 246, 0.3);
+      background:rgba(59, 130, 246, 0.08);
+    }
+    .integration-section h4{color:#93c5fd;margin-bottom:10px}
+    .code-block{
+      background:rgba(0,0,0,.4);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:8px;
+      padding:14px;
+      margin:12px 0;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:13px;
+      line-height:1.5;
+      overflow-x:auto;
+    }
+    .inline-code{
+      background:rgba(0,0,0,.3);
+      padding:2px 6px;
+      border-radius:4px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:0.9em;
+      color:#ffb09a;
+    }
     footer{text-align:center;opacity:.6;font-size:13px;padding:50px 20px 20px}
   </style>
 </head>
 <body>
-  <!-- LIVE_MARKER_DOCS_DEMO_V2 -->
-
   <div class="wrap">
     <h1>AI agents are getting dangerously smart</h1>
     <p class="lead">
-      Once an agent has credentials, auth alone can’t stop the wrong action.<br/>
-      Kasbah enforces cryptographic proof <strong>before execution</strong>.
+      Once an agent has credentials, <b>auth alone can't stop the wrong action</b>.<br/>
+      Kasbah enforces <b>cryptographic proof before execution</b> — tool-bound, single-use, time-boxed.
     </p>
+    <div class="sublead">
+      Browser simulator. Enforcement happens in Kasbah-Core (server-side).
+    </div>
+
     <div class="cta">
       <button class="btn" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Try the demo ↓</button>
       <a class="btn secondary" href="https://github.com/Al-Adnane/Kasbah-Core" target="_blank" rel="noreferrer">GitHub</a>
@@ -45,36 +106,150 @@
   <div id="demo" class="wrap">
     <div class="grid">
       <div class="card">
-        <h3>Safe execution</h3>
+        <h3>Safe: execute once</h3>
+        <div class="hint">Normal use: decide → ticket → consume → audit.</div>
         <button class="btn" onclick="runSafe()">Run safe flow</button>
         <div class="terminal" id="out1">—</div>
       </div>
 
       <div class="card">
-        <h3>Replay attack</h3>
+        <h3>Attack: replay ticket</h3>
+        <div class="hint">Mundane bug: retries / loops reuse a token by accident.</div>
         <button class="btn" onclick="runReplay()">Try replay</button>
         <div class="terminal" id="out2">—</div>
       </div>
 
       <div class="card">
-        <h3>Tool swap attack</h3>
+        <h3>Attack: swap tool</h3>
+        <div class="hint">Mundane bug: wrong function called after a context shift.</div>
         <button class="btn" onclick="runSwap()">Try tool swap</button>
         <div class="terminal" id="out3">—</div>
       </div>
 
       <div class="card">
         <h3>Full protocol</h3>
+        <div class="hint">Shows verification + audit chain; tamper breaks it.</div>
         <button class="btn" onclick="runFull()">Run full flow</button>
         <div class="terminal" id="out4">—</div>
       </div>
     </div>
 
     <details>
-      <summary>How this works (optional)</summary>
-      <div style="margin-top:10px;opacity:.8">
-        This is a guided simulator. In production, Kasbah enforces cryptographic, single-use,
-        tool-bound execution tickets at the API layer. Replay and tool-swap are denied at runtime
-        even after authentication.
+      <summary>Concrete before → after story (this is the missing "click")</summary>
+
+      <div class="story">
+        <span class="pill">Mundane, not adversarial</span>
+        <h4>Support refund workflow: where it goes wrong today → how Kasbah stops it</h4>
+
+        <div class="row">
+          <div class="box">
+            <b>Before Kasbah (today)</b><br/><br/>
+            A support agent opens <b>Customer A</b> and the agent system fetches data.<br/>
+            Then a common operational thing happens:
+            <ul>
+              <li>the model retries (timeout),</li>
+              <li>pagination loads another record,</li>
+              <li>or the user asks a new question mid-run.</li>
+            </ul>
+            The internal pointer drifts, and the agent calls:
+            <br/><br/>
+            <code>billing.refund(customer_id=...)</code><br/><br/>
+            …but it now references <b>Customer B</b> or a stale session.<br/><br/>
+            <b>No one hacked anything.</b> Auth is valid. The action is "allowed".<br/>
+            The mistake becomes a real-world incident (wrong refund / wrong email / wrong update).
+          </div>
+
+          <div class="box">
+            <b>With Kasbah</b><br/><br/>
+            The refund tool cannot execute just because the agent is authenticated.<br/>
+            It must present a <b>signed execution ticket</b> bound to:
+            <ul>
+              <li><b>exact tool</b> = <code>billing.refund</code></li>
+              <li><b>exact target</b> = <code>customer_id = A</code></li>
+              <li><b>time box</b> (TTL) so stale context expires</li>
+              <li><b>single-use</b> so loops / retries cannot replay it</li>
+            </ul>
+            When the pointer drifts or context changes, verification fails and Kasbah returns:<br/><br/>
+            <code>DENY (context/tool/target mismatch)</code><br/><br/>
+            The bad action is blocked <b>before execution</b>. The incident never happens.
+          </div>
+        </div>
+
+        <div class="integration-section">
+          <h4>📚 Technical Integration (from Kasbah Documentation)</h4>
+          <p>Here's how the policy from the story above is actually defined in Kasbah's configuration:</p>
+          
+          <div class="code-block">
+# kasbah-policy.yaml
+version: "1.0"
+tools:
+  - name: billing.refund
+    policy:
+      # Enforce single-use tickets (prevents replay bugs)
+      single_use: true
+      
+      # Bind to specific parameters (prevents context drift)
+      parameter_binding:
+        customer_id: required  # Must match initial request
+      
+      # Time-bound execution (expires stale requests)
+      ttl_seconds: 60
+      
+      # Additional safety rules
+      rules:
+        - rule: "customer_id IN allowed_customers"
+        - rule: "amount <= 1000"  # Maximum refund limit</div>
+
+          <p>And this is how an agent call gets intercepted and verified at runtime:</p>
+          
+          <div class="code-block">
+# 1. Agent requests to execute a tool
+agent_calls → kasbah.decide({
+  tool: "billing.refund",
+  parameters: {customer_id: "cust_123", amount: 250}
+})
+
+# 2. Kasbah validates against policy, issues signed ticket
+→ Returns: {ticket: "signed_xyz123", ttl: 60}
+
+# 3. Tool execution layer verifies ticket before running
+tool_executor → kasbah.verify(ticket)
+
+# 4. If valid, executes; ticket is marked consumed
+→ Result: Refund processed for cust_123
+→ Audit: Hash-chained log entry created</div>
+
+          <p style="margin-top: 16px; font-size: 15px; opacity: 0.9;">
+            <b>Want to see the full documentation with more examples?</b>
+          </p>
+          <a class="btn blue" href="https://kasbahdemo.space.z.ai" target="_blank">
+            View Complete Kasbah Docs
+          </a>
+          <p style="font-size: 13px; opacity: 0.7; margin-top: 8px;">
+            Explore configuration examples, API reference, and deployment guides.
+          </p>
+        </div>
+      </div>
+
+      <div class="opt">
+        <b>Mapping this demo to the story:</b>
+        <ul>
+          <li><b>Replay ticket</b> ≈ retries/loops accidentally reusing an "okay" token</li>
+          <li><b>Tool swap</b> ≈ wrong function called after context drift ("helpful" mistake)</li>
+          <li><b>Safe execution</b> ≈ normal path: decide → proof → execute once → audit</li>
+        </ul>
+      </div>
+
+      <div class="opt">
+        <b>Note:</b> this page is a browser simulator. Production enforcement lives in Kasbah-Core.
+      </div>
+    </details>
+
+    <details>
+      <summary>Mechanics (optional)</summary>
+      <div class="opt">
+        In production, Kasbah enforces cryptographic, single-use, tool-bound execution tickets at the API layer.
+        Verification checks signature, tool binding, TTL, and "already consumed" state, and appends a hash-chained audit log.
       </div>
     </details>
   </div>
@@ -87,20 +262,51 @@
 
     function runSafe(){
       used = false;
-      out('out1', "DECIDE  ✅ allow\nTICKET  ✅ issued (tool-bound, ttl)\nCONSUME ✅ allowed (1/1)\nAUDIT   ✅ appended");
+      out('out1',
+        "DECIDE  ✅ allow\n" +
+        "TICKET  ✅ issued (tool-bound, ttl=60s)\n" +
+        "VERIFY  ✅ signature valid; tool match; ttl valid\n" +
+        "CONSUME ✅ allowed (1/1)\n" +
+        "AUDIT   ✅ appended (hash-chained)\n\n" +
+        "Result: executed under proof, not trust."
+      );
     }
 
     function runReplay(){
-      if (!used){ used = true; out('out2', "CONSUME ✅ allowed (first use)\nCONSUME ❌ denied (second use)\nreason=ticket_already_consumed"); }
-      else { out('out2', "CONSUME ❌ denied\nreason=ticket_already_consumed"); }
+      if (!used){
+        used = true;
+        out('out2',
+          "CONSUME ✅ allowed (first use)\n" +
+          "CONSUME ❌ denied (second use)\n" +
+          "reason=ticket_already_consumed\n\n" +
+          "Maps to: retries/loops reusing a token."
+        );
+      } else {
+        out('out2',
+          "CONSUME ❌ denied\n" +
+          "reason=ticket_already_consumed"
+        );
+      }
     }
 
     function runSwap(){
-      out('out3', "DECIDE  ✅ allow tool=db.query\nCONSUME ❌ denied\nreason=tool_mismatch (expected db.query, got shell.exec)");
+      out('out3',
+        "DECIDE  ✅ allow tool=billing.refund\n" +
+        "CONSUME ❌ denied\n" +
+        "reason=tool_mismatch (expected billing.refund, got shell.exec)\n\n" +
+        "Maps to: context drift calling the wrong function."
+      );
     }
 
     function runFull(){
-      out('out4', "DECIDE → ALLOW\nTICKET → SIGNED\nVERIFY → OK\nCONSUME → OK\nAUDIT → HASH-CHAINED");
+      out('out4',
+        "DECIDE → ALLOW\n" +
+        "TICKET → SIGNED + tool-bound + ttl\n" +
+        "VERIFY → OK\n" +
+        "CONSUME → OK (single-use)\n" +
+        "AUDIT → HASH-CHAINED\n\n" +
+        "Tamper test: modify one event → chain verification fails."
+      );
     }
   </script>
 </body>
