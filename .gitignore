@@ -69,3 +69,22 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# --- local secrets / env ---
+.env
+.env.*
+!.env.example
+
+# --- local databases / state ---
+*.db
+data/
+
+# --- local backups / artifacts ---
+*.backup
+*.bak*
+docker-compose.yml.bak*
+api*.log
+server.log
+
+# --- local scripts / scratch ---
+scripts/_patch.py
