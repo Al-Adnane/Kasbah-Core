@@ -684,11 +684,25 @@
           This is enforced at execution time — not by prompts, not by “trusting the agent”.
         </div>
       </section>
+
+<script>
+/* TRY_SCROLL_HANDLER: keep Try working even if markup changes */
+(function(){
+  function go(){
+    var el = document.getElementById('demo');
+    if (el) { el.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    window.location.href = "https://github.com/Al-Adnane/Kasbah-Core";
+  }
+  document.querySelectorAll('a,button').forEach(function(x){
+    var t = (x.textContent||'').trim().toLowerCase();
+    if (t === 'try') {
+      x.addEventListener('click', function(e){ e.preventDefault(); go(); });
+      if (x.tagName.toLowerCase()==='a') x.setAttribute('href','#demo');
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
-<-la .git
-
-cd: no such file or directory: /Users/mac/Projects/Kasbah-CoreF
-/Users/mac/Downloads/Kasbah-Coref
-ls: .git: No such file or directory
-mac@192 Kasbah-Coref pages-rebuild Sat Feb  7 04:06:01 +01 2026 -->
+>
