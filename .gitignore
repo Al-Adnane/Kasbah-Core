@@ -88,3 +88,4 @@ server.log
 
 # --- local scripts / scratch ---
 scripts/_patch.py
+kasbah_*.sh
