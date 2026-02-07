@@ -46,7 +46,6 @@
         
         .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
         
-        /* Hero */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -154,7 +153,6 @@
             color: #fff;
         }
         
-        /* Context box - ALWAYS VISIBLE */
         .context-box {
             background: rgba(30, 58, 138, 0.15);
             border-left: 4px solid var(--desert-sky);
@@ -182,7 +180,6 @@
             margin-bottom: 0;
         }
         
-        /* Demo */
         .demo-section {
             padding: 100px 24px;
         }
@@ -307,7 +304,6 @@
             box-shadow: 0 0 30px rgba(193, 68, 14, 0.3); 
         }
         
-        /* Runtime guarantees */
         .guarantees {
             padding: 80px 24px;
             background: rgba(0,0,0,0.3);
@@ -317,6 +313,13 @@
             text-align: center;
             font-size: clamp(32px, 5vw, 48px);
             font-weight: 900;
+            margin-bottom: 20px;
+        }
+        
+        .guarantees-tagline {
+            text-align: center;
+            font-size: 16px;
+            color: rgba(255,255,255,0.5);
             margin-bottom: 60px;
         }
         
@@ -348,7 +351,6 @@
             line-height: 1.6;
         }
         
-        /* Footer */
         footer {
             padding: 80px 24px 40px;
             border-top: 1px solid rgba(212, 197, 185, 0.1);
@@ -367,6 +369,7 @@
             color: rgba(255,255,255,0.6);
             text-decoration: none;
             transition: color 0.3s;
+            font-size: 15px;
         }
         
         .footer-links a:hover { 
@@ -421,7 +424,6 @@
             </a>
         </div>
         
-        <!-- CONTEXT BOX - NOW ALWAYS VISIBLE -->
         <div class="context-box">
             <h3>The actual problem (and why this matters):</h3>
             <p>
@@ -446,7 +448,6 @@
             </div>
             
             <div class="demo-grid">
-                <!-- Safe flow -->
                 <div class="card">
                     <div class="card-header">
                         <div class="dot green"></div>
@@ -474,7 +475,6 @@
                     <div class="terminal" id="out1">Click above to see it work...</div>
                 </div>
                 
-                <!-- Replay attack -->
                 <div class="card">
                     <div class="card-header">
                         <div class="dot red"></div>
@@ -499,7 +499,6 @@
                     <div class="terminal" id="out2">Run safe flow first...</div>
                 </div>
                 
-                <!-- Tool swap -->
                 <div class="card">
                     <div class="card-header">
                         <div class="dot red"></div>
@@ -527,7 +526,6 @@
                     <div class="terminal" id="out3">The sneaky one...</div>
                 </div>
                 
-                <!-- Complete flow -->
                 <div class="card">
                     <div class="card-header">
                         <div class="dot green"></div>
@@ -546,10 +544,10 @@
         </div>
     </section>
     
-    <!-- Runtime guarantees -->
     <section class="guarantees">
         <div class="container">
-            <h2>Runtime guarantees Kasbah enforces</h2>
+            <h2>Runtime guarantees</h2>
+            <p class="guarantees-tagline">Enforced at execution time — not by prompts, not by "trusting the agent"</p>
             <div class="guarantees-grid">
                 <div class="guarantee-card">
                     <h4>Single-use tickets</h4>
@@ -568,9 +566,6 @@
                     <p>Decisions affect future behavior. Lockdown and incident semantics enforced at runtime.</p>
                 </div>
             </div>
-            <p style="text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 16px;">
-                This is enforced at execution time — not by prompts, not by "trusting the agent".
-            </p>
         </div>
     </section>
     
@@ -579,19 +574,18 @@
             <div class="footer-links">
                 <a href="https://github.com/Al-Adnane/Kasbah-Core">GitHub</a>
                 <a href="https://github.com/Al-Adnane/Kasbah-Core">Docs</a>
-                <a href="https://github.com/Al-Adnane/Kasbah-Core/issues/new?title=Kasbah%20Demo%20Feedback&body=1)%20Which%20demo%20confused%20you%3F%0A2)%20Would%20you%20trust%20this%3F%0A3)%20What%27s%20missing%3F">Give Feedback</a>
+                <a href="https://github.com/Al-Adnane/Kasbah-Core/issues/new?title=Kasbah%20Demo%20Feedback&body=What%20confused%20you%3F%0A%0AWould%20you%20trust%20this%3F%0A%0AWhat%27s%20missing%3F">Give Feedback</a>
             </div>
             <div class="heritage">
-                <p style="font-size: 20px; margin-bottom: 8px; color: var(--desert-sky);">قصبة</p>
-                <p>Heritage Architecture · Future Intelligence</p>
-                <p style="margin-top: 8px; opacity: 0.7;">Built in Rabat. MIT Licensed. No VC money.</p>
+                <p style="font-size: 24px; margin-bottom: 12px; color: var(--desert-sky);">قصبة</p>
+                <p style="font-size: 16px; margin-bottom: 8px;">Heritage Architecture · Future Intelligence</p>
+                <p style="opacity: 0.7;">Built in Rabat. MIT Licensed. No VC money.</p>
             </div>
         </div>
     </footer>
     
     <script>
         let savedTicket = null;
-        let ticketUsed = false;
         
         function scroll(id) {
             document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
@@ -607,24 +601,17 @@
             return new Promise(r => setTimeout(r, ms));
         }
         
-        function setLoading(btnId, loading) {
-            const btn = document.getElementById(btnId);
-            btn.disabled = loading;
-            if (loading) {
-                btn.textContent = btn.textContent.replace(/→|attack|swap|flow/, 'Running...');
-            }
-        }
-        
         async function runSafe() {
-            setLoading('btn-safe', true);
+            const btn = document.getElementById('btn-safe');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
             out('out1', '⏳ Requesting entry to the fortress...');
             await sleep(600);
             
             const ticket = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b29sIjoiZGIucXVlcnkiLCJhZ2VudCI6ImNsYXVkZSIsImlhdCI6MTcwOTg1MDAwMH0.kF8vY2mK5xPp9Hq7wN3jL4mR6tS8uV1yZ0aB3cD4eF5';
             const integrity = 0.953;
-            
             savedTicket = ticket;
-            ticketUsed = false;
             
             out('out1', 
                 `✓ Gates open\n\n` +
@@ -633,8 +620,6 @@
                 `⏳ Consuming ticket...`
             );
             await sleep(500);
-            
-            ticketUsed = true;
             
             out('out1',
                 `✓ Gates open\n\n` +
@@ -649,8 +634,8 @@
                 'success'
             );
             
-            document.getElementById('btn-safe').textContent = 'Run safe flow';
-            document.getElementById('btn-safe').disabled = false;
+            btn.disabled = false;
+            btn.textContent = 'Run safe flow';
         }
         
         async function runReplay() {
@@ -659,7 +644,10 @@
                 return;
             }
             
-            setLoading('btn-replay', true);
+            const btn = document.getElementById('btn-replay');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
             out('out2', '⚔️ Attempting breach...\n\nTrying to reuse consumed ticket...');
             await sleep(700);
             
@@ -678,8 +666,8 @@
                 'success'
             );
             
-            document.getElementById('btn-replay').textContent = 'Try replay attack';
-            document.getElementById('btn-replay').disabled = false;
+            btn.disabled = false;
+            btn.textContent = 'Try replay attack';
         }
         
         async function runSwap() {
@@ -688,7 +676,10 @@
                 return;
             }
             
-            setLoading('btn-swap', true);
+            const btn = document.getElementById('btn-swap');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
             out('out3', '⚔️ Privilege escalation attempt...\n\nSwapping db.query → shell.exec...');
             await sleep(700);
             
@@ -709,12 +700,15 @@
                 'success'
             );
             
-            document.getElementById('btn-swap').textContent = 'Try tool swap';
-            document.getElementById('btn-swap').disabled = false;
+            btn.disabled = false;
+            btn.textContent = 'Try tool swap';
         }
         
         async function runFull() {
-            setLoading('btn-full', true);
+            const btn = document.getElementById('btn-full');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
             out('out4', '🏰 Initiating fortress protocol...\n');
             await sleep(400);
             
@@ -767,8 +761,8 @@
                 'success'
             );
             
-            document.getElementById('btn-full').textContent = 'Run complete flow';
-            document.getElementById('btn-full').disabled = false;
+            btn.disabled = false;
+            btn.textContent = 'Run complete flow';
         }
     </script>
 </body>
