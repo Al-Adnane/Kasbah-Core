@@ -12,5 +12,9 @@ chmod +x /app/scripts/*.sh 2>/dev/null || true
   done
 ) &
 
-# Start the original command
-exec "$@"
+# Start the original command (or default to API server)
+if [ "$#" -eq 0 ]; then
+  exec uvicorn apps.api.main:app --host 0.0.0.0 --port 8002
+else
+  exec "$@"
+fi

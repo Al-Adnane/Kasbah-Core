@@ -7,6 +7,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8002
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "main:app"]
+# Fail fast if syntax is broken (prevents "random 8002 down" situations)
+RUN python -m py_compile apps/api/main.py
+
+CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8002"]

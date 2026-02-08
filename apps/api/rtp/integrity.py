@@ -1,26 +1,29 @@
-import numpy as np
+def _clamp01(x: float) -> float:
+    if x < 0.0:
+        return 0.0
+    if x > 1.0:
+        return 1.0
+    return x
 
 def geometric_integrity(signals: dict) -> float:
     """
-    Calculates Geometric Integrity Index (GI).
-    Low GI = High Risk.
+    Pure-Python integrity score in [0,1].
+    Uses geometric mean over available normalized signals.
+    Missing signals are ignored (not punished).
     """
-    # Extract signal values, default to 1.0 if missing
-    vals = [
-        signals.get("consistency", 0.95),
-        signals.get("pred_accuracy", 0.95),
-        signals.get("normality", 0.95)
-    ]
-    
-    # Avoid division by zero or log of zero
-    vals = [max(v, 0.001) for v in vals]
-    
-    # Geometric mean
-    product = 1.0
+    keys = ["consistency", "accuracy", "normality", "latency_score"]
+    vals = []
+    for k in keys:
+        if k in signals and signals[k] is not None:
+            try:
+                vals.append(_clamp01(float(signals[k])))
+            except Exception:
+                pass
+
+    if not vals:
+        return 0.0
+
+    prod = 1.0
     for v in vals:
-        product *= v
-        
-    gi = product ** (1.0 / len(vals))
-    
-    # Scale to 0-100
-    return gi * 100.0
+        prod *= v
+    return prod ** (1.0 / len(vals))

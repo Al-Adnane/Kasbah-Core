@@ -1,9 +1,9 @@
 fastapi
 uvicorn[standard]
 requests
-numpy
 cryptography
 pydantic
 python-dotenv
 python-multipart
 PyJWT>=2.8.0
+redis>=5.0.0
