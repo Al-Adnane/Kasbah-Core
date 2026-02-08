@@ -1,19 +1,38 @@
-version: '3.8'
-
 services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - kasbah_redis:/data
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    entrypoint: ["/app/scripts/entrypoint_with_loop.sh"]
     ports:
       - "8002:8002"
+    depends_on:
+      - redis
     environment:
       # --- Core Config ---
-      - KASBAH_JWT_SECRET=dev-only-change-me-in-production
-      - KASBAH_SIGN_MODE=hs256
-      - KASBAH_TICKET_TTL_SECONDS=120
+      KASBAH_JWT_SECRET: dev-only-change-me-in-production
+      KASBAH_SIGN_MODE: hs256
+      KASBAH_TICKET_TTL_SECONDS: "120"
+
       # --- Demo Overrides ---
-      - KASBAH_SYSTEM_STABLE=1 # Force system stability for demos
-      - KASBAH_GEOMETRY_THRESHOLD=70
+      KASBAH_SYSTEM_STABLE: "1"
+      KASBAH_GEOMETRY_THRESHOLD: "70"
+
+      # --- Replay moat ---
+      REDIS_URL: redis://redis:6379/0
+      KASBAH_REPLAY_TTL_SEC: "600"
     volumes:
       - ./.kasbah:/app/.kasbah
+      - ./scripts:/app/scripts
+
+volumes:
+  kasbah_redis:

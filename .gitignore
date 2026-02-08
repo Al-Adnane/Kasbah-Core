@@ -1,94 +1,38 @@
-# kasbah runtime / secrets
-.kasbah/
-**/.kasbah/
-*.log
-rtp_audit.log
-used_jtis.jsonl
-*.pem
-*.key
-.env
-
-# Added by security fix
-.env  # Never commit .env
-venv/
-.venv/
-# Backup files generated during debugging
-*.bak
-*_BACKUP/
-.bak_rtp_
-
-# Local scripts and dev files
-fix_*.py
-stess_test.py
-verify_logic.py
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-# Kasbah secrets & runtime
-.env
-*.env
-*.pem
-*.key
-*.private
-.kasbah/*.pem
-.kasbah/*.key
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# --- local secrets / env ---
+# --- secrets / local env ---
 .env
 .env.*
 !.env.example
+*.env
+*.pem
+*.key
+*.private
 
-# --- local databases / state ---
+# --- kasbah runtime state ---
+.kasbah/
+**/.kasbah/
+*.log
 *.db
 data/
 
-# --- local backups / artifacts ---
-*.backup
+# --- python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# --- local artifacts/backups ---
+*.bak
 *.bak*
+*.backup
+*_BACKUP/
 docker-compose.yml.bak*
 api*.log
 server.log
 
-# --- local scripts / scratch ---
-scripts/_patch.py
-kasbah_*.sh
-
-# local scratch
+# --- scratch ---
 .scratch/
+scripts/_patch.py
+fix_*.py
+stress_test.py
+verify_logic.py
