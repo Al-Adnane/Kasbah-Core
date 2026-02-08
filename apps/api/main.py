@@ -2,19 +2,20 @@ import os
 import time
 import json
 import hashlib
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Header
+from pydantic import BaseModel, Field
 import jwt
 
-# --- Local Imports (audit only; keep core minimal & stable) ---
 from apps.api.rtp.audit import append_audit, read_audit
 
 # --- Configuration ---
 SIGN_MODE = os.getenv("KASBAH_SIGN_MODE", "hs256")  # hs256 | ed25519 (ed25519 not wired here)
 JWT_SECRET = os.getenv("KASBAH_JWT_SECRET", "dev-only-change-me-in-production")
 ISSUER = "kasbah-core"
+
+ADMIN_KEY = os.getenv("KASBAH_ADMIN_KEY", "dev-master-key")
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 REPLAY_PREFIX = os.getenv("KASBAH_REPLAY_PREFIX", "kasbah:replay:")
@@ -23,19 +24,17 @@ REPLAY_PREFIX = os.getenv("KASBAH_REPLAY_PREFIX", "kasbah:replay:")
 REPLAY_TTL_SEC = int(os.getenv("KASBAH_REPLAY_TTL_SEC", "600"))
 
 # Ticket TTL in seconds (default 120s)
-TICKET_TTL_SEC = int(os.getenv("KASBAH_TICKET_TTL_SEC", "120"))
+TICKET_TTL_SEC = int(os.getenv("KASBAH_TICKET_TTL_SEC", os.getenv("KASBAH_TICKET_TTL_SECONDS", "120")))
 
 # --- FastAPI App ---
 app = FastAPI(title="Kasbah Core", version="1.0.0")
-
 
 # --- Models ---
 class DecisionRequest(BaseModel):
     tool_name: str
     agent_id: Optional[str] = None
-    signals: Dict[str, Any] = {}
-    usage: Dict[str, Any] = {}
-
+    signals: Dict[str, Any] = Field(default_factory=dict)
+    usage: Dict[str, Any] = Field(default_factory=dict)
 
 class DecisionResponse(BaseModel):
     decision: str
@@ -44,13 +43,11 @@ class DecisionResponse(BaseModel):
     ticket: Optional[str] = None
     explain: Optional[str] = None
 
-
 class ConsumeRequest(BaseModel):
     ticket: str
     tool_name: str
     agent_id: Optional[str] = None
-    usage: Dict[str, Any] = {}
-
+    usage: Dict[str, Any] = Field(default_factory=dict)
 
 class ConsumeResponse(BaseModel):
     status: str
@@ -58,15 +55,21 @@ class ConsumeResponse(BaseModel):
     tool: str
     consumed_at: float
 
-
 class AuditLogResponse(BaseModel):
     ts: float
     event: str
     agent_id: Optional[str] = None
     jti: Optional[str] = None
-
+    extra: Optional[Dict[str, Any]] = None
 
 # --- Helpers ---
+def _require_admin(authorization: Optional[str]) -> None:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="missing auth")
+    token = authorization.split(" ", 1)[1].strip()
+    if token != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="forbidden")
+
 def _redis():
     try:
         import redis  # type: ignore
@@ -74,32 +77,29 @@ def _redis():
     except Exception:
         return None
 
-
 def _now_ns() -> int:
     return time.time_ns()
-
 
 def sign_ticket_jwt(payload: dict) -> str:
     payload = dict(payload)
     payload["iss"] = ISSUER
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
-
 def verify_ticket_jwt(token: str) -> dict:
+    # Strict: signature + issuer must validate before any other moat
     try:
         return jwt.decode(token, JWT_SECRET, algorithms=["HS256"], issuer=ISSUER)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Expired ticket")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid ticket")
-
 
 def _hash_tool_args(tool_name: str, args: dict) -> str:
     blob = json.dumps({"tool": tool_name, "args": args}, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()
 
-
 def _replay_key(jti: str) -> str:
     return f"{REPLAY_PREFIX}{jti}"
-
 
 def _claim_replay_once(jti: str) -> None:
     """
@@ -115,21 +115,18 @@ def _claim_replay_once(jti: str) -> None:
     if not ok:
         raise HTTPException(status_code=409, detail="replay")
 
-
 # --- Endpoints ---
 @app.get("/")
 def root():
     return {"name": "Kasbah Core", "status": "running", "version": app.version}
 
-
 @app.get("/health")
 def health():
     return {"ok": True}
 
-
 @app.post("/api/rtp/decide", response_model=DecisionResponse)
 def rtp_decide(req: DecisionRequest):
-    # Minimal policy for now: always allow. (You can re-wire moats later.)
+    # Minimal policy for now: always allow.
     jti = hashlib.sha256(f"{req.tool_name}|{req.agent_id}|{_now_ns()}".encode("utf-8")).hexdigest()[:32]
 
     args = (req.usage or {}).get("args", {}) if isinstance(req.usage, dict) else {}
@@ -148,8 +145,9 @@ def rtp_decide(req: DecisionRequest):
 
     token = sign_ticket_jwt(payload)
 
+    # Audit: do not swallow silently; if it fails, surface in logs (but do not break runtime)
     try:
-        append_audit("DECIDE", agent_id=req.agent_id or "anon", jti=jti)
+        append_audit("DECIDE", agent_id=req.agent_id or "anon", jti=jti, extra={"tool_name": req.tool_name})
     except Exception:
         pass
 
@@ -160,7 +158,6 @@ def rtp_decide(req: DecisionRequest):
         ticket=token,
         explain="Policy checks passed.",
     )
-
 
 @app.post("/api/rtp/consume", response_model=ConsumeResponse)
 def rtp_consume(req: ConsumeRequest):
@@ -191,14 +188,19 @@ def rtp_consume(req: ConsumeRequest):
     _claim_replay_once(jti)
 
     try:
-        append_audit("CONSUME", agent_id=req.agent_id or payload.get("agent_id") or "anon", jti=jti)
+        append_audit(
+            "CONSUME",
+            agent_id=req.agent_id or payload.get("agent_id") or "anon",
+            jti=jti,
+            extra={"tool_name": req.tool_name},
+        )
     except Exception:
         pass
 
     return ConsumeResponse(status="ALLOWED", action="execute", tool=req.tool_name, consumed_at=time.time())
 
-
-@app.get("/api/rtp/audit", response_model=list[AuditLogResponse])
-def rtp_audit(limit: int = 50):
+@app.get("/api/rtp/audit", response_model=List[AuditLogResponse])
+def rtp_audit(limit: int = 50, authorization: Optional[str] = Header(default=None)):
+    _require_admin(authorization)
     logs = read_audit(limit)
     return [AuditLogResponse(**x) for x in logs]
