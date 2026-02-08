@@ -36,3 +36,7 @@ scripts/_patch.py
 fix_*.py
 stress_test.py
 verify_logic.py
+
+# --- demo bundles / generated artifacts ---
+*.zip
+kasbah-core-demo.zip
