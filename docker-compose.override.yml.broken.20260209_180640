@@ -1,0 +1,22 @@
+services:
+  api:
+    ports:
+      - "8002:8002"
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      KASBAH_RL_DECIDE_LIMIT: "1000"
+      KASBAH_RL_DECIDE_WINDOW_SEC: "60"
+      KASBAH_RL_CONSUME_LIMIT: "3"
+      KASBAH_RL_CONSUME_WINDOW_SEC: "60"
+
+  api2:
+    ports:
+      - "8003:8002"
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      API_KEY: "dev-master-key"
+      TICKET_TTL_SEC: "600"
+      KASBAH_RL_DECIDE_LIMIT: "1000"
+      KASBAH_RL_DECIDE_WINDOW_SEC: "60"
+      KASBAH_RL_CONSUME_LIMIT: "3"
+      KASBAH_RL_CONSUME_WINDOW_SEC: "60"
