@@ -99,3 +99,14 @@ kasbah-core-8/
 kasbah-core-9/
 Kasbah-CoreF_ARCHIVE/
 .env*
+
+# --- local dumps / build artifacts (do not ship) ---
+.scratch/local_dumps/
+*.log
+*.zip
+*.tgz
+Kasbah-CoreF_ARCHIVE/
+kasbah-core-7/
+kasbah-core-8/
+kasbah-core-9/
+kasbah_dist/
