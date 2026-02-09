@@ -1,54 +1,54 @@
 import json
-import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Union
 
-# Prefer container-mounted path (docker-compose mounts ./.kasbah -> /app/.kasbah)
-AUDIT_DIR = Path(os.getenv("KASBAH_AUDIT_DIR", "/app/.kasbah"))
-AUDIT_LOG = Path(os.getenv("KASBAH_AUDIT_LOG", str(AUDIT_DIR / "rtp_audit.log")))
+# Always write inside the container-mapped directory.
+# In Docker, /app is WORKDIR; ".kasbah" resolves to /app/.kasbah
+AUDIT_DIR = Path(".kasbah")
+AUDIT_PATH = AUDIT_DIR / "rtp_audit.log"
 
-def append_audit(event: str, agent_id: Optional[str] = None, jti: Optional[str] = None, extra: Optional[Dict[str, Any]] = None) -> None:
-    """
-    Append a single JSONL audit record to AUDIT_LOG.
-    Record schema is stable and append-only.
-    """
-    AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
-    rec: Dict[str, Any] = {
-        "ts": time.time(),
-        "event": str(event),
-        "agent_id": agent_id,
-        "jti": jti,
-    }
-    if extra and isinstance(extra, dict):
-        # Keep it flat + JSON-safe as much as possible
-        rec["extra"] = extra
+def _normalize_record(
+    record_or_event: Union[Dict[str, Any], str],
+    agent_id: Optional[str] = None,
+    jti: Optional[str] = None,
+) -> Dict[str, Any]:
+    # Backward compatible:
+    # - append_audit({"event": "...", ...})
+    # - append_audit("DECIDE", agent_id="x", jti="y")
+    if isinstance(record_or_event, dict):
+        rec = dict(record_or_event)
+        # allow "event" or legacy "type"
+        if "event" not in rec and "type" in rec:
+            rec["event"] = rec.pop("type")
+        if agent_id is not None and "agent_id" not in rec:
+            rec["agent_id"] = agent_id
+        if jti is not None and "jti" not in rec:
+            rec["jti"] = jti
+    else:
+        rec = {"event": str(record_or_event), "agent_id": agent_id, "jti": jti}
 
-    with open(AUDIT_LOG, "a", encoding="utf-8") as f:
+    rec["ts"] = float(rec.get("ts", time.time()))
+    return rec
+
+
+def append_audit(record_or_event: Union[Dict[str, Any], str], agent_id: Optional[str] = None, jti: Optional[str] = None) -> None:
+    AUDIT_DIR.mkdir(exist_ok=True)
+    rec = _normalize_record(record_or_event, agent_id=agent_id, jti=jti)
+    with AUDIT_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps(rec, separators=(",", ":"), ensure_ascii=False) + "\n")
 
-def read_audit(limit: int = 50) -> List[Dict[str, Any]]:
-    """
-    Read last N JSONL records. Best-effort parsing (skips bad lines).
-    """
-    if limit <= 0:
-        return []
-    if not AUDIT_LOG.exists():
-        return []
 
-    # Small file: read all is fine. If it grows, we can optimize later.
-    try:
-        lines = AUDIT_LOG.read_text(encoding="utf-8").splitlines()
-    except Exception:
+def read_audit(limit: int = 50):
+    if not AUDIT_PATH.exists():
         return []
-
-    out: List[Dict[str, Any]] = []
-    for line in lines[-limit:]:
+    # tail-ish read without loading huge files: still OK for demo sizes
+    lines = AUDIT_PATH.read_text(encoding="utf-8").splitlines()
+    out = []
+    for line in lines[-max(0, int(limit)):]:
         try:
-            obj = json.loads(line)
-            if isinstance(obj, dict):
-                out.append(obj)
+            out.append(json.loads(line))
         except Exception:
-            continue
+            pass
     return out
