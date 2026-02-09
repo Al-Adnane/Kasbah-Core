@@ -85,3 +85,17 @@ __pycache__/
 .env.prod.example
 scratch/untracked_quarantine/
 scratch/early_access/
+
+# --- ship hygiene (root artifacts) ---
+*.zip
+*.tgz
+*.log
+api*.log
+server.log
+kasbah.log
+kasbah_dist/
+kasbah-core-7/
+kasbah-core-8/
+kasbah-core-9/
+Kasbah-CoreF_ARCHIVE/
+.env*
