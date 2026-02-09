@@ -144,3 +144,6 @@ Response:
 This denial is stateful and irreversible.
 Tickets are single-use, tool-bound, time-bound, and verified at runtime.
 
+
+## Moats / Security posture
+See `docs/MOATS_REGISTRY.md` for the authoritative list of implemented moats, evidence, and explicit non-goals.
