@@ -63,7 +63,7 @@ APP_VERSION = os.environ.get("KASBAH_VERSION", "dev")
 
 API_KEY = os.environ.get("API_KEY", "dev-master-key").encode("utf-8")
 TICKET_TTL_SEC = int(os.environ.get("TICKET_TTL_SEC", "600"))
-KASBAH_AUTHZ = os.environ.get("KASBAH_AUTHZ", "0").strip().lower() in ("1", "true", "yes", "on")
+KASBAH_AUTHZ = os.environ.get("KASBAH_AUTHZ", "1").strip().lower() in ("1", "true", "yes", "on")
 
 DATA_DIR = Path(os.environ.get("KASBAH_DATA_DIR", ".kasbah"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
