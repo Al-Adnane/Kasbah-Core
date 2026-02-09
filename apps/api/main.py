@@ -68,6 +68,16 @@ DATA_DIR = Path(os.environ.get("KASBAH_DATA_DIR", ".kasbah"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 AUDIT_PATH = DATA_DIR / "audit.jsonl"
 
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+
+def _redis_client():
+    try:
+        import redis  # type: ignore
+        return redis.Redis.from_url(REDIS_URL, decode_responses=True)
+    except Exception:
+        return None
+
+
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
@@ -270,11 +280,9 @@ def rtp_consume(req: ConsumeRequest, authorization: Optional[str] = Header(defau
     args = (req.usage or {}).get("args", {}) if isinstance(req.usage, dict) else {}
 
     payload = verify_ticket(ticket, tool_name, args)
-
-
-    # __KASBAH_REPLAY_GUARD_CALL_V1__
-    if not _mark_consumed_once(str(ticket), payload):
-        return {"status": "DENIED", "reason": "replay", "valid": False}
+    # replay protection: consume once (fail-closed)
+    if not _mark_consumed_once(req.ticket, payload):
+        raise HTTPException(status_code=403, detail="replay")
     if KASBAH_AUTHZ:
         claims = payload.get("claims", {}) or {}
         principal = claims.get("principal")
