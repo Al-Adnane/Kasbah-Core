@@ -110,3 +110,17 @@ kasbah-core-7/
 kasbah-core-8/
 kasbah-core-9/
 kasbah_dist/
+
+# --- Launch quarantine / local artifacts ---
+/.scratch/launch_quarantine/
+/Kasbah-CoreF_ARCHIVE/
+/kasbah-core-7/
+/kasbah-core-8/
+/kasbah-core-9/
+/kasbah_dist/
+*.zip
+*.tgz
+*.log
+api*.log
+server.log
+kasbah.log
