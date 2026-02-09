@@ -446,55 +446,94 @@ def health():
 @app.post("/api/rtp/decide", response_model=DecisionResponse)
 def rtp_decide(req: DecisionRequest):
     agent_id = req.agent_id or "anon"
+
     if _brittle_is_locked(agent_id):
         raise HTTPException(status_code=403, detail="brittle lock")
+
     args = (req.usage or {}).get("args", {}) if isinstance(req.usage, dict) else {}
 
-    rl_rem = _rl_check(f"decide:{agent_id}", KASBAH_RL_DECIDE_LIMIT, KASBAH_RL_DECIDE_WINDOW_SEC)
+    rl_rem = _rl_check(
+        f"decide:{agent_id}",
+        KASBAH_RL_DECIDE_LIMIT,
+        KASBAH_RL_DECIDE_WINDOW_SEC,
+    )
     if rl_rem < 0:
         raise HTTPException(status_code=429, detail="rate limited (decide)")
+
+    claims = {}
 
     if KASBAH_AUTHZ:
         principal = req.principal or agent_id
         action = req.action
         resource = req.resource
         acting_as = req.acting_as
+
         if not principal or not action or not resource:
-            res = {
-                "decision": "DENY",
-                "decision_kind": "AUTHZ_DENY",
-                "reason": "missing principal/action/resource",
-            }
-            try:
-                append_audit("AUTHZ_DENY", agent_id=agent_id, jti=None, extra=res)
-            except Exception:
-                pass
-            raise HTTPException(status_code=403, detail=res["reason"])
+            append_audit(
+                "AUTHZ_DENY",
+                agent_id=agent_id,
+                jti=None,
+                extra={"reason": "missing principal/action/resource"},
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="missing principal/action/resource",
+            )
 
-        az = _authz_check(principal=principal, action=action, resource=resource, acting_as=acting_as)
+        az = _authz_check(
+            principal=principal,
+            action=action,
+            resource=resource,
+            acting_as=acting_as,
+        )
+
         if not az.allow:
-            try:
-                append_audit("AUTHZ_DENY", agent_id=agent_id, jti=None, extra={"principal": principal, "action": action, "resource": resource, "acting_as": acting_as, "reason": az.reason})
-            except Exception:
-                pass
-            raise HTTPException(status_code=403, detail=f"authz deny: {az.reason}")
+            append_audit(
+                "AUTHZ_DENY",
+                agent_id=agent_id,
+                jti=None,
+                extra={
+                    "principal": principal,
+                    "action": action,
+                    "resource": resource,
+                    "acting_as": acting_as,
+                    "reason": az.reason,
+                },
+            )
+            raise HTTPException(
+                status_code=403,
+                detail=f"authz deny: {az.reason}",
+            )
 
-        claims = {"principal": principal, "action": action, "resource": resource, "acting_as": acting_as}
-    else:
-        claims = {}
-    # emergency gate (decide)
-    _principal = req.principal or agent_id
-    em = _emergency_blocked(req.tool_name, _principal)
+        claims = {
+            "principal": principal,
+            "action": action,
+            "resource": resource,
+            "acting_as": acting_as,
+        }
+
+    em = _emergency_blocked(req.tool_name, req.principal or agent_id)
     if em:
-        append_audit("DECIDE_DENY", agent_id=agent_id, jti=None, extra={"tool_name": req.tool_name, "reason": em})
+        append_audit(
+            "DECIDE_DENY",
+            agent_id=agent_id,
+            jti=None,
+            extra={"tool_name": req.tool_name, "reason": em},
+        )
         raise HTTPException(status_code=403, detail=em)
-
 
     token = generate_ticket(req.tool_name, agent_id, args, claims)
 
     try:
-        payload = json.loads(_b64url_decode(token.split(".", 1)[0]).decode("utf-8"))
-        append_audit("DECIDE", agent_id=agent_id, jti=payload.get("jti"), extra={"tool_name": req.tool_name})
+        payload = json.loads(
+            _b64url_decode(token.split(".", 1)[0]).decode("utf-8")
+        )
+        append_audit(
+            "DECIDE",
+            agent_id=agent_id,
+            jti=payload.get("jti"),
+            extra={"tool_name": req.tool_name},
+        )
     except Exception:
         pass
 
@@ -506,6 +545,7 @@ def rtp_decide(req: DecisionRequest):
         ticket=token,
         explain="Policy checks passed.",
     )
+
 
 
 @app.post("/api/rtp/consume", response_model=ConsumeResponse)
