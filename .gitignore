@@ -82,3 +82,6 @@ venv/
 
 # --- python cache ---
 __pycache__/
+.env.prod.example
+scratch/untracked_quarantine/
+scratch/early_access/
