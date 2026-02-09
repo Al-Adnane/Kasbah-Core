@@ -1,18 +1,7 @@
 services:
   api:
-    volumes:
-      - ./.kasbah:/app/.kasbah
-      - ./scripts:/app/scripts
-    entrypoint: ["/app/scripts/entrypoint_with_loop.sh"]
-
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "6379:6379"
-    volumes:
-      - kasbah_redis:/data
-    restart: unless-stopped
-
-volumes:
-  kasbah_redis:
+    environment:
+      KASBAH_RL_DECIDE_LIMIT: "3"
+      KASBAH_RL_DECIDE_WINDOW_SEC: "60"
+      KASBAH_RL_CONSUME_LIMIT: "5"
+      KASBAH_RL_CONSUME_WINDOW_SEC: "60"
