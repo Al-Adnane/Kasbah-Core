@@ -40,3 +40,15 @@ verify_logic.py
 # --- demo bundles / generated artifacts ---
 *.zip
 kasbah-core-demo.zip
+apps/api/static/
+
+.env
+.env.*
+!.env.example
+!.env.prod.example
+!.env.production.example
+.DS_Store
+.pytest_cache/
+.venv/
+.scratch/
+*.zip
