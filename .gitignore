@@ -60,3 +60,12 @@ kasbah-core-8/
 kasbah-core-9/
 kasbah_dist/
 *.tgz
+
+# --- archives / scratch dumps ---
+Kasbah-CoreF_ARCHIVE/
+kasbah-core-7/
+kasbah-core-8/
+kasbah-core-9/
+kasbah_dist/
+*.tgz
+*.zip
