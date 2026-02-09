@@ -69,3 +69,16 @@ kasbah-core-9/
 kasbah_dist/
 *.tgz
 *.zip
+
+# --- logs ---
+*.log
+server.log
+api.log
+api_*.log
+kasbah.log
+
+# --- alt venv name ---
+venv/
+
+# --- python cache ---
+__pycache__/
