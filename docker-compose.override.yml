@@ -1,7 +1,55 @@
 services:
   api:
     environment:
-      KASBAH_RL_DECIDE_LIMIT: "3"
+      REDIS_URL: "redis://redis:6379/0"
+      # ship RL
+      KASBAH_RL_DECIDE_LIMIT: "60"
       KASBAH_RL_DECIDE_WINDOW_SEC: "60"
-      KASBAH_RL_CONSUME_LIMIT: "5"
+      KASBAH_RL_CONSUME_LIMIT: "60"
       KASBAH_RL_CONSUME_WINDOW_SEC: "60"
+
+      # bearer identity auth (optional)
+      KASBAH_REQUIRE_BEARER: "1"
+      # If empty, API_KEY is accepted. Otherwise comma-separated tokens:
+      # KASBAH_BEARER_TOKENS: "token1,token2"
+
+      # thermo lockdown (optional)
+      KASBAH_THERMO_EMA_MS_THRESHOLD: "300"
+      KASBAH_THERMO_ALPHA: "0.20"
+      KASBAH_THERMO_COOLDOWN_SEC: "10"
+      KASBAH_THERMO_FORCE: "0"
+
+      # brittleness moat (optional)
+      KASBAH_BRITTLE_ENABLE: "1"
+      KASBAH_BRITTLE_STRIKES: "5"
+      KASBAH_BRITTLE_WINDOW_SEC: "600"
+      KASBAH_BRITTLE_LOCK_SEC: "120"
+
+  api2:
+    image: kasbah-core-api
+    depends_on:
+      - redis
+    entrypoint: ["/app/scripts/entrypoint_with_loop.sh"]
+    ports:
+      - "8003:8002"
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+      API_KEY: "dev-master-key"
+      TICKET_TTL_SEC: "600"
+
+      KASBAH_RL_DECIDE_LIMIT: "60"
+      KASBAH_RL_DECIDE_WINDOW_SEC: "60"
+      KASBAH_RL_CONSUME_LIMIT: "60"
+      KASBAH_RL_CONSUME_WINDOW_SEC: "60"
+
+      KASBAH_REQUIRE_BEARER: "1"
+
+      KASBAH_THERMO_EMA_MS_THRESHOLD: "300"
+      KASBAH_THERMO_ALPHA: "0.20"
+      KASBAH_THERMO_COOLDOWN_SEC: "10"
+      KASBAH_THERMO_FORCE: "0"
+
+      KASBAH_BRITTLE_ENABLE: "1"
+      KASBAH_BRITTLE_STRIKES: "5"
+      KASBAH_BRITTLE_WINDOW_SEC: "600"
+      KASBAH_BRITTLE_LOCK_SEC: "120"

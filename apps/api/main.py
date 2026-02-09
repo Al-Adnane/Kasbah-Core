@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 
@@ -70,6 +70,119 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 AUDIT_PATH = DATA_DIR / "audit.jsonl"
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+
+# __KASBAH_BEARER_AUTH_V1__
+KASBAH_REQUIRE_BEARER = os.environ.get("KASBAH_REQUIRE_BEARER", "0").strip().lower() in ("1","true","yes","on")
+KASBAH_BEARER_TOKENS = [t.strip() for t in os.environ.get("KASBAH_BEARER_TOKENS","").split(",") if t.strip()]
+
+def _check_bearer(request: "Request") -> None:
+    """
+    Identity gate (optional). This is NOT the same as tickets.
+    If enabled, requires Authorization: Bearer <token> for /api/*.
+    """
+    if not KASBAH_REQUIRE_BEARER:
+        return
+    if request.method.upper() == "OPTIONS":
+        return
+    path = request.url.path or ""
+    if not path.startswith("/api/"):
+        return
+
+    auth = request.headers.get("authorization") or request.headers.get("Authorization") or ""
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="missing bearer token")
+    token = auth.split(" ", 1)[1].strip()
+    allowed = KASBAH_BEARER_TOKENS[:] if KASBAH_BEARER_TOKENS else [API_KEY.decode("utf-8", errors="ignore")]
+    ok = any(hmac.compare_digest(token, t) for t in allowed)
+    if not ok:
+        raise HTTPException(status_code=401, detail="invalid bearer token")
+
+# __KASBAH_THERMO_LOCKDOWN_V1__
+KASBAH_THERMO_FORCE = os.environ.get("KASBAH_THERMO_FORCE","0").strip().lower() in ("1","true","yes","on")
+KASBAH_THERMO_EMA_MS_THRESHOLD = float(os.environ.get("KASBAH_THERMO_EMA_MS_THRESHOLD","300"))
+KASBAH_THERMO_ALPHA = float(os.environ.get("KASBAH_THERMO_ALPHA","0.20"))
+KASBAH_THERMO_COOLDOWN_SEC = int(os.environ.get("KASBAH_THERMO_COOLDOWN_SEC","10"))
+
+def _thermo_keys() -> tuple[str,str]:
+    return ("kasbah:thermo:ema_ms", "kasbah:thermo:lock_until")
+
+def _thermo_is_locked() -> bool:
+    if KASBAH_THERMO_FORCE:
+        return True
+    rc = _redis_client()
+    if rc is None:
+        return False  # don't fail closed on thermo; thermo is a safety brake, not core security
+    _, k_lock = _thermo_keys()
+    try:
+        v = rc.get(k_lock)
+        if not v:
+            return False
+        return float(v) > time.time()
+    except Exception:
+        return False
+
+def _thermo_update(lat_ms: float) -> None:
+    rc = _redis_client()
+    if rc is None:
+        return
+    k_ema, k_lock = _thermo_keys()
+    try:
+        cur = rc.get(k_ema)
+        if cur is None:
+            ema = float(lat_ms)
+        else:
+            ema0 = float(cur)
+            ema = (KASBAH_THERMO_ALPHA * float(lat_ms)) + ((1.0 - KASBAH_THERMO_ALPHA) * ema0)
+        rc.set(k_ema, str(ema), ex=3600)
+
+        if ema >= KASBAH_THERMO_EMA_MS_THRESHOLD:
+            rc.set(k_lock, str(time.time() + float(KASBAH_THERMO_COOLDOWN_SEC)), ex=max(2, KASBAH_THERMO_COOLDOWN_SEC + 2))
+    except Exception:
+        return
+
+# __KASBAH_BRITTLENESS_V1__
+KASBAH_BRITTLE_ENABLE = os.environ.get("KASBAH_BRITTLE_ENABLE","1").strip().lower() in ("1","true","yes","on")
+KASBAH_BRITTLE_STRIKES = int(os.environ.get("KASBAH_BRITTLE_STRIKES","5"))
+KASBAH_BRITTLE_WINDOW_SEC = int(os.environ.get("KASBAH_BRITTLE_WINDOW_SEC","600"))
+KASBAH_BRITTLE_LOCK_SEC = int(os.environ.get("KASBAH_BRITTLE_LOCK_SEC","120"))
+
+def _brittle_lock_key(agent_id: str) -> str:
+    return f"kasbah:brittle:lock:{agent_id}"
+
+def _brittle_strike_key(agent_id: str) -> str:
+    return f"kasbah:brittle:strikes:{agent_id}"
+
+def _brittle_is_locked(agent_id: str) -> bool:
+    if not KASBAH_BRITTLE_ENABLE:
+        return False
+    rc = _redis_client()
+    if rc is None:
+        return False
+    try:
+        v = rc.get(_brittle_lock_key(agent_id))
+        if not v:
+            return False
+        return float(v) > time.time()
+    except Exception:
+        return False
+
+def _brittle_add_strike(agent_id: str) -> None:
+    if not KASBAH_BRITTLE_ENABLE:
+        return
+    rc = _redis_client()
+    if rc is None:
+        return
+    try:
+        k = _brittle_strike_key(agent_id)
+        n = rc.incr(k)
+        rc.expire(k, KASBAH_BRITTLE_WINDOW_SEC)
+        if int(n) >= KASBAH_BRITTLE_STRIKES:
+            rc.set(_brittle_lock_key(agent_id), str(time.time() + float(KASBAH_BRITTLE_LOCK_SEC)), ex=max(2, KASBAH_BRITTLE_LOCK_SEC + 2))
+    except Exception:
+        return
+
+
+
 
 def _redis_client():
     try:
@@ -150,6 +263,26 @@ def _audit_hash_line(prev_hex: str, line: str) -> str:
     return h.hexdigest()
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
+
+@app.middleware("http")
+async def kasbah_security_middleware(request: Request, call_next):
+    _check_bearer(request)
+
+    # thermo gate (optional)
+    if (request.url.path or "").startswith("/api/") and request.method.upper() != "OPTIONS":
+        if _thermo_is_locked():
+            raise HTTPException(status_code=503, detail="thermo lockdown")
+
+    t0 = time.time()
+    resp = await call_next(request)
+    lat_ms = (time.time() - t0) * 1000.0
+
+    # update thermo after response
+    if (request.url.path or "").startswith("/api/") and request.method.upper() != "OPTIONS":
+        _thermo_update(lat_ms)
+
+    return resp
+
 
 
 def _now_ns() -> int:
@@ -313,6 +446,8 @@ def health():
 @app.post("/api/rtp/decide", response_model=DecisionResponse)
 def rtp_decide(req: DecisionRequest):
     agent_id = req.agent_id or "anon"
+    if _brittle_is_locked(agent_id):
+        raise HTTPException(status_code=403, detail="brittle lock")
     args = (req.usage or {}).get("args", {}) if isinstance(req.usage, dict) else {}
 
     rl_rem = _rl_check(f"decide:{agent_id}", KASBAH_RL_DECIDE_LIMIT, KASBAH_RL_DECIDE_WINDOW_SEC)
@@ -378,13 +513,30 @@ def rtp_consume(req: ConsumeRequest, authorization: Optional[str] = Header(defau
     ticket = req.ticket
     tool_name = req.tool_name or "unknown"
     agent_id = req.agent_id or "anon"
+    if _brittle_is_locked(agent_id):
+        raise HTTPException(status_code=403, detail="brittle lock")
     args = (req.usage or {}).get("args", {}) if isinstance(req.usage, dict) else {}
 
     rl_rem = _rl_check(f"consume:{agent_id}", KASBAH_RL_CONSUME_LIMIT, KASBAH_RL_CONSUME_WINDOW_SEC)
     if rl_rem < 0:
         raise HTTPException(status_code=429, detail="rate limited (consume)")
+    try:
+              # __BRITTLE_STRIKE_ON_VERIFY_FAIL_V1__
+      try:
+          payload = verify_ticket(ticket, tool_name, args)
+      except HTTPException as e:
+          # Any ticket failure is a strike for this agent_id (tamper / swap / expiry / format).
+          try:
+              _brittle_add_strike(agent_id, reason=str(getattr(e, 'detail', 'verify_fail')))
+              append_audit("BRITTLE_STRIKE", agent_id=agent_id, jti=None, extra={"reason": str(getattr(e, 'detail', 'verify_fail')), "status": int(getattr(e, 'status_code', 0) or 0)})
+          except Exception:
+              pass
+          raise
 
-    payload = verify_ticket(ticket, tool_name, args)
+    except HTTPException as e:
+        if int(getattr(e, "status_code", 0)) in (400, 401, 403):
+            _brittle_add_strike(agent_id)
+        raise
     # emergency gate (consume)
     _claims = payload.get("claims", {}) or {}
     _principal = _claims.get("principal") or agent_id
