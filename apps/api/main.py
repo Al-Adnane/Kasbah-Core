@@ -5,6 +5,7 @@ import hmac
 import json
 import os
 import time
+import fcntl
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -68,6 +69,8 @@ KASBAH_AUTHZ = os.environ.get("KASBAH_AUTHZ", "1").strip().lower() in ("1", "tru
 DATA_DIR = Path(os.environ.get("KASBAH_DATA_DIR", ".kasbah"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 AUDIT_PATH = DATA_DIR / "audit.jsonl"
+AUDIT_LOCK_PATH = (DATA_DIR_PATH / "audit.lock")
+
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 
@@ -312,6 +315,10 @@ def _hash_tool_args(tool_name: str, args: Any) -> str:
 
 
 def append_audit(event: str, agent_id: str, jti: Optional[str], extra: Optional[Dict[str, Any]] = None) -> None:
+    """
+    Append hash-chained audit record.
+    IMPORTANT: This must be globally serialized; otherwise concurrent requests create many chain breaks.
+    """
     rec = {
         "ts_ns": _now_ns(),
         "event": event,
@@ -320,117 +327,64 @@ def append_audit(event: str, agent_id: str, jti: Optional[str], extra: Optional[
         "extra": extra or {},
     }
 
-    prev = ""
+    # Ensure dir exists
     try:
-        if AUDIT_PATH.exists():
-            lines = AUDIT_PATH.read_text(encoding="utf-8", errors="replace").splitlines()
-            if lines:
-                try:
-                    last = json.loads(lines[-1])
-                    prev = str(last.get("hash", ""))[:64]
-                except Exception:
-                    prev = ""
+        DATA_DIR_PATH.mkdir(parents=True, exist_ok=True)
     except Exception:
-        prev = ""
+        pass
 
-    rec["prev_hash"] = prev
+    # Global critical section: lock -> read last hash -> append line -> fsync -> unlock
+    prev = ""
     tmp = dict(rec)
     tmp.pop("hash", None)
     line = json.dumps(tmp, separators=(",", ":"), sort_keys=True)
-    rec["hash"] = _audit_hash_line(prev, line)
 
-    with open(AUDIT_PATH, "a", encoding="utf-8") as f:
-        f.write(json.dumps(rec, separators=(",", ":"), sort_keys=True) + "\n")
-
-
-class DecisionRequest(BaseModel):
-    tool_name: str
-    agent_id: Optional[str] = None
-    signals: Optional[Dict[str, Any]] = None
-    usage: Optional[Dict[str, Any]] = None
-
-    principal: Optional[str] = None
-    action: Optional[str] = None
-    resource: Optional[str] = None
-    acting_as: Optional[str] = None
-
-
-class DecisionResponse(BaseModel):
-    decision: str
-    decision_kind: str = "DECIDE_ALLOW"
-    reason: str = "ok"
-    rule_id: str = "RTP-ALLOW-001"
-    ticket: str
-    explain: Optional[str] = None
-
-
-class ConsumeRequest(BaseModel):
-    ticket: str
-    tool_name: Optional[str] = None
-    agent_id: Optional[str] = None
-    usage: Optional[Dict[str, Any]] = None
-
-
-class ConsumeResponse(BaseModel):
-    status: str
-    action: str
-    tool: str
-    consumed_at: float
-
-
-@dataclass
-class AuthZResult:
-    allow: bool
-    reason: str
-
-
-def _authz_check(principal: str, action: str, resource: str, acting_as: Optional[str]) -> AuthZResult:
     try:
-        from apps.api.rtp.authz import check_access  # type: ignore
-        az = check_access(principal=str(principal), action=str(action), resource=str(resource), acting_as=(str(acting_as) if acting_as else None))
-        allow = bool(getattr(az, "allow", False))
-        reason = str(getattr(az, "reason", "")) or str(getattr(az, "why", "")) or "no reason"
-        return AuthZResult(allow=allow, reason=reason)
-    except Exception as e:
-        return AuthZResult(allow=False, reason=f"authz error: {e}")
+        with open(AUDIT_LOCK_PATH, "a+", encoding="utf-8") as lockf:
+            try:
+                fcntl.flock(lockf.fileno(), fcntl.LOCK_EX)
+            except Exception:
+                # If lock fails, fail-open (still write, but chain might break)
+                pass
 
+            try:
+                if AUDIT_PATH.exists():
+                    try:
+                        lines = AUDIT_PATH.read_text(encoding="utf-8", errors="replace").splitlines()
+                        if lines:
+                            try:
+                                last = json.loads(lines[-1])
+                                if isinstance(last, str):
+                                    last = json.loads(last)
+                                prev = str(last.get("hash", ""))[:64]
+                            except Exception:
+                                prev = ""
+                    except Exception:
+                        prev = ""
+            except Exception:
+                prev = ""
 
-def generate_ticket(tool_name: str, agent_id: str, args: Any, claims: Dict[str, Any]) -> str:
-    jti = hashlib.sha256(f"{tool_name}|{agent_id}|{_now_ns()}".encode("utf-8")).hexdigest()[:32]
-    payload = {
-        "jti": jti,
-        "tool_name": tool_name,
-        "agent_id": agent_id,
-        "issued_ns": _now_ns(),
-        "ttl_sec": TICKET_TTL_SEC,
-        "tool_hash": _hash_tool_args(tool_name, args),
-        "claims": claims or {},
-    }
-    payload_b64 = _b64url_encode(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
-    sig_b64 = _sign(payload_b64)
-    return payload_b64 + "." + sig_b64
+            rec["prev_hash"] = prev
+            rec["hash"] = _audit_hash_line(prev, line)
 
+            out_line = json.dumps(rec, separators=(",", ":"), sort_keys=True)
 
-def verify_ticket(token: str, tool_name: str, args: Any) -> Dict[str, Any]:
-    if "." not in token:
-        raise HTTPException(status_code=400, detail="invalid ticket format")
-    payload_b64, sig_b64 = token.split(".", 1)
-    exp_sig = _sign(payload_b64)
-    if not hmac.compare_digest(exp_sig, sig_b64):
-        raise HTTPException(status_code=403, detail="bad signature")
-    payload = json.loads(_b64url_decode(payload_b64).decode("utf-8"))
-    if payload.get("tool_name") != tool_name:
-        raise HTTPException(status_code=403, detail="tool mismatch")
-    if payload.get("tool_hash") != _hash_tool_args(tool_name, args):
-        raise HTTPException(status_code=403, detail="args mismatch")
-    issued_ns = int(payload.get("issued_ns", 0))
-    ttl_sec = int(payload.get("ttl_sec", 0))
-    if issued_ns <= 0 or ttl_sec <= 0:
-        raise HTTPException(status_code=403, detail="invalid ttl")
-    age_sec = (time.time_ns() - issued_ns) / 1e9
-    if age_sec > ttl_sec:
-        raise HTTPException(status_code=403, detail="expired")
-    return payload
+            with open(AUDIT_PATH, "a", encoding="utf-8") as f:
+                f.write(out_line + "\n")
+                try:
+                    f.flush()
+                    import os
+                    os.fsync(f.fileno())
+                except Exception:
+                    pass
+
+            try:
+                fcntl.flock(lockf.fileno(), fcntl.LOCK_UN)
+            except Exception:
+                pass
+    except Exception:
+        # ultimate fail-open: do not crash request path
+        return
 
 
 @app.get("/")
@@ -547,6 +501,34 @@ def rtp_decide(req: DecisionRequest):
     )
 
 
+
+
+@app.get("/api/rtp/audit/export")
+def rtp_audit_export(limit: int = 2000, authorization: Optional[str] = Header(default=None)):
+    """
+    Admin-only export of hash-chained audit log lines (newline-delimited JSON records).
+    """
+    _require_admin(authorization)
+    try:
+        if not AUDIT_PATH.exists():
+            return {"meta": {"exported_at_ns": _now_ns(), "version": APP_VERSION}, "lines": [], "last_hash": ""}
+        lines = AUDIT_PATH.read_text(encoding="utf-8", errors="replace").splitlines()
+        if limit and limit > 0:
+            lines = lines[-int(limit):]
+        last_hash = ""
+        if lines:
+            try:
+                last = json.loads(lines[-1])
+                last_hash = str(last.get("hash", ""))
+            except Exception:
+                last_hash = ""
+        return {
+            "meta": {"exported_at_ns": _now_ns(), "version": APP_VERSION},
+            "lines": lines,
+            "last_hash": last_hash,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/rtp/consume", response_model=ConsumeResponse)
 def rtp_consume(req: ConsumeRequest, authorization: Optional[str] = Header(default=None)):
