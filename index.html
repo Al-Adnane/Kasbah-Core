@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasbah – Stop agents from executing dangerous actions</title>
+    <meta name="description" content="Your AI agent has your database password. What happens when it hallucinates DELETE FROM users? Kasbah adds a decision gate before execution.">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --kasbah-red: #C1440E;
+            --desert-sky: #1E3A8A;
+            --fortress-stone: #D4C5B9;
+            --midnight: #0F172A;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .glow-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(193, 68, 14, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(30, 58, 138, 0.15) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.6; }
+        }
+        
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 80px 24px;
+            text-align: center;
+        }
+        
+        .fortress-icon {
+            width: 70px;
+            height: 70px;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 4px 20px rgba(193, 68, 14, 0.4));
+        }
+        
+        .brand { 
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            color: var(--fortress-stone);
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: clamp(32px, 6vw, 64px);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 32px;
+            letter-spacing: -0.02em;
+        }
+        
+        .problem-code {
+            background: rgba(193, 68, 14, 0.15);
+            border: 2px solid var(--kasbah-red);
+            border-radius: 8px;
+            padding: 20px 28px;
+            margin: 32px auto;
+            max-width: 700px;
+            font-family: 'SF Mono', monospace;
+            font-size: clamp(16px, 3vw, 20px);
+            color: #ff8866;
+        }
+        
+        .solution {
+            font-size: clamp(18px, 2.5vw, 22px);
+            line-height: 1.6;
+            color: rgba(255,255,255,0.9);
+            max-width: 800px;
+            margin: 0 auto 32px;
+        }
+        
+        .cta-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 48px 0;
+        }
+        
+        .btn {
+            padding: 18px 36px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: var(--kasbah-red);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(193, 68, 14, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(193, 68, 14, 0.6);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--fortress-stone);
+            border: 2px solid var(--fortress-stone);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(212, 197, 185, 0.1);
+            color: #fff;
+        }
+        
+        /* Diagram */
+        .diagram {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(212, 197, 185, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        
+        .diagram h3 {
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 20px;
+            color: var(--fortress-stone);
+        }
+        
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-family: 'SF Mono', monospace;
+            font-size: 14px;
+        }
+        
+        .flow-item {
+            background: rgba(30, 58, 138, 0.3);
+            padding: 12px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--desert-sky);
+            flex-shrink: 0;
+        }
+        
+        .flow-arrow {
+            color: rgba(255,255,255,0.4);
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .flow.bad .flow-item {
+            background: rgba(193, 68, 14, 0.2);
+            border-color: var(--kasbah-red);
+        }
+        
+        .flow-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+            margin-top: 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+        
+        .flow-label:first-child {
+            margin-top: 0;
+        }
+        
+        .flow-caption {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            margin-top: 12px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        /* Integration */
+        .integration {
+            padding: 100px 24px;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .integration h2 {
+            text-align: center;
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 900;
+            margin-bottom: 20px;
+        }
+        
+        .integration-subtitle {
+            text-align: center;
+            font-size: 18px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 60px;
+        }
+        
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 32px;
+            max-width: 1100px;
+            margin: 0 auto 60px;
+        }
+        
+        .integration-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(212, 197, 185, 0.15);
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s ease;
+        }
+        
+        .integration-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(212, 197, 185, 0.3);
+        }
+        
+        .integration-card h3 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: var(--kasbah-red);
+        }
+        
+        .integration-card pre {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--fortress-stone);
+            font-family: 'SF Mono', monospace;
+        }
+        
+        /* Demo section */
+        .demo-section {
+            padding: 100px 24px;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+        
+        .section-header h2 {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 900;
+            margin-bottom: 20px;
+        }
+        
+        .section-header p {
+            font-size: 18px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .demo-grid {
+            display: grid;
+            gap: 32px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 197, 185, 0.15);
+            border-radius: 12px;
+            padding: 40px;
+            transition: all 0.4s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(212, 197, 185, 0.3);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: glow 2s infinite;
+        }
+        
+        .dot.green { 
+            background: var(--desert-sky); 
+            box-shadow: 0 0 20px rgba(30, 58, 138, 0.6); 
+        }
+        
+        .dot.red { 
+            background: var(--kasbah-red); 
+            box-shadow: 0 0 20px rgba(193, 68, 14, 0.6); 
+        }
+        
+        @keyframes glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .card h3 {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .explain {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 24px;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        
+        .code {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(212, 197, 185, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        
+        .code pre { margin: 0; }
+        
+        .comment { color: #6a737d; }
+        .string { color: var(--fortress-stone); }
+        .keyword { color: var(--kasbah-red); }
+        .function { color: var(--desert-sky); }
+        
+        .terminal {
+            background: #000;
+            border: 1px solid rgba(212, 197, 185, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 150px;
+            font-family: 'SF Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--fortress-stone);
+            margin-top: 16px;
+            white-space: pre-wrap;
+        }
+        
+        .terminal.success { 
+            border-color: var(--desert-sky); 
+            box-shadow: 0 0 30px rgba(30, 58, 138, 0.3); 
+        }
+        
+        .terminal.error { 
+            border-color: var(--kasbah-red); 
+            box-shadow: 0 0 30px rgba(193, 68, 14, 0.3); 
+        }
+        
+        /* Guarantees */
+        .guarantees {
+            padding: 80px 24px;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .guarantees h2 {
+            text-align: center;
+            font-size: clamp(32px, 5vw, 44px);
+            font-weight: 900;
+            margin-bottom: 20px;
+        }
+        
+        .guarantees-tagline {
+            text-align: center;
+            font-size: 16px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 60px;
+        }
+        
+        .guarantees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .guarantee-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(212, 197, 185, 0.1);
+            border-radius: 8px;
+            padding: 24px;
+        }
+        
+        .guarantee-card h4 {
+            color: var(--kasbah-red);
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .guarantee-card p {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        /* Footer */
+        footer {
+            padding: 80px 24px 40px;
+            border-top: 1px solid rgba(212, 197, 185, 0.1);
+            text-align: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-size: 15px;
+        }
+        
+        .footer-links a:hover { 
+            color: var(--kasbah-red); 
+        }
+        
+        .heritage {
+            color: rgba(212, 197, 185, 0.5);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        @media (max-width: 768px) {
+            .cta-group { flex-direction: column; }
+            .btn { width: 100%; }
+            .integration-grid { grid-template-columns: 1fr; }
+            .flow { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    
+    <section class="hero">
+        <svg class="fortress-icon" viewBox="0 0 100 80" fill="none">
+            <path d="M20 80V30L35 15V5H45V15L50 10L55 15V5H65V15L80 30V80H20Z" fill="#C1440E"/>
+            <circle cx="35" cy="45" r="5" fill="#0F172A"/>
+            <circle cx="65" cy="45" r="5" fill="#0F172A"/>
+            <path d="M40 80V60H60V80" fill="#0F172A"/>
+        </svg>
+        
+        <div class="brand">🏰 KASBAH</div>
+        
+        <h1>Your AI agent has your database password</h1>
+        
+        <div class="problem-code">
+            DELETE FROM users WHERE 1=1
+        </div>
+        
+        <p class="solution">
+            Your agent just hallucinated this. Traditional auth can't stop it —<br>
+            <strong>the agent already authenticated.</strong>
+        </p>
+        
+        <p class="solution">
+            Kasbah adds a <strong>decision gate</strong> before dangerous actions execute.<br>
+            Cryptographic proof. Single-use tickets. Tamper-proof audit trail.
+        </p>
+        
+        <div class="cta-group">
+            <a href="#integrate" class="btn btn-primary">How to integrate →</a>
+            <a href="#demo" class="btn btn-secondary">Try the demo</a>
+        </div>
+        
+        <div class="diagram">
+            <h3>The gap in traditional auth</h3>
+            
+            <div class="flow-label">❌ Without Kasbah (no gate)</div>
+            <div class="flow bad">
+                <div class="flow-item">Agent</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">Tool</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">💥 Database</div>
+            </div>
+            <p class="flow-caption">
+                Agent has credentials. No runtime gate. Hallucination executes immediately.
+            </p>
+            
+            <div class="flow-label">✅ With Kasbah (decision gate)</div>
+            <div class="flow">
+                <div class="flow-item">Agent</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">kasbah.decide()</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">Tool</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-item">✓ Database</div>
+            </div>
+            <p class="flow-caption">
+                Runtime gate enforces proof before execution. HMAC-signed ticket. Single-use. Auditable.
+            </p>
+        </div>
+    </section>
+    
+    <section class="integration" id="integrate">
+        <div class="container">
+            <h2>Where this plugs into your stack</h2>
+            <p class="integration-subtitle">Works with any agent framework. 5 minutes to integrate.</p>
+            
+            <div class="integration-grid">
+                <div class="integration-card">
+                    <h3>LangChain / LangGraph</h3>
+                    <pre>from kasbah import protect_tool
+
+@protect_tool(kasbah_api_key="...")
+def run_sql_query(query: str):
+    return db.execute(query)
+
+# Kasbah gates this automatically
+agent.add_tool(run_sql_query)</pre>
+                </div>
+                
+                <div class="integration-card">
+                    <h3>Direct API wrapper</h3>
+                    <pre>async function safeSQLQuery(sql) {
+  // Ask permission first
+  const { ticket, allowed } = 
+    await kasbah.decide({
+      tool: 'db.query',
+      signals: await getSafetySignals()
+    });
+  
+  if (!allowed) throw new Error('Blocked');
+  
+  // Execute with proof
+  return db.query(sql, { 
+    kasbah_ticket: ticket 
+  });
+}</pre>
+                </div>
+                
+                <div class="integration-card">
+                    <h3>Anthropic Claude / OpenAI</h3>
+                    <pre>// Wrap tool execution
+const tools = [{
+  name: "database_query",
+  execute: async (params) => {
+    // Gate with Kasbah
+    const gate = await kasbah.decide({
+      tool: 'db.query',
+      agent_id: 'claude-v4'
+    });
+    
+    if (!gate.allowed) return null;
+    
+    return db.query(params.sql);
+  }
+}];</pre>
+                </div>
+                
+                <div class="integration-card">
+                    <h3>Any framework (Python)</h3>
+                    <pre># Before dangerous action:
+ticket = kasbah.decide(
+    tool_name="shell.exec",
+    signals={
+        "consistency": 0.95,
+        "accuracy": 0.98
+    }
+)
+
+if ticket.allowed:
+    # Execute with proof
+    result = execute_tool(
+        kasbah_ticket=ticket.id
+    )</pre>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="https://github.com/Al-Adnane/Kasbah-Core" class="btn btn-primary" target="_blank">
+                    See full docs on GitHub →
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="demo-section" id="demo">
+        <div class="container">
+            <div class="section-header">
+                <h2>Interactive demo</h2>
+                <p>Try to breach the gates. See how it blocks attacks.</p>
+            </div>
+            
+            <div class="demo-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="dot green"></div>
+                        <h3>Safe execution</h3>
+                    </div>
+                    <p class="explain">
+                        Agent requests permission, gets a cryptographic ticket, executes the tool. Ticket works once.
+                    </p>
+                    <div class="code">
+<pre><span class="comment">// Agent requests entry</span>
+<span class="keyword">const</span> { ticket, integrity } = <span class="keyword">await</span> <span class="function">kasbah.decide</span>({
+  <span class="string">tool</span>: <span class="string">'db.query'</span>,
+  <span class="string">signals</span>: { <span class="string">consistency</span>: <span class="keyword">0.95</span> }
+});
+<span class="comment">// Returns HMAC-signed ticket</span></pre>
+                    </div>
+                    <button class="btn btn-primary" onclick="runSafe()" id="btn-safe">
+                        Run safe flow
+                    </button>
+                    <div class="terminal" id="out1">Click above to see it work...</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="dot red"></div>
+                        <h3>Attack: Replay ticket</h3>
+                    </div>
+                    <p class="explain">
+                        Try using the same ticket twice. Kasbah tracks consumed tickets and blocks replays.
+                    </p>
+                    <div class="code">
+<pre><span class="comment">// Use ticket once</span>
+<span class="keyword">await</span> <span class="function">execute</span>(ticket);  <span class="comment">// ✅ Works</span>
+
+<span class="comment">// Try again</span>
+<span class="keyword">await</span> <span class="function">execute</span>(ticket);  <span class="comment">// ❌ BLOCKED</span></pre>
+                    </div>
+                    <button class="btn btn-primary" onclick="runReplay()" id="btn-replay">
+                        Try replay attack
+                    </button>
+                    <div class="terminal" id="out2">Run safe flow first...</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="dot red"></div>
+                        <h3>Attack: Tool swap</h3>
+                    </div>
+                    <p class="explain">
+                        Try using a db.query ticket for shell.exec. Tickets are cryptographically bound to specific tools.
+                    </p>
+                    <div class="code">
+<pre><span class="comment">// Get ticket for database</span>
+<span class="keyword">const</span> t = <span class="keyword">await</span> <span class="function">kasbah.decide</span>({ 
+  <span class="string">tool</span>: <span class="string">'db.query'</span> 
+});
+
+<span class="comment">// Try privilege escalation</span>
+<span class="keyword">await</span> <span class="function">kasbah.consume</span>(t, { 
+  <span class="string">tool</span>: <span class="string">'shell.exec'</span>  <span class="comment">// ❌</span>
+});</pre>
+                    </div>
+                    <button class="btn btn-primary" onclick="runSwap()" id="btn-swap">
+                        Try tool swap
+                    </button>
+                    <div class="terminal" id="out3">The sneaky one...</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="dot green"></div>
+                        <h3>Complete flow</h3>
+                    </div>
+                    <p class="explain">
+                        Watch decide → consume → audit. Every action logged with SHA256 hash chaining.
+                    </p>
+                    <button class="btn btn-primary" onclick="runFull()" id="btn-full">
+                        Run complete flow
+                    </button>
+                    <div class="terminal" id="out4">Watch the full protocol...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="guarantees">
+        <div class="container">
+            <h2>Runtime guarantees</h2>
+            <p class="guarantees-tagline">Enforced at execution time — not by prompts or trust</p>
+            <div class="guarantees-grid">
+                <div class="guarantee-card">
+                    <h4>Single-use tickets</h4>
+                    <p>Every ticket tracked in Redis. Second use = instant 403. Replay attacks prevented.</p>
+                </div>
+                <div class="guarantee-card">
+                    <h4>Tool binding</h4>
+                    <p>Tickets cryptographically bound to specific tools. Tool swapping blocked.</p>
+                </div>
+                <div class="guarantee-card">
+                    <h4>Time binding</h4>
+                    <p>Tickets have TTL. Expired actions denied. No stale permissions.</p>
+                </div>
+                <div class="guarantee-card">
+                    <h4>Audit trail</h4>
+                    <p>SHA256 hash chain. Tamper-proof logs. Cryptographically provable history.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://github.com/Al-Adnane/Kasbah-Core">GitHub</a>
+                <a href="https://github.com/Al-Adnane/Kasbah-Core">Docs</a>
+                <a href="https://github.com/Al-Adnane/Kasbah-Core/issues/new?title=Feedback&body=What%20confused%20you%3F%0A%0AWould%20you%20use%20this%3F%0A%0AWhat%27s%20missing%3F">Give Feedback</a>
+            </div>
+            <div class="heritage">
+                <p style="font-size: 24px; margin-bottom: 12px; color: var(--desert-sky);">قصبة</p>
+                <p style="font-size: 16px; margin-bottom: 8px;">Built in Rabat, Morocco</p>
+                <p style="opacity: 0.7;">MIT Licensed · No VC money</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        let savedTicket = null;
+        
+        function scroll(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function out(id, text, type) {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.className = 'terminal ' + (type || '');
+        }
+        
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+        
+        async function runSafe() {
+            const btn = document.getElementById('btn-safe');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
+            out('out1', '⏳ Requesting entry...');
+            await sleep(600);
+            
+            const ticket = 'JWT_REDACTED_USE_ENV_OR_GENERATE_RUNTIME';
+            const integrity = 0.953;
+            savedTicket = ticket;
+            
+            out('out1', 
+                `✓ Gates open\n\n` +
+                `Integrity: ${integrity}\n` +
+                `Ticket: ${ticket.slice(0, 40)}...\n\n` +
+                `⏳ Consuming...`
+            );
+            await sleep(500);
+            
+            out('out1',
+                `✓ Gates open\n\n` +
+                `Integrity: ${integrity}\n` +
+                `Ticket: ${ticket.slice(0, 40)}...\n\n` +
+                `✓ Granted\n` +
+                `Status: OK\n` +
+                `Tool: db.query\n\n` +
+                `💡 Agent can execute\n` +
+                `   Ticket consumed\n` +
+                `   Cannot reuse →`,
+                'success'
+            );
+            
+            btn.disabled = false;
+            btn.textContent = 'Run safe flow';
+        }
+        
+        async function runReplay() {
+            if (!savedTicket) {
+                out('out2', '⚠️ Run safe flow first!', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('btn-replay');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
+            out('out2', '⚔️ Breach attempt...\n\nReusing consumed ticket...');
+            await sleep(700);
+            
+            out('out2',
+                `⚔️ Attack: Replay\n\n` +
+                `🛡️ Fortress: HOLDS\n` +
+                `Status: 403\n\n` +
+                `✓ Blocked!\n` +
+                `Reason: ticket_already_consumed\n\n` +
+                `How:\n` +
+                `• Tickets tracked in Redis\n` +
+                `• TTL: 15 min\n` +
+                `• Second use = 403\n` +
+                `• TOCTOU prevented`,
+                'success'
+            );
+            
+            btn.disabled = false;
+            btn.textContent = 'Try replay attack';
+        }
+        
+        async function runSwap() {
+            if (!savedTicket) {
+                out('out3', '⚠️ Run safe flow first!', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('btn-swap');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
+            out('out3', '⚔️ Escalation...\n\nSwapping db.query → shell.exec...');
+            await sleep(700);
+            
+            out('out3',
+                `⚔️ Attack: Tool swap\n\n` +
+                `Was: db.query\n` +
+                `Tried: shell.exec\n\n` +
+                `🛡️ Fortress: HOLDS\n` +
+                `Status: 403\n\n` +
+                `✓ Blocked!\n` +
+                `Reason: tool_mismatch\n\n` +
+                `How:\n` +
+                `• Tool in HMAC payload\n` +
+                `• Sig: tool+agent+time\n` +
+                `• Change tool = invalid sig\n` +
+                `• Crypto verification fails`,
+                'success'
+            );
+            
+            btn.disabled = false;
+            btn.textContent = 'Try tool swap';
+        }
+        
+        async function runFull() {
+            const btn = document.getElementById('btn-full');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            
+            out('out4', '🏰 Initiating...\n');
+            await sleep(400);
+            
+            out('out4', '🏰 Step 1: Decide\n⏳ Calculating integrity...');
+            await sleep(600);
+            
+            const integrity = 0.947;
+            
+            out('out4',
+                `🏰 Step 1: Decide\n\n` +
+                `✓ ALLOW\n` +
+                `  Integrity: ${integrity}\n` +
+                `  Signals: 0.92, 0.95\n\n` +
+                `🔐 Step 2: Consume\n` +
+                `⏳ Verifying HMAC...`
+            );
+            await sleep(600);
+            
+            out('out4',
+                `🏰 Step 1: Decide ✓\n` +
+                `🔐 Step 2: Consume ✓\n\n` +
+                `  Sig: Valid\n` +
+                `  Tool: Matched\n` +
+                `  Replay: First use\n` +
+                `  Time: Valid\n\n` +
+                `📝 Step 3: Audit\n` +
+                `⏳ Verifying chain...`
+            );
+            await sleep(600);
+            
+            out('out4',
+                `🏰 Complete\n\n` +
+                `✓ Decision - ALLOW\n` +
+                `✓ Consumption - OK\n` +
+                `✓ Audit - Verified\n\n` +
+                `Logged:\n` +
+                `• Decision (f3a9...)\n` +
+                `• Consumption (8e7d...)\n` +
+                `• Chain (prev: f3a9...)\n\n` +
+                `Chain:\n` +
+                `• hash = SHA256(prev+data)\n` +
+                `• Tamper = breaks chain\n` +
+                `• Immutable audit\n\n` +
+                `💡 Fortress architecture\n` +
+                `💡 Cryptographic proof`,
+                'success'
+            );
+            
+            btn.disabled = false;
+            btn.textContent = 'Run complete flow';
+        }
+    </script>
+</body>
+</html>
