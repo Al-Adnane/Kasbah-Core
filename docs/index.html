@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kasbah — Stop your AI from going rogue</title>
+  <meta name="description" content="Runtime enforcement for AI agents — cryptographic proof before every tool execution." />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,system-ui,sans-serif;background:#0F172A;color:#fff;line-height:1.6}
+    .wrap{max-width:1100px;margin:auto;padding:40px 20px}
+    
+    /* Hero */
+    h1{font-size:clamp(36px,7vw,68px);font-weight:900;margin-bottom:16px;text-align:center;letter-spacing:-0.02em}
+    .lead{text-align:center;font-size:clamp(18px,3vw,24px);opacity:.88;max-width:850px;margin:0 auto 12px;line-height:1.5}
+    .sublead{text-align:center;font-size:15px;opacity:.65;max-width:900px;margin:0 auto 28px}
+    
+    /* Buttons */
+    .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+    .btn{padding:16px 28px;border-radius:10px;font-weight:900;cursor:pointer;border:none;background:#C1440E;color:#fff;text-decoration:none;display:inline-block;transition:all 0.2s;font-size:15px}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(193,68,14,0.5)}
+    .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+    .btn.secondary{background:transparent;border:2px solid rgba(255,255,255,.3);color:rgba(255,255,255,.9)}
+    .btn.secondary:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.5)}
+    
+    /* Demo grid */
+    #demo{padding-top:24px}
+    .grid{display:grid;gap:20px}
+    @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+    
+    .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:24px;transition:all 0.3s}
+    .card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.07)}
+    .card h3{margin-bottom:8px;font-size:20px;font-weight:800}
+    .hint{opacity:.7;font-size:14px;margin-bottom:16px;line-height:1.5}
+    
+    /* Terminal */
+    .terminal{background:#000;border-radius:12px;padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;white-space:pre-wrap;margin-top:14px;min-height:140px;border:1px solid rgba(255,255,255,.18);line-height:1.6;color:rgba(212,197,185,0.95)}
+    .terminal.success{border-color:#1E3A8A;box-shadow:0 0 20px rgba(30,58,138,0.3)}
+    .terminal.error{border-color:#C1440E;box-shadow:0 0 20px rgba(193,68,14,0.3)}
+    
+    /* Details/accordion */
+    details{margin-top:24px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px}
+    summary{cursor:pointer;font-weight:800;font-size:17px;padding:4px 0}
+    summary:hover{opacity:0.8}
+    .opt{margin-top:14px;opacity:.86;line-height:1.7}
+    
+    /* Story boxes */
+    .story{margin-top:16px;padding:0}
+    .row{display:grid;gap:16px;margin-bottom:20px}
+    @media(min-width:900px){.row{grid-template-columns:1fr 1fr}}
+    .box{padding:18px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12)}
+    .box code{background:rgba(0,0,0,.35);padding:3px 8px;border-radius:6px;color:#ffb09a;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px}
+    .box b{color:#fff}
+    ul{margin:10px 0 0 20px}
+    li{margin:6px 0}
+    
+    /* Integration section */
+    .integration{margin-top:32px;padding:32px 0}
+    .integration h2{font-size:clamp(28px,5vw,42px);font-weight:900;margin-bottom:12px;text-align:center}
+    .integration-subtitle{text-align:center;opacity:.7;font-size:16px;margin-bottom:32px}
+    .int-grid{display:grid;gap:20px;margin-top:24px}
+    @media(min-width:900px){.int-grid{grid-template-columns:1fr 1fr}}
+    .int-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:20px}
+    .int-card h4{font-size:16px;font-weight:800;margin-bottom:12px;color:#C1440E}
+    .int-card pre{background:#000;padding:14px;border-radius:10px;overflow-x:auto;font-size:12px;line-height:1.6;color:rgba(212,197,185,0.9);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    
+    footer{text-align:center;opacity:.55;font-size:13px;padding:60px 20px 30px;border-top:1px solid rgba(255,255,255,.08);margin-top:60px}
+    .arabic{font-size:24px;margin-bottom:8px;color:#1E3A8A}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Your AI agent just refunded the wrong customer</h1>
+    <p class="lead">
+      Auth worked. The agent had valid credentials.<br>
+      <b>The runtime action was wrong.</b>
+    </p>
+    <p class="sublead">
+      Kasbah adds cryptographic proof before every tool execution.<br>
+      Single-use tickets. Tool binding. Tamper-proof audit.
+    </p>
+
+    <div class="cta">
+      <button class="btn" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Try the demo ↓</button>
+      <a class="btn secondary" href="https://github.com/Al-Adnane/Kasbah-Core" target="_blank" rel="noreferrer">GitHub</a>
+      <a class="btn secondary" href="https://github.com/Al-Adnane/Kasbah-Core/issues/new/choose" target="_blank" rel="noreferrer">Feedback</a>
+    </div>
+
+    <!-- Concrete story FIRST, but collapsible -->
+    <details open>
+      <summary>The mundane failure mode (real scenario)</summary>
+      <div class="story">
+        <div class="row">
+          <div class="box">
+            <b>❌ Without Kasbah</b><br/><br/>
+            Support agent opens <b>Customer A</b>. User says: "refund my last invoice."<br/><br/>
+            Then something normal happens:
+            <ul>
+              <li>timeout → retry</li>
+              <li>pagination loads another record</li>
+              <li>new message arrives mid-run</li>
+            </ul>
+            Context drifts. Agent executes:<br/><br/>
+            <code>billing.refund(customer_id=...)</code><br/><br/>
+            …but targets <b>Customer B</b> (similar email / stale state / name collision).<br/><br/>
+            <b>Nothing was hacked.</b> Auth was valid.<br>
+            The runtime action was wrong.
+          </div>
+
+          <div class="box">
+            <b>✅ With Kasbah</b><br/><br/>
+            Agent can't run <code>billing.refund</code> just because it authenticated.<br/><br/>
+            Must present signed execution ticket bound to:
+            <ul>
+              <li><b>tool</b>: <code>billing.refund</code></li>
+              <li><b>target</b>: <code>customer_id = A</code></li>
+              <li><b>TTL</b>: stale context expires</li>
+              <li><b>single-use</b>: retries can't replay</li>
+            </ul>
+            When context drifts → verification fails → <code>DENY</code><br/><br/>
+            Result: "helpful mistake" becomes blocked action.
+          </div>
+        </div>
+
+        <div class="opt">
+          <b>How demo buttons map to this:</b>
+          <ul>
+            <li><b>Replay ticket</b> = retry/loop reusing expired auth</li>
+            <li><b>Swap tool</b> = context drift calling wrong function</li>
+            <li><b>Safe flow</b> = decide → proof → execute once → audit</li>
+          </ul>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div id="demo" class="wrap">
+    <h2 style="text-align:center;font-size:clamp(28px,5vw,42px);font-weight:900;margin-bottom:32px">Interactive demo</h2>
+    
+    <div class="grid">
+      <div class="card">
+        <h3>✓ Safe execution</h3>
+        <div class="hint">Normal flow: decide → signed ticket → consume → audit chain</div>
+        <button class="btn" onclick="runSafe()" id="btn1">Run safe flow</button>
+        <div class="terminal" id="out1">Click above...</div>
+      </div>
+
+      <div class="card">
+        <h3>⚔️ Attack: Replay ticket</h3>
+        <div class="hint">Retry/loop accidentally reuses consumed token</div>
+        <button class="btn" onclick="runReplay()" id="btn2">Try replay attack</button>
+        <div class="terminal" id="out2">Click above...</div>
+      </div>
+
+      <div class="card">
+        <h3>⚔️ Attack: Tool swap</h3>
+        <div class="hint">Context drift tries to execute wrong function</div>
+        <button class="btn" onclick="runSwap()" id="btn3">Try tool swap</button>
+        <div class="terminal" id="out3">Click above...</div>
+      </div>
+
+      <div class="card">
+        <h3>🔐 Complete protocol</h3>
+        <div class="hint">Full sequence: verify + single-use + hash-chained audit</div>
+        <button class="btn" onclick="runFull()" id="btn4">Run full protocol</button>
+        <div class="terminal" id="out4">Click above...</div>
+      </div>
+    </div>
+
+    <!-- Integration examples -->
+    <div class="integration">
+      <h2>How to integrate</h2>
+      <p class="integration-subtitle">Works with any agent framework. 5 minutes to add.</p>
+      
+      <div class="int-grid">
+        <div class="int-card">
+          <h4>LangChain / LangGraph</h4>
+          <pre>from kasbah import protect_tool
+
+@protect_tool(kasbah_api_key="...")
+def refund_customer(customer_id: str):
+    return billing.refund(customer_id)
+
+# Kasbah gates execution automatically
+agent.add_tool(refund_customer)</pre>
+        </div>
+
+        <div class="int-card">
+          <h4>Direct API wrapper</h4>
+          <pre>async function safeRefund(customerId) {
+  // Get permission first
+  const { ticket, allowed } = 
+    await kasbah.decide({
+      tool: 'billing.refund',
+      target: { customer_id: customerId }
+    });
+  
+  if (!allowed) throw new Error('Blocked');
+  
+  // Execute with proof
+  return billing.refund(customerId, { 
+    kasbah_ticket: ticket 
+  });
+}</pre>
+        </div>
+
+        <div class="int-card">
+          <h4>Claude / OpenAI tools</h4>
+          <pre>const tools = [{
+  name: "refund_customer",
+  execute: async (params) => {
+    // Runtime gate
+    const gate = await kasbah.decide({
+      tool: 'billing.refund',
+      target: params
+    });
+    
+    if (!gate.allowed) return null;
+    
+    return billing.refund(params.customer_id);
+  }
+}];</pre>
+        </div>
+
+        <div class="int-card">
+          <h4>Any framework</h4>
+          <pre># Before dangerous action
+ticket = kasbah.decide(
+    tool_name="db.execute",
+    signals={"consistency": 0.95}
+)
+
+if ticket.allowed:
+    # Execute with proof
+    result = execute_tool(
+        kasbah_ticket=ticket.id
+    )</pre>
+        </div>
+      </div>
+    </div>
+
+    <details>
+      <summary>Technical mechanics (optional)</summary>
+      <div class="opt">
+        In production, Kasbah verifies HMAC signatures, tool binding, TTL, and "already consumed" state in Redis, 
+        then appends to a SHA256 hash-chained audit log. Tamper with any event → chain verification fails.
+      </div>
+    </details>
+  </div>
+
+  <footer>
+    <div class="arabic">قصبة</div>
+    <div>Built in Rabat, Morocco · MIT Licensed · No VC money</div>
+  </footer>
+
+  <script>
+    let ticket = null;
+    let consumed = false;
+
+    function out(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'terminal ' + (type || '');
+    }
+
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    async function runSafe() {
+      const btn = document.getElementById('btn1');
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      
+      consumed = false;
+      ticket = 'eyJhbGci...kF8vY2mK';
+      
+      out('out1', '⏳ Requesting permission...');
+      await sleep(500);
+      
+      out('out1',
+        "✓ DECIDE → ALLOW\n" +
+        "  Integrity: 0.953\n" +
+        "  Ticket: " + ticket + "\n\n" +
+        "⏳ Verifying signature..."
+      );
+      await sleep(400);
+      
+      consumed = true;
+      out('out1',
+        "✓ DECIDE → ALLOW\n" +
+        "✓ VERIFY → signature valid, tool matched\n" +
+        "✓ CONSUME → allowed (1/1 use)\n" +
+        "✓ AUDIT → hash-chained entry appended\n\n" +
+        "Result: executed under proof, not trust.\n" +
+        "Ticket consumed. Cannot replay.",
+        'success'
+      );
+      
+      btn.disabled = false;
+      btn.textContent = 'Run safe flow';
+    }
+
+    async function runReplay() {
+      if (!ticket) {
+        out('out2', '⚠️ Run safe flow first to get a ticket!', 'error');
+        return;
+      }
+      
+      const btn = document.getElementById('btn2');
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      
+      out('out2', '⚔️ Attempting replay attack...\nReusing consumed ticket...');
+      await sleep(600);
+      
+      out('out2',
+        "⚔️ ATTACK: Replay consumed ticket\n\n" +
+        "🛡️ FORTRESS: HOLDS\n" +
+        "Status: 403 Forbidden\n\n" +
+        "✓ Replay blocked!\n" +
+        "Reason: ticket_already_consumed\n\n" +
+        "How it works:\n" +
+        "• Tickets tracked in Redis\n" +
+        "• TTL: 15 minutes\n" +
+        "• Second use = instant 403\n\n" +
+        "Maps to: retry/loop reusing auth",
+        'success'
+      );
+      
+      btn.disabled = false;
+      btn.textContent = 'Try replay attack';
+    }
+
+    async function runSwap() {
+      if (!ticket) {
+        out('out3', '⚠️ Run safe flow first!', 'error');
+        return;
+      }
+      
+      const btn = document.getElementById('btn3');
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      
+      out('out3', '⚔️ Privilege escalation...\nSwapping billing.refund → shell.exec...');
+      await sleep(600);
+      
+      out('out3',
+        "⚔️ ATTACK: Tool swap\n\n" +
+        "Ticket was for: billing.refund\n" +
+        "Attempted: shell.exec\n\n" +
+        "🛡️ FORTRESS: HOLDS\n" +
+        "Status: 403 Forbidden\n\n" +
+        "✓ Tool swap blocked!\n" +
+        "Reason: tool_mismatch\n\n" +
+        "How it works:\n" +
+        "• Tool name in HMAC signature\n" +
+        "• Changing tool → invalid signature\n\n" +
+        "Maps to: context drift calling wrong function",
+        'success'
+      );
+      
+      btn.disabled = false;
+      btn.textContent = 'Try tool swap';
+    }
+
+    async function runFull() {
+      const btn = document.getElementById('btn4');
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      
+      out('out4', '🏰 Initiating full protocol...\n');
+      await sleep(400);
+      
+      out('out4', '🏰 Step 1: DECIDE\n⏳ Calculating integrity...');
+      await sleep(500);
+      
+      out('out4',
+        "🏰 Step 1: DECIDE ✓\n" +
+        "  Decision: ALLOW\n" +
+        "  Integrity: 0.947\n" +
+        "  Ticket issued\n\n" +
+        "🔐 Step 2: VERIFY\n" +
+        "⏳ Checking HMAC signature..."
+      );
+      await sleep(500);
+      
+      out('out4',
+        "🏰 Step 1: DECIDE ✓\n" +
+        "🔐 Step 2: VERIFY ✓\n" +
+        "  Signature: Valid (HMAC-SHA256)\n" +
+        "  Tool: Matched\n" +
+        "  TTL: Valid\n\n" +
+        "📝 Step 3: AUDIT\n" +
+        "⏳ Appending hash chain..."
+      );
+      await sleep(500);
+      
+      out('out4',
+        "✓ Complete protocol\n\n" +
+        "Step 1: DECIDE → ALLOW\n" +
+        "Step 2: VERIFY → signature valid\n" +
+        "Step 3: CONSUME → executed (1/1)\n" +
+        "Step 4: AUDIT → hash-chained\n\n" +
+        "Audit chain:\n" +
+        "• Event hash = SHA256(prev_hash + data)\n" +
+        "• Tamper with any event → chain breaks\n" +
+        "• Cryptographically provable history\n\n" +
+        "🏰 Heritage: Fortress architecture\n" +
+        "💡 Future: Cryptographic proof",
+        'success'
+      );
+      
+      btn.disabled = false;
+      btn.textContent = 'Run full protocol';
+    }
+  </script>
+</body>
+</html>
+<!-- Add this before </body> in docs/index.html -->
+<script>
+// Simple event tracking - no external dependencies
+const events = [];
+const sessionStart = Date.now();
+
+function track(event, data = {}) {
+  const entry = {
+    event,
+    data,
+    timestamp: Date.now(),
+    session_duration: Date.now() - sessionStart,
+    url: window.location.href
+  };
+  
+  events.push(entry);
+  console.log('📊 Event:', entry);
+  
+  // Send to your own endpoint (optional)
+  // fetch('https://api.kasbah.dev/track', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify(entry)
+  // }).catch(() => {});
+}
+
+// Track demo button clicks
+const demoButtons = {
+  'btn1': 'safe_flow',
+  'btn2': 'replay_attack',
+  'btn3': 'tool_swap',
+  'btn4': 'full_protocol'
+};
+
+Object.entries(demoButtons).forEach(([id, name]) => {
+  const btn = document.getElementById(id);
+  if (btn) {
+    const originalOnClick = btn.onclick;
+    btn.onclick = function() {
+      track('demo_run', { demo: name });
+      return originalOnClick.apply(this, arguments);
+    };
+  }
+});
+
+// Track CTA clicks
+document.querySelectorAll('.btn').forEach(btn => {
+  if (!btn.id) { // Don't double-track demo buttons
+    btn.addEventListener('click', () => {
+      track('cta_click', {
+        text: btn.textContent.trim(),
+        href: btn.href || null
+      });
+    });
+  }
+});
+
+// Track details/accordion expansions
+document.querySelectorAll('details').forEach(details => {
+  details.addEventListener('toggle', () => {
+    if (details.open) {
+      track('accordion_open', {
+        summary: details.querySelector('summary').textContent.trim()
+      });
+    }
+  });
+});
+
+// Track scroll depth
+let maxScroll = 0;
+let scrollTracked = new Set();
+
+window.addEventListener('scroll', () => {
+  const scrollPercent = Math.round(
+    (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100
+  );
+  
+  if (scrollPercent > maxScroll) {
+    maxScroll = scrollPercent;
+  }
+  
+  [25, 50, 75, 100].forEach(milestone => {
+    if (scrollPercent >= milestone && !scrollTracked.has(milestone)) {
+      scrollTracked.add(milestone);
+      track('scroll_depth', { percent: milestone });
+    }
+  });
+});
+
+// Track exit (when tab closes)
+window.addEventListener('beforeunload', () => {
+  track('session_end', {
+    duration: Date.now() - sessionStart,
+    max_scroll: maxScroll,
+    events_count: events.length
+  });
+  
+  // Store in localStorage for debugging
+  localStorage.setItem('kasbah_last_session', JSON.stringify({
+    events,
+    duration: Date.now() - sessionStart,
+    timestamp: new Date().toISOString()
+  }));
+});
+
+// On page load
+track('page_view', {
+  referrer: document.referrer,
+  viewport: `${window.innerWidth}x${window.innerHeight}`
+});
+
+// Debug: View session data in console
+console.log('📊 To view session data: localStorage.getItem("kasbah_last_session")');
+</script>
+
+<script>
+// Ultra-simple tracking - just console logs
+console.log('📊 Kasbah Analytics Active');
+
+// Track which demos people run
+['btn1','btn2','btn3','btn4'].forEach(id => {
+  const btn = document.getElementById(id);
+  if (btn && btn.onclick) {
+    const orig = btn.onclick;
+    btn.onclick = function() {
+      console.log('Demo clicked:', id);
+      return orig.apply(this, arguments);
+    };
+  }
+});
+
+// Track scroll depth
+let maxScroll = 0;
+window.addEventListener('scroll', () => {
+  const pct = Math.round((window.scrollY + window.innerHeight) / document.body.scrollHeight * 100);
+  if (pct > maxScroll) {
+    maxScroll = pct;
+    if (pct >= 75) console.log('Deep scroll:', pct + '%');
+  }
+});
+</script>
