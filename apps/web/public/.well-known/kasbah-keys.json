@@ -1,0 +1,1 @@
+{"issuer":"kasbah","spec":"https://bekasbah.com/spec/receipt-v2","keys":[{"kid":"029e59602579d4be","alg":"EdDSA","crv":"Ed25519","use":"sig","x":"bKwP5vrDahVhocU2bLuqWes-ZhIh8mhqLQkIUUnxEHM","pem":"-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbKwP5vrDahVhocU2bLuqWes+ZhIh8mhqLQkIUUnxEHM=\n-----END PUBLIC KEY-----\n","createdAt":"2026-05-27T09:36:20.259Z"}]}

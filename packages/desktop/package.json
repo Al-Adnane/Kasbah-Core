@@ -1,0 +1,116 @@
+{
+  "name": "kasbah-guard-desktop",
+  "version": "3.0.0",
+  "description": "Kasbah Guard Desktop — AI Governance Platform for Enterprise",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "NODE_ENV=development npx electron .",
+    "start": "NODE_ENV=production npx electron .",
+    "build": "npx electron-builder --mac",
+    "build:dmg": "npx electron-builder --mac dmg",
+    "build:all": "npx electron-builder -mwl"
+  },
+  "build": {
+    "appId": "com.kasbahguard.desktop",
+    "productName": "Kasbah Guard",
+    "copyright": "Copyright © 2026 Kasbah Guard",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "files": [
+      "src/**/*",
+      "resources/**/*",
+      "package.json",
+      "!src/**/*.test.*"
+    ],
+    "extraResources": [
+      { "from": "../api-server",           "to": "packages/api-server",           "filter": ["**/*", "!tests/**", "!*.test.*", "!Dockerfile", "!coverage/**"] },
+      { "from": "../../src",               "to": "src",                           "filter": ["**/*"] },
+      { "from": "../../detector.js",       "to": "detector.js" },
+      { "from": "../../.kasbahpolicy.json","to": ".kasbahpolicy.json" },
+      { "from": "../../kasbah-unified-engine.js", "to": "kasbah-unified-engine.js" },
+      { "from": "../../demo",              "to": "demo",                          "filter": ["**/*", "!test-*.js", "!debug-*.js"] },
+      { "from": "../../products",          "to": "products",                      "filter": ["**/*"] },
+      { "from": "../../app",               "to": "app",                           "filter": ["**/*"] },
+      { "from": "../agent-cost-watch",     "to": "packages/agent-cost-watch",     "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../agent-runtime",        "to": "packages/agent-runtime",        "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../agent-governance",     "to": "packages/agent-governance",     "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../detector",             "to": "packages/detector",             "filter": ["**/*", "!node_modules/**", "!tests/**", "!coverage/**"] },
+      { "from": "../wasm-kernel",          "to": "packages/wasm-kernel",          "filter": ["pkg/**/*", "index.js", "package.json"] },
+      { "from": "../advanced-security",    "to": "packages/advanced-security",    "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../biometric-detection",  "to": "packages/biometric-detection",  "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../policy-fuzzer",        "to": "packages/policy-fuzzer",        "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../verification-network", "to": "packages/verification-network", "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../threat-coop",          "to": "packages/threat-coop",          "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../islamic-finance",      "to": "packages/islamic-finance",      "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../nomos-engine",         "to": "packages/nomos-engine",         "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../kernel-ebpf",          "to": "packages/kernel-ebpf",          "filter": ["**/*", "!node_modules/**", "!tests/**"] },
+      { "from": "../hardware-enclave",     "to": "packages/hardware-enclave",     "filter": ["**/*", "!node_modules/**", "!tests/**"] }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.icns",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null,
+      "bundleVersion": "300",
+      "minimumSystemVersion": "12.0"
+    },
+    "dmg": {
+      "background": null,
+      "sign": false,
+      "window": {
+        "width": 600,
+        "height": 400
+      },
+      "contents": [
+        {
+          "x": 150,
+          "y": 200,
+          "type": "file"
+        },
+        {
+          "x": 450,
+          "y": 200,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "resources/icon.ico",
+      "publisherName": "Kasbah Guard"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Security"
+    }
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "electron": "^41.3.0",
+    "electron-builder": "^25.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
