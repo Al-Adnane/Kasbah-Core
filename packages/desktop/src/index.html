@@ -14,30 +14,30 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 :root{
-  /* Brand: warm terracotta — identity, CTAs, active states */
-  --brand:#BF3811;
-  --brand-soft:rgba(191,56,17,.08);
-  --brand-glow:0 0 0 3px rgba(191,56,17,.1);
-  /* Danger: distinct crimson — threats, blocks, errors */
-  --danger:#D1242F;
-  --danger-soft:rgba(209,36,47,.08);
-  /* Keep --red as alias for backward compat */
-  --red:#BF3811;
-  --red-soft:rgba(191,56,17,.08);
-  --red-glow:0 0 0 3px rgba(191,56,17,.1);
-  --green:#0F7A50;
-  --green-bg:rgba(15,122,80,.08);
-  --amber:#8A5C00;
-  --amber-bg:rgba(138,92,0,.08);
-  --bg:#F7F5F2;
-  --bg2:#EFECE7;
+  /* Brand: terracotta (aligned with web · #C1440E) */
+  --brand:#C1440E;
+  --brand-soft:rgba(193,68,14,.10);
+  --brand-glow:0 0 0 3px rgba(193,68,14,.12);
+  --danger:#C1440E;
+  --danger-soft:rgba(193,68,14,.10);
+  --red:#C1440E;
+  --red-lt:#E5501A;
+  --red-dk:#A23509;
+  --red-soft:rgba(193,68,14,.10);
+  --red-glow:0 0 0 3px rgba(193,68,14,.12);
+  --green:#10B981;
+  --green-bg:rgba(16,185,129,.08);
+  --amber:#D97706;
+  --amber-bg:rgba(217,119,6,.08);
+  --bg:#FEFCFA;
+  --bg2:#F7F4F0;
   --card:#FFFFFF;
-  --ink:#1A1A1A;
-  --ink2:#3A3A3A;
-  --muted:#6A6A6A;
-  --subtle:#AAAAAA;
-  --border:#E0DBD4;
-  --border-soft:#EAE6E0;
+  --ink:#0F172A;
+  --ink2:#1E293B;
+  --muted:#64748B;
+  --subtle:#94A3B8;
+  --border:#E8E2DB;
+  --border-soft:#F0EAE2;
   --r:12px;--r-lg:16px;--r-xl:20px;
   --shadow:0 1px 4px rgba(26,26,26,.06),0 4px 16px rgba(26,26,26,.04);
   --shadow-md:0 4px 24px rgba(26,26,26,.09);
@@ -1198,6 +1198,10 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
         <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
         Scan
       </div>
+      <div class="nav-item" id="navVerify" data-page="verify">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.1" fill="none" opacity=".4"/></svg></span>
+        Verify
+      </div>
       <div class="nav-item" id="navAgents" data-page="agents">
         <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" fill="currentColor"/><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.1" fill="none" opacity=".5"/></svg></span>
         Activity
@@ -1332,14 +1336,55 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
     <div class="page active" id="pageHome">
       <div class="dash-shell">
 
-        <!-- Live sessions — the actual product -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div>
-            <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink)">Agent Control</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:3px">Run AI agents unsupervised. Kasbah holds the contract.</div>
+        <!-- ── HERO · runtime-first, aligned with bekasbah.com ── -->
+        <div style="margin-bottom:18px">
+          <div style="font-size:26px;font-weight:800;letter-spacing:-.7px;color:var(--ink);line-height:1.15;margin-bottom:6px">
+            Your AI does 200 things a day.<br>
+            Right now, you can't see <em style="color:var(--red);font-style:normal">any</em> of them.
           </div>
-          <button class="k-btn k-btn--primary" onclick="openNewSession()" style="gap:6px;display:flex;align-items:center">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <div style="font-size:13.5px;color:var(--muted);line-height:1.55;max-width:680px">
+            Kasbah is what runs inside your AI stack — saving money, blocking attacks, redacting data, signing every action.
+            <em style="color:var(--ink);font-style:normal;font-weight:600">This desktop app is your local copy of the runtime.</em>
+          </div>
+        </div>
+
+        <!-- ── INSTALL ROW · MCP / Browser / Mobile / Self-host (matches web) ── -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px">
+          <a class="install-btn" onclick="nav('connect')" style="cursor:pointer;display:flex;gap:10px;align-items:center;padding:11px 12px;background:var(--red);color:#fff;border-radius:10px;text-decoration:none;border:1.5px solid var(--red);transition:all .15s">
+            <span style="font-size:18px;width:24px;text-align:center">⌘</span>
+            <span style="display:flex;flex-direction:column;line-height:1.2">
+              <strong style="font-size:12px;font-weight:700">Claude Code · Cursor</strong>
+              <span style="font-size:10.5px;opacity:.85">one MCP install</span>
+            </span>
+          </a>
+          <a class="install-btn" onclick="nav('connect')" style="cursor:pointer;display:flex;gap:10px;align-items:center;padding:11px 12px;background:var(--card);color:var(--ink);border-radius:10px;text-decoration:none;border:1.5px solid var(--border);transition:all .15s">
+            <span style="font-size:18px;width:24px;text-align:center">◐</span>
+            <span style="display:flex;flex-direction:column;line-height:1.2">
+              <strong style="font-size:12px;font-weight:700">Browser ext</strong>
+              <span style="font-size:10.5px;color:var(--muted)">ChatGPT · Claude</span>
+            </span>
+          </a>
+          <a class="install-btn" onclick="alert('Mobile beta — join via web')" style="cursor:pointer;display:flex;gap:10px;align-items:center;padding:11px 12px;background:var(--card);color:var(--ink);border-radius:10px;text-decoration:none;border:1.5px solid var(--border);transition:all .15s">
+            <span style="font-size:18px;width:24px;text-align:center">▢</span>
+            <span style="display:flex;flex-direction:column;line-height:1.2">
+              <strong style="font-size:12px;font-weight:700">Mobile</strong>
+              <span style="font-size:10.5px;color:var(--muted)">iOS · Android</span>
+            </span>
+          </a>
+          <a class="install-btn" onclick="nav('settings')" style="cursor:pointer;display:flex;gap:10px;align-items:center;padding:11px 12px;background:var(--card);color:var(--ink);border-radius:10px;text-decoration:none;border:1.5px solid var(--border);transition:all .15s">
+            <span style="font-size:18px;width:24px;text-align:center">▦</span>
+            <span style="display:flex;flex-direction:column;line-height:1.2">
+              <strong style="font-size:12px;font-weight:700">Self-host engine</strong>
+              <span style="font-size:10.5px;color:var(--muted)">already running ✓</span>
+            </span>
+          </a>
+        </div>
+
+        <!-- Agent-control bar (kept from previous, demoted) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px">
+          <div style="font-size:12px;color:var(--muted)">Run an agent under contract — budget cap, allowed tools, kill switch.</div>
+          <button class="k-btn k-btn--primary" onclick="openNewSession()" style="gap:6px;display:flex;align-items:center;font-size:12px;padding:6px 14px">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             New session
           </button>
         </div>
@@ -2019,6 +2064,38 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
         <div class="usage-card">
           <div class="usage-tier-label" style="margin-bottom:12px">Per-product cost</div>
           <div id="usageWeights" style="font-size:12.5px;color:var(--muted);line-height:1.7"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VERIFY page · offline Ed25519 receipt check ── -->
+    <div class="page" id="pageVerify">
+      <div class="page-wrap" style="max-width:760px">
+        <div class="page-hd">
+          <div class="page-title">Verify a receipt</div>
+          <div class="page-desc">Independent · works offline · zero engine round-trip. Paste any Kasbah v2 receipt and its payload — verified in your browser with the published Ed25519 public key.</div>
+        </div>
+
+        <div class="settings-card" style="padding:20px">
+          <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Receipt</label>
+          <textarea id="vfReceipt" placeholder="kasbah_receipt:v2:ed25519:…" spellcheck="false"
+            style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-family:ui-monospace,monospace;font-size:12px;color:var(--ink);resize:vertical;min-height:60px;line-height:1.5;outline:none"></textarea>
+
+          <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:14px 0 6px">Payload (base64url)</label>
+          <textarea id="vfPayload" placeholder="base64url-encoded canonical JSON" spellcheck="false"
+            style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-family:ui-monospace,monospace;font-size:12px;color:var(--ink);resize:vertical;min-height:80px;line-height:1.5;outline:none"></textarea>
+
+          <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
+            <button class="k-btn k-btn--primary" id="vfBtn" onclick="vfRun()">Verify offline →</button>
+            <span id="vfMeta" style="font-size:12px;color:var(--muted)">fetching public key…</span>
+          </div>
+        </div>
+
+        <div id="vfResult" style="margin-top:14px;display:none"></div>
+
+        <div style="margin-top:18px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.6">
+          Implements <a href="https://bekasbah.com/spec/receipt-v2" target="_blank" style="color:var(--red);font-weight:600">Receipt Spec v2</a>.
+          The engine signs every governance decision with Ed25519. Anyone with the published public key can verify it offline, forever — even if Kasbah ceases to exist.
         </div>
       </div>
     </div>
@@ -4136,6 +4213,63 @@ function mvRenderUniverses(results) {
     </div>`;
   }).join('');
 }
+
+// ── VERIFY · offline Ed25519 receipt check via the engine's /v1/receipt/verify ─
+let _vfPubKey = null;
+async function vfLoadPubKey() {
+  try {
+    const r = await fetch('http://127.0.0.1:8788/.well-known/kasbah-keys.json');
+    if (!r.ok) throw new Error('engine offline');
+    const j = await r.json();
+    const k = j?.keys?.[0];
+    if (!k) throw new Error('no key');
+    _vfPubKey = k;
+    const el = document.getElementById('vfMeta');
+    if (el) el.textContent = 'pubkey loaded · kid ' + k.kid;
+  } catch (e) {
+    const el = document.getElementById('vfMeta');
+    if (el) el.textContent = '⚠ engine offline · ' + e.message;
+  }
+}
+async function vfRun() {
+  const r = document.getElementById('vfReceipt').value.trim();
+  const p = document.getElementById('vfPayload').value.trim();
+  const out = document.getElementById('vfResult');
+  if (!r || !p) {
+    out.style.display = 'block';
+    out.innerHTML = '<div style="padding:16px 18px;border:2px solid var(--red);background:var(--red-soft);border-radius:10px"><div style="font-weight:700;color:var(--red);font-size:16px;margin-bottom:4px">✗ Invalid</div><div style="font-size:13px;color:var(--muted)">Both receipt and payload are required.</div></div>';
+    return;
+  }
+  try {
+    const res = await fetch('http://127.0.0.1:8788/v1/receipt/verify', {
+      method: 'POST', headers: {'content-type':'application/json'},
+      body: JSON.stringify({ receipt: r, payload: p })
+    });
+    const d = await res.json();
+    const ok = d.verified === true || d.valid === true;
+    const c = ok ? 'green' : 'red';
+    const head = ok ? '✓ Genuine' : '✗ Invalid';
+    const body = ok
+      ? `This receipt was signed by Kasbah engine key <code style="font-family:ui-monospace,monospace;background:var(--bg2);padding:2px 6px;border-radius:3px;color:var(--ink)">${d.keyId || (_vfPubKey?.kid || '—')}</code>. Verified by the local engine using Ed25519.`
+      : (d.error || 'Signature does not match. The receipt has been tampered with.');
+    let decoded = '';
+    if (ok && d.decoded) {
+      decoded = `<pre style="margin-top:12px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-family:ui-monospace,monospace;font-size:11px;overflow-x:auto;line-height:1.5;color:var(--ink)">${JSON.stringify(d.decoded, null, 2)}</pre>`;
+    }
+    out.style.display = 'block';
+    out.innerHTML = `<div style="padding:18px 20px;border:2px solid var(--${c});background:var(--${c}-bg);border-radius:12px"><div style="font-weight:700;color:var(--${c});font-size:18px;margin-bottom:6px">${head}</div><div style="font-size:13.5px;color:var(--muted);line-height:1.6">${body}</div>${decoded}</div>`;
+  } catch (e) {
+    out.style.display = 'block';
+    out.innerHTML = `<div style="padding:16px 18px;border:2px solid var(--red);background:var(--red-soft);border-radius:10px"><div style="font-weight:700;color:var(--red);font-size:16px;margin-bottom:4px">✗ Engine unreachable</div><div style="font-size:13px;color:var(--muted)">${e.message}</div></div>`;
+  }
+}
+// Load pubkey when verify tab becomes active
+document.addEventListener('DOMContentLoaded', () => {
+  const navV = document.getElementById('navVerify');
+  if (navV) navV.addEventListener('click', () => { if (!_vfPubKey) vfLoadPubKey(); });
+  // Also load eagerly so it's ready
+  setTimeout(vfLoadPubKey, 1200);
+});
 
 async function mvRun() {
   const text = $('mvInput').value.trim();
