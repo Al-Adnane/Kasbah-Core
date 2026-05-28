@@ -1301,6 +1301,35 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
   .cp-kpi-cell:nth-child(2){border-right:none}
   .cp-kpi-cell:nth-child(1),.cp-kpi-cell:nth-child(2){border-bottom:1px solid var(--border)}
 }
+
+/* ── MODELS page · segmented control + provider groups ── */
+.seg{display:inline-flex;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:2px;gap:2px}
+.seg-btn{font-family:inherit;font-size:11px;font-weight:600;padding:5px 10px;border-radius:5px;background:transparent;border:none;color:var(--muted);cursor:pointer;transition:all .12s}
+.seg-btn:hover{color:var(--ink)}
+.seg-btn.active{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.md-group{margin-bottom:16px}
+.md-group-hd{display:flex;align-items:baseline;justify-content:space-between;padding:6px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.md-group-name{font-size:11px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.07em}
+.md-group-meta{font-size:10.5px;color:var(--muted);font-family:ui-monospace,monospace}
+.md-row{
+  display:grid;grid-template-columns:24px 1fr 90px 110px 84px 84px 100px;
+  gap:10px;align-items:center;padding:9px 10px;border-radius:6px;
+  font-size:11.5px;cursor:default;
+}
+.md-row:hover{background:var(--bg2)}
+.md-flag{font-size:14px;line-height:1}
+.md-id{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,monospace;font-size:11.5px}
+.md-tag{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em}
+.md-tag.flagship{background:rgba(193,68,14,.10);color:var(--red)}
+.md-tag.balanced{background:rgba(217,119,6,.10);color:#a45504}
+.md-tag.fast{background:rgba(16,185,129,.10);color:#0a7548}
+.md-tag.reasoning{background:rgba(99,102,241,.10);color:#4f46e5}
+.md-tag.unknown{background:var(--bg2);color:var(--muted)}
+.md-ctx{font-family:ui-monospace,monospace;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
+.md-price{font-family:ui-monospace,monospace;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
+.md-price-free{color:#0a7548;font-weight:600}
+.md-spend{font-family:ui-monospace,monospace;text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
+.md-spend-active{color:var(--red);font-weight:700}
 </style>
 </head>
 <body>
@@ -1383,6 +1412,11 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
         <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 12L6 8L9 11L14 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="14" cy="5" r="1.4" fill="currentColor"/></svg></span>
         Optimize
         <span id="optSavedChip" style="margin-left:auto;font-size:10px;background:rgba(16,185,129,.12);color:#10B981;padding:1px 6px;border-radius:999px;font-weight:700;font-variant-numeric:tabular-nums">$0</span>
+      </div>
+      <div class="nav-item" id="navModels" data-page="models">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.1" fill="none"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.1" fill="none"/><rect x="5.5" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.1" fill="none"/></svg></span>
+        Models
+        <span id="modelsCountChip" style="margin-left:auto;font-size:10px;background:rgba(193,68,14,.12);color:var(--red);padding:1px 6px;border-radius:999px;font-weight:700;font-variant-numeric:tabular-nums">—</span>
       </div>
       <div class="nav-item" id="navScan" data-page="scan">
         <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
@@ -2246,6 +2280,40 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
           Implements <a href="https://bekasbah.com/spec/receipt-v2" target="_blank" style="color:var(--red);font-weight:600">Receipt Spec v2</a>.
           The engine signs every governance decision with Ed25519. Anyone with the published public key can verify it offline, forever — even if Kasbah ceases to exist.
         </div>
+      </div>
+    </div>
+
+    <!-- ── MODELS · catalog of every LLM Kasbah recognizes, with live spend ── -->
+    <div class="page" id="pageModels">
+      <div class="page-wrap" style="max-width:1080px">
+        <div class="cp-title">
+          <div class="cp-h1">Models</div>
+          <div class="cp-meta">
+            <div class="seg" id="mdRegionSeg">
+              <button class="seg-btn active" data-region="">All</button>
+              <button class="seg-btn" data-region="us">🇺🇸 US</button>
+              <button class="seg-btn" data-region="cn">🇨🇳 China</button>
+              <button class="seg-btn" data-region="eu">🇪🇺 EU</button>
+              <button class="seg-btn" data-region="ca">🇨🇦 CA</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 KPIs only — minimal -->
+        <div class="cp-kpi" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
+          <div class="cp-kpi-cell">
+            <div class="cp-kpi-k">This session — total spent</div>
+            <div class="cp-kpi-v" id="mdTotalSpent">$0.00</div>
+            <div class="cp-kpi-d" id="mdTotalTokens">0 tokens · 0 models</div>
+          </div>
+          <div class="cp-kpi-cell">
+            <div class="cp-kpi-k">Catalog</div>
+            <div class="cp-kpi-v" id="mdCatalogSize">—</div>
+            <div class="cp-kpi-d">across <span id="mdProvCount">—</span> providers, <span id="mdRegCount">—</span> regions</div>
+          </div>
+        </div>
+
+        <div id="mdGroups"></div>
       </div>
     </div>
 
@@ -4620,6 +4688,109 @@ document.addEventListener('DOMContentLoaded', () => {
   cpRefresh();
   cpAttachStream();
   setInterval(cpRefresh, 5000);   // poll every 5s — keeps numbers fresh
+});
+
+// ── MODELS · catalog browser with live per-model spend ───────────────────────
+let _mdRegion = '';
+let _mdModels = [];
+let _mdUsage  = { rows: [], totalSpent: 0, totalTokens: 0 };
+
+const PROVIDER_NAMES = {
+  openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google', mistral: 'Mistral',
+  cohere: 'Cohere', xai: 'xAI', perplexity: 'Perplexity',
+  deepseek: 'DeepSeek', alibaba: 'Alibaba (Qwen)', moonshot: 'Moonshot (Kimi)',
+  zhipu: 'Zhipu (GLM)', '01ai': '01.AI (Yi)', baidu: 'Baidu (Ernie)',
+  bytedance: 'ByteDance (Doubao)', tencent: 'Tencent (Hunyuan)',
+  minimax: 'MiniMax', iflytek: 'iFlytek (Spark)', stepfun: 'StepFun',
+  meta: 'Meta', microsoft: 'Microsoft'
+};
+const PROVIDER_ORDER = [
+  'openai','anthropic','google','xai','mistral','cohere','perplexity',
+  'deepseek','alibaba','moonshot','zhipu','01ai','minimax','baidu',
+  'bytedance','tencent','iflytek','stepfun','meta','microsoft'
+];
+
+function _mdFmt$(n) { return n === 0 ? 'free' : '$' + n.toFixed(n < 1 ? 2 : 2); }
+function _mdFmtCtx(n) {
+  if (!n) return '—';
+  if (n >= 1000000) return (n/1000000) + 'M';
+  if (n >= 1000) return (n/1000) + 'K';
+  return n.toString();
+}
+
+async function mdLoad() {
+  try {
+    const u = '/v1/models' + (_mdRegion ? '?region=' + _mdRegion : '');
+    const [cat, usage] = await Promise.all([
+      fetch('http://127.0.0.1:8788' + u).then(r => r.json()),
+      fetch('http://127.0.0.1:8788/v1/track/usage').then(r => r.json()).catch(() => ({ rows: [], totalSpent: 0, totalTokens: 0 }))
+    ]);
+    _mdModels = cat.models || [];
+    _mdUsage  = usage;
+
+    setText('mdCatalogSize', cat.totalCatalog);
+    setText('mdProvCount', cat.providers.length);
+    setText('mdRegCount', cat.regions.length);
+    setText('mdTotalSpent', '$' + (usage.totalSpent || 0).toFixed(2));
+    setText('mdTotalTokens', `${(usage.totalTokens || 0).toLocaleString()} tokens · ${usage.distinctModels || 0} models`);
+    const chip = document.getElementById('modelsCountChip');
+    if (chip) chip.textContent = cat.totalCatalog;
+
+    // Group by provider, render
+    const byProv = {};
+    for (const m of _mdModels) (byProv[m.provider] = byProv[m.provider] || []).push(m);
+    const usageById = {};
+    for (const r of (_mdUsage.rows || [])) usageById[r.id] = r;
+
+    const provOrder = PROVIDER_ORDER.filter(p => byProv[p]);
+    const html = provOrder.map(p => {
+      const ms = byProv[p];
+      const flag = ms[0]?.flag || '🌐';
+      const country = ms[0]?.country || '';
+      const groupSpend = ms.reduce((s, m) => s + (usageById[m.id]?.cost || 0), 0);
+      const rows = ms.map(m => {
+        const u = usageById[m.id];
+        const priceIn  = m.in  === 0 ? '<span class="md-price-free">free</span>' : '$' + m.in.toFixed(2);
+        const priceOut = m.out === 0 ? '<span class="md-price-free">free</span>' : '$' + m.out.toFixed(2);
+        const spent   = u ? `<span class="md-spend-active">$${u.cost.toFixed(2)}</span>` : '<span style="color:var(--subtle)">—</span>';
+        return `<div class="md-row" title="${m.note || ''}">
+          <span class="md-flag">${m.flag}</span>
+          <span class="md-id">${m.id}${m.note ? ' <span style=\"color:var(--subtle);font-size:10px\">' + m.note + '</span>' : ''}</span>
+          <span><span class="md-tag ${m.tier}">${m.tier}</span></span>
+          <span class="md-ctx">${_mdFmtCtx(m.ctx)} ctx</span>
+          <span class="md-price">${priceIn}<span style="color:var(--subtle);font-size:9px"> /1M in</span></span>
+          <span class="md-price">${priceOut}<span style="color:var(--subtle);font-size:9px"> /1M out</span></span>
+          <span class="md-spend">${spent}</span>
+        </div>`;
+      }).join('');
+      return `<div class="md-group">
+        <div class="md-group-hd">
+          <span class="md-group-name">${flag}  ${PROVIDER_NAMES[p] || p}</span>
+          <span class="md-group-meta">${ms.length} models${groupSpend > 0 ? ' · $' + groupSpend.toFixed(2) + ' spent' : ''}</span>
+        </div>
+        ${rows}
+      </div>`;
+    }).join('');
+    document.getElementById('mdGroups').innerHTML = html || '<div class="cp-empty">No models in this region.</div>';
+  } catch (e) {
+    document.getElementById('mdGroups').innerHTML = `<div class="cp-empty">Engine unreachable. <strong>Check :8788</strong></div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Region segmented control
+  document.querySelectorAll('#mdRegionSeg .seg-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#mdRegionSeg .seg-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      _mdRegion = b.dataset.region || '';
+      mdLoad();
+    });
+  });
+  const navM = document.getElementById('navModels');
+  if (navM) navM.addEventListener('click', () => setTimeout(mdLoad, 80));
+  setTimeout(mdLoad, 1800); // eager initial so chip is populated
+  setInterval(() => { if (document.getElementById('pageModels')?.classList.contains('active')) mdLoad(); }, 15000);
 });
 
 // ── OPTIMIZE · token-economy cockpit ─────────────────────────────────────────

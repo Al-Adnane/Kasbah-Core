@@ -2504,6 +2504,78 @@ app.post('/v1/receipt/verify', (req, res) => {
   res.json({ ...result, version: 1, alg: 'hmac-sha256', timestamp: new Date().toISOString() });
 });
 
+// ─── MODEL CATALOG ───────────────────────────────────────────────────────────
+// Every LLM Kasbah recognizes — Western (OpenAI/Anthropic/Google/Mistral),
+// Chinese (DeepSeek/Qwen/Kimi/GLM/Yi/Ernie/Doubao/Hunyuan/MiniMax/Spark/Step),
+// and open-source (Llama/Mixtral/Phi). Prices per 1M tokens, current 2026 Q2.
+const modelCatalog = require('./src/model-catalog.js');
+
+// Per-(model id) running token + cost counters, populated by /v1/track/usage
+const _modelUsage = new Map(); // id → { promptTokens, completionTokens, cost, calls, lastSeen }
+
+app.get('/v1/models', (req, res) => {
+  const region = req.query.region;       // e.g. ?region=cn
+  const provider = req.query.provider;   // e.g. ?provider=deepseek
+  let list = modelCatalog.CATALOG;
+  if (region)   list = list.filter(m => m.region === region);
+  if (provider) list = list.filter(m => m.provider === provider);
+  res.json({
+    count: list.length,
+    totalCatalog: modelCatalog.CATALOG.length,
+    regions:   modelCatalog.REGIONS,
+    providers: modelCatalog.PROVIDERS,
+    models: list,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.post('/v1/models/detect', (req, res) => {
+  const { url, headers, body, model } = req.body || {};
+  const m = modelCatalog.detect({ url, headers, body, model });
+  res.json({ ...m, detected_at: new Date().toISOString() });
+});
+
+app.post('/v1/track/usage', (req, res) => {
+  // Caller sends: { model: 'gpt-4o', promptTokens: 1500, completionTokens: 800 }
+  // OR the raw provider response and we extract. Returns real cost computed
+  // from the catalog so the desktop / dashboards can show real money.
+  const b = req.body || {};
+  let id = b.model || b.model_id || b.id;
+  let pt = b.promptTokens ?? b.prompt_tokens ?? b.usage?.prompt_tokens ?? b.usage?.input_tokens ?? 0;
+  let ct = b.completionTokens ?? b.completion_tokens ?? b.usage?.completion_tokens ?? b.usage?.output_tokens ?? 0;
+  if (b.response && typeof b.response === 'object') {
+    id = id || b.response.model;
+    pt = pt || b.response.usage?.prompt_tokens || b.response.usage?.input_tokens || 0;
+    ct = ct || b.response.usage?.completion_tokens || b.response.usage?.output_tokens || 0;
+  }
+  const m = modelCatalog.detect({ url: b.url, body: b, model: id });
+  const cost = modelCatalog.priceFor(m, pt, ct);
+  const cur = _modelUsage.get(m.id) || { promptTokens: 0, completionTokens: 0, cost: 0, calls: 0, lastSeen: null };
+  cur.promptTokens     += +pt;
+  cur.completionTokens += +ct;
+  cur.cost             += cost.total;
+  cur.calls            += 1;
+  cur.lastSeen          = new Date().toISOString();
+  _modelUsage.set(m.id, cur);
+  res.json({ model: m, tokens: { prompt: pt, completion: ct }, cost, running: cur });
+});
+
+app.get('/v1/track/usage', (req, res) => {
+  const rows = [];
+  for (const [id, u] of _modelUsage) {
+    const m = modelCatalog.byId.get(id) || modelCatalog.detect({ model: id });
+    rows.push({ id, provider: m.provider, region: m.region, flag: m.flag, ...u });
+  }
+  rows.sort((a, b) => b.cost - a.cost);
+  const total = rows.reduce((s, r) => s + r.cost, 0);
+  res.json({
+    rows, totalSpent: total,
+    totalTokens: rows.reduce((s, r) => s + r.promptTokens + r.completionTokens, 0),
+    distinctModels: rows.length,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ─── GET /v1/keys ────────────────────────────────────────────────────────────
 // World-proof: anyone can fetch the public verification key and verify
 // every receipt this engine has ever issued, offline, forever.
