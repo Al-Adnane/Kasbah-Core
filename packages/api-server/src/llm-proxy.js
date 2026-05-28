@@ -91,7 +91,6 @@ function _readBody(req) {
 function _forward(upstream, method, path, headers, body) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(`https://${upstream.host}${upstream.pathBase}${path}`);
-    // headers may include query overrides
     const apiKey = process.env[upstream.envKey];
     _attachAuth(headers, upstream, apiKey, urlObj);
     const req = https.request({
@@ -112,6 +111,110 @@ function _forward(upstream, method, path, headers, body) {
     if (body) req.write(typeof body === 'string' ? body : JSON.stringify(body));
     req.end();
   });
+}
+
+/**
+ * Streaming forwarder. Pipes upstream chunks straight to the client and
+ * snapshots the final usage line (if any) so we can compute real cost.
+ * Supports OpenAI-style SSE (`data: {...}\n\n`) including the final
+ * `data: [DONE]` sentinel and chunks that contain `usage` (OpenAI sends it
+ * in the LAST chunk when stream_options.include_usage=true).
+ */
+function _forwardStream(upstream, method, path, headers, body, res, onMeta) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(`https://${upstream.host}${upstream.pathBase}${path}`);
+    const apiKey = process.env[upstream.envKey];
+    _attachAuth(headers, upstream, apiKey, urlObj);
+    headers.accept = 'text/event-stream';
+    const req = https.request({
+      method, hostname: urlObj.hostname,
+      path: urlObj.pathname + (urlObj.search || ''),
+      headers
+    }, (upstreamRes) => {
+      // Pass through status + content-type to client
+      res.status(upstreamRes.statusCode);
+      res.setHeader('content-type', upstreamRes.headers['content-type'] || 'text/event-stream');
+      res.setHeader('cache-control', 'no-cache');
+      res.flushHeaders?.();
+
+      let lastUsage = null;
+      let chunkCount = 0;
+      let leftover = '';
+      let promptApprox = 0;
+      let completionApprox = 0;
+
+      upstreamRes.on('data', (chunk) => {
+        const s = leftover + chunk.toString();
+        const lines = s.split(/\r?\n/);
+        leftover = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          try {
+            const j = JSON.parse(payload);
+            if (j.usage) lastUsage = j.usage;
+            // approximate completion tokens for upstreams that don't send usage
+            const delta = j.choices?.[0]?.delta?.content || j.choices?.[0]?.text || '';
+            if (delta) completionApprox += Math.ceil(delta.length / 4);
+          } catch (_) {}
+          chunkCount++;
+        }
+        res.write(chunk);
+      });
+      upstreamRes.on('end', () => {
+        if (leftover && leftover.startsWith('data:')) res.write(leftover + '\n\n');
+        res.end();
+        const usage = lastUsage || {
+          prompt_tokens: promptApprox || 0,
+          completion_tokens: completionApprox,
+          total_tokens: (promptApprox || 0) + completionApprox
+        };
+        onMeta?.(usage, chunkCount);
+        resolve({ status: upstreamRes.statusCode, usage, chunkCount });
+      });
+      upstreamRes.on('error', reject);
+    });
+    req.on('error', reject);
+    req.setTimeout(120000, () => req.destroy(new Error('upstream stream timeout')));
+    if (body) {
+      // Make sure stream-options.include_usage is set for OpenAI-compatible upstreams
+      if (typeof body === 'object' && body.stream) {
+        body.stream_options = { ...(body.stream_options || {}), include_usage: true };
+      }
+      req.write(typeof body === 'string' ? body : JSON.stringify(body));
+    }
+    req.end();
+  });
+}
+
+/**
+ * Mock SSE stream — used when no API key is configured. Sends a handful of
+ * chat-completion chunks with realistic timing then a final usage event.
+ */
+function _mockStream(provider, modelId, prompt, res) {
+  const pTok = Math.max(20, Math.min(8000, Math.ceil((prompt || '').length / 4)));
+  const reply = `[mock streaming from ${provider}] Real responses would arrive chunk-by-chunk here once you set ${UPSTREAMS[provider]?.envKey || 'API_KEY'}.`;
+  const cTok = Math.ceil(reply.length / 4);
+  res.setHeader('content-type', 'text/event-stream');
+  res.setHeader('cache-control', 'no-cache');
+  res.flushHeaders?.();
+  const id = 'chatcmpl-mock-' + crypto.randomBytes(6).toString('hex');
+  const tokens = reply.split(' ');
+  let i = 0;
+  const tick = setInterval(() => {
+    if (i >= tokens.length) {
+      clearInterval(tick);
+      // Final chunk with usage
+      const usage = { prompt_tokens: pTok, completion_tokens: cTok, total_tokens: pTok + cTok };
+      res.write(`data: ${JSON.stringify({ id, object:'chat.completion.chunk', model:modelId, choices:[{index:0, delta:{}, finish_reason:'stop'}], usage })}\n\n`);
+      res.write(`data: [DONE]\n\n`);
+      res.end();
+      return;
+    }
+    const delta = (i ? ' ' : '') + tokens[i++];
+    res.write(`data: ${JSON.stringify({ id, object:'chat.completion.chunk', model:modelId, choices:[{index:0, delta:{content:delta}}] })}\n\n`);
+  }, 40);
 }
 
 function _mockResponse(provider, modelId, prompt) {
@@ -180,9 +283,55 @@ function mount(app, deps) {
     const piiCtx = { redactions: 0 };
     const redactedBody = _walkRedact(body, piiCtx);
 
-    // 3. Forward (or mock if no API key)
-    let upstreamResp;
+    // 3. Forward (or mock if no API key). Streaming branch separate.
     const apiKey = process.env[upstream.envKey];
+    const wantsStream = redactedBody && (redactedBody.stream === true || redactedBody.stream === 'true');
+
+    if (wantsStream) {
+      // STREAMING PATH
+      // Set headers proactively
+      res.setHeader('x-kasbah-model', model.id);
+      // Mint the receipt up-front (covers the request); add tokens/cost after stream ends
+      let receiptStr = null;
+      try {
+        if (engineKey) {
+          const sig = engineKey.sign({
+            id: 'rcpt_' + crypto.randomBytes(6).toString('hex'),
+            ts: Date.now(), verdict: gov.verdict || 'ALLOW', risk: gov.risk || 0,
+            requestId: 'req_' + crypto.randomBytes(6).toString('hex'),
+            subject: crypto.createHash('sha256').update(JSON.stringify(body || '')).digest('hex'),
+            passportId: null, surface: 'proxy:' + provider + ':stream', action: 'llm_stream'
+          });
+          receiptStr = sig.receipt;
+          res.setHeader('x-kasbah-receipt', receiptStr);
+        }
+      } catch (_) {}
+      res.setHeader('x-kasbah-pii-redacted', String(piiCtx.redactions));
+
+      try {
+        if (!apiKey) {
+          _mockStream(provider, model.id, JSON.stringify(redactedBody?.messages || redactedBody?.prompt || ''), res);
+          // mock fires usage synchronously inside; estimate for tracking
+          const pTok = 50, cTok = 80;
+          const cost = modelCatalog.priceFor(model, pTok, cTok);
+          if (recordUsage) recordUsage(model.id, pTok, cTok, cost.total);
+        } else {
+          const fwdHeaders = { 'content-type': 'application/json' };
+          await _forwardStream(upstream, req.method, upstreamPath, fwdHeaders, redactedBody, res, (usage) => {
+            const pt = usage.prompt_tokens || 0, ct = usage.completion_tokens || 0;
+            const cost = modelCatalog.priceFor(model, pt, ct);
+            if (recordUsage) recordUsage(model.id, pt, ct, cost.total);
+          });
+        }
+      } catch (e) {
+        if (!res.headersSent) res.status(502).json({ error: 'upstream_stream_error', detail: e.message, provider, model: model.id });
+        else { try { res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`); res.end(); } catch(_){} }
+      }
+      return; // streaming done
+    }
+
+    // NON-STREAMING PATH (JSON response)
+    let upstreamResp;
     if (!apiKey) {
       upstreamResp = { status: 200, headers: { 'x-kasbah-mock': '1' }, body: _mockResponse(provider, model.id, JSON.stringify(redactedBody?.messages || redactedBody?.prompt || '')), rawSize: 0 };
     } else {
