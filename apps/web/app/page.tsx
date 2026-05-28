@@ -186,15 +186,16 @@ export default async function Landing() {
             <span className="eyebrow">Measured, not claimed</span>
             <h2>Numbers anyone can <em>reproduce.</em></h2>
             <p className="lede">
-              Every figure lives in a committed file. <code>node bench/run.js</code> against{' '}
-              <code>bench/corpus/v1.json</code> — same numbers, every time.
+              Reproducible. <code>node bench/run.js</code> against the committed
+              {' '}<code>bench/corpus/v1.json</code> (77 cases) to measure F1/recall on your hardware.
+              Catalog and proxy figures readable at <code>/v1/models</code> and <code>/v1/proxy</code>.
             </p>
           </div>
           <div className="proof-grid">
-            <div className="proof-num"><div className="n">0.852</div><div className="l">F1 on adversarial corpus</div></div>
-            <div className="proof-num"><div className="n">38 ms</div><div className="l">p95 verdict latency</div></div>
-            <div className="proof-num"><div className="n">4.3M</div><div className="l">signed decisions per node / day</div></div>
-            <div className="proof-num"><div className="n">Ed25519</div><div className="l">offline-verifiable, forever</div></div>
+            <div className="proof-num"><div className="n">72</div><div className="l">LLMs recognized · West, China, OSS</div></div>
+            <div className="proof-num"><div className="n">18</div><div className="l">providers proxied · drop-in BASE_URL</div></div>
+            <div className="proof-num"><div className="n">~40 ms</div><div className="l">p95 verdict latency</div></div>
+            <div className="proof-num"><div className="n">Ed25519</div><div className="l">offline-verifiable receipts, forever</div></div>
           </div>
         </div>
       </section>
