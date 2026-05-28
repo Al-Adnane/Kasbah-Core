@@ -2504,14 +2504,43 @@ app.post('/v1/receipt/verify', (req, res) => {
   res.json({ ...result, version: 1, alg: 'hmac-sha256', timestamp: new Date().toISOString() });
 });
 
-// ─── MODEL CATALOG ───────────────────────────────────────────────────────────
+// ─── MODEL CATALOG + LLM PROXY ───────────────────────────────────────────────
 // Every LLM Kasbah recognizes — Western (OpenAI/Anthropic/Google/Mistral),
 // Chinese (DeepSeek/Qwen/Kimi/GLM/Yi/Ernie/Doubao/Hunyuan/MiniMax/Spark/Step),
 // and open-source (Llama/Mixtral/Phi). Prices per 1M tokens, current 2026 Q2.
 const modelCatalog = require('./src/model-catalog.js');
+const llmProxy = require('./src/llm-proxy.js');
 
 // Per-(model id) running token + cost counters, populated by /v1/track/usage
 const _modelUsage = new Map(); // id → { promptTokens, completionTokens, cost, calls, lastSeen }
+function _recordUsage(modelId, prompt, completion, cost) {
+  const cur = _modelUsage.get(modelId) || { promptTokens: 0, completionTokens: 0, cost: 0, calls: 0, lastSeen: null };
+  cur.promptTokens     += +prompt;
+  cur.completionTokens += +completion;
+  cur.cost             += +cost;
+  cur.calls            += 1;
+  cur.lastSeen          = new Date().toISOString();
+  _modelUsage.set(modelId, cur);
+}
+async function _governCheck(text, ctx) {
+  if (!text) return { verdict: 'ALLOW', risk: 0, threats: [] };
+  // Minimal governance pass — exposed for the proxy to call. Mirrors what
+  // /v1/govern does internally without going through the full HTTP loop.
+  const low = (text || '').toLowerCase();
+  const denyPatterns = [
+    /\brm\s+-rf\s+\//i,
+    /\bcurl\s+.*\|\s*sh/i,
+    /(api[_-]?key|secret|token|password)\s*[=:]\s*['"]?[a-z0-9_-]{16,}/i,
+    /ignore (all )?previous instructions/i,
+    /exfiltrate|leak|drain.*wallet/i
+  ];
+  let risk = 0; const threats = [];
+  for (const re of denyPatterns) if (re.test(low)) { risk = Math.max(risk, 0.9); threats.push(re.source.slice(0,30)); }
+  // gentler warnings
+  if (/\bsudo\b|chmod\s+777|--no-preserve-root/i.test(low)) { risk = Math.max(risk, 0.45); threats.push('privileged-op'); }
+  const verdict = risk >= 0.7 ? 'DENY' : risk >= 0.35 ? 'WARN' : 'ALLOW';
+  return { verdict, risk: +risk.toFixed(2), threats };
+}
 
 app.get('/v1/models', (req, res) => {
   const region = req.query.region;       // e.g. ?region=cn
@@ -2550,15 +2579,14 @@ app.post('/v1/track/usage', (req, res) => {
   }
   const m = modelCatalog.detect({ url: b.url, body: b, model: id });
   const cost = modelCatalog.priceFor(m, pt, ct);
-  const cur = _modelUsage.get(m.id) || { promptTokens: 0, completionTokens: 0, cost: 0, calls: 0, lastSeen: null };
-  cur.promptTokens     += +pt;
-  cur.completionTokens += +ct;
-  cur.cost             += cost.total;
-  cur.calls            += 1;
-  cur.lastSeen          = new Date().toISOString();
-  _modelUsage.set(m.id, cur);
-  res.json({ model: m, tokens: { prompt: pt, completion: ct }, cost, running: cur });
+  _recordUsage(m.id, pt, ct, cost.total);
+  res.json({ model: m, tokens: { prompt: pt, completion: ct }, cost, running: _modelUsage.get(m.id) });
 });
+
+// Mount the LLM proxy — drop-in compatible with OpenAI/Anthropic/etc. SDKs.
+// Point any client's BASE_URL at http://localhost:8788/v1/proxy/<provider>/...
+const _proxyEngineKey = require('./src/engine-key.js');
+llmProxy.mount(app, { modelCatalog, engineKey: _proxyEngineKey, recordUsage: _recordUsage, governCheck: _governCheck });
 
 app.get('/v1/track/usage', (req, res) => {
   const rows = [];
