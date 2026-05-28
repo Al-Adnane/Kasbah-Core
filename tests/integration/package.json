@@ -1,0 +1,9 @@
+{
+  "name": "@kasbah/integration-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end smoke tests for the Kasbah runtime.",
+  "scripts": {
+    "test": "node runtime.test.js"
+  }
+}
