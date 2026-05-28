@@ -2522,24 +2522,11 @@ function _recordUsage(modelId, prompt, completion, cost) {
   cur.lastSeen          = new Date().toISOString();
   _modelUsage.set(modelId, cur);
 }
+// Real 4-detector governance pipeline (prompt-injection, secret-leak, PII, destructive-intent)
+const governancePipeline = require('./src/governance/index.js');
 async function _governCheck(text, ctx) {
-  if (!text) return { verdict: 'ALLOW', risk: 0, threats: [] };
-  // Minimal governance pass — exposed for the proxy to call. Mirrors what
-  // /v1/govern does internally without going through the full HTTP loop.
-  const low = (text || '').toLowerCase();
-  const denyPatterns = [
-    /\brm\s+-rf\s+\//i,
-    /\bcurl\s+.*\|\s*sh/i,
-    /(api[_-]?key|secret|token|password)\s*[=:]\s*['"]?[a-z0-9_-]{16,}/i,
-    /ignore (all )?previous instructions/i,
-    /exfiltrate|leak|drain.*wallet/i
-  ];
-  let risk = 0; const threats = [];
-  for (const re of denyPatterns) if (re.test(low)) { risk = Math.max(risk, 0.9); threats.push(re.source.slice(0,30)); }
-  // gentler warnings
-  if (/\bsudo\b|chmod\s+777|--no-preserve-root/i.test(low)) { risk = Math.max(risk, 0.45); threats.push('privileged-op'); }
-  const verdict = risk >= 0.7 ? 'DENY' : risk >= 0.35 ? 'WARN' : 'ALLOW';
-  return { verdict, risk: +risk.toFixed(2), threats };
+  if (!text) return { verdict: 'ALLOW', risk: 0, threats: [], detectors: [] };
+  return governancePipeline.evaluate(text, ctx);
 }
 
 app.get('/v1/models', (req, res) => {
@@ -2607,6 +2594,14 @@ app.get('/v1/track/usage', (req, res) => {
 // ─── GET /v1/keys ────────────────────────────────────────────────────────────
 // World-proof: anyone can fetch the public verification key and verify
 // every receipt this engine has ever issued, offline, forever.
+// POST /v1/govern/explain — full detector breakdown for any input
+app.post('/v1/govern/explain', async (req, res) => {
+  const text = req.body?.text || req.body?.prompt || '';
+  if (!text) return res.status(400).json({ error: 'text or prompt required' });
+  const result = await _governCheck(text);
+  res.json({ ...result, input_length: text.length, timestamp: new Date().toISOString() });
+});
+
 app.get('/v1/keys', (req, res) => {
   res.json({
     keys: [ engineKey.info() ],
