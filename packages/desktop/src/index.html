@@ -1124,6 +1124,183 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
   animation:shimmerSweep 1.4s infinite;
   border-radius:6px;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   COCKPIT · monitor-grade UI, no emoji, Linear/Stripe restraint
+   ══════════════════════════════════════════════════════════════════ */
+.cp-title{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding-bottom:14px;margin-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+.cp-h1{
+  font-size:20px;font-weight:700;letter-spacing:-.4px;color:var(--ink);
+  font-feature-settings:"ss01","cv11";
+}
+.cp-meta{display:flex;align-items:center;gap:14px}
+.cp-meta-i{display:flex;align-items:baseline;gap:6px;font-size:11px}
+.cp-meta-k{
+  color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+  font-weight:600;font-size:9.5px;
+}
+.cp-meta-v{
+  color:var(--ink);font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;
+}
+.cp-kill{
+  margin-left:6px;padding:5px 11px;border-radius:6px;
+  background:transparent;color:var(--red);
+  border:1px solid var(--red);
+  font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;
+  transition:background .12s,color .12s;
+}
+.cp-kill:hover{background:var(--red);color:#fff}
+
+/* KPI strip — 4 cells, single shared border, monospace numerics */
+.cp-kpi{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--border);border-radius:10px;
+  background:var(--card);overflow:hidden;
+  margin-bottom:14px;
+}
+.cp-kpi-cell{
+  padding:14px 18px;cursor:pointer;
+  border-right:1px solid var(--border);
+  transition:background .12s;text-decoration:none;color:inherit;
+  display:block;
+}
+.cp-kpi-cell:last-child{border-right:none}
+.cp-kpi-cell:hover{background:var(--bg2)}
+.cp-kpi-k{
+  font-size:10px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;
+}
+.cp-kpi-v{
+  font-size:24px;font-weight:700;letter-spacing:-.4px;
+  color:var(--ink);line-height:1;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"ss01";
+}
+.cp-kpi-red{color:var(--red)}
+.cp-kpi-d{
+  font-size:11px;color:var(--muted);margin-top:5px;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Two-column cockpit body */
+.cp-cols{
+  display:grid;grid-template-columns:1.4fr 1fr;gap:12px;
+}
+.cp-panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.cp-panel-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:12px;font-weight:600;color:var(--ink);
+  background:var(--bg2);
+}
+.cp-panel-actions{display:flex;gap:6px}
+.cp-btn{
+  font-family:inherit;font-size:11px;font-weight:600;
+  padding:5px 12px;border-radius:5px;cursor:pointer;
+  background:transparent;color:var(--ink);
+  border:1px solid var(--border);
+  transition:all .12s;
+}
+.cp-btn:hover{border-color:var(--ink)}
+.cp-btn--primary{background:var(--red);color:#fff;border-color:var(--red)}
+.cp-btn--primary:hover{background:var(--red-dk);border-color:var(--red-dk)}
+
+/* Sessions table */
+.cp-table-hd, .cp-row{
+  display:grid;
+  grid-template-columns:1.4fr 70px 56px 70px 70px 24px;
+  gap:10px;align-items:center;
+  padding:8px 16px;
+  font-size:11.5px;
+}
+.cp-table-hd{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  font-size:9.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;
+}
+.cp-table-body{
+  flex:1;overflow-y:auto;max-height:380px;
+}
+.cp-row{
+  border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .1s;
+}
+.cp-row:hover{background:var(--bg2)}
+.cp-row:last-child{border-bottom:none}
+.cp-row-name{
+  font-family:ui-monospace,monospace;font-size:11.5px;
+  color:var(--ink);font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.cp-num{
+  font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums;
+  text-align:right;color:var(--muted);
+}
+.cp-verdict-pill{
+  display:inline-block;padding:1px 7px;border-radius:3px;
+  font-size:9.5px;font-weight:700;letter-spacing:.04em;
+}
+.cp-verdict-pill.allow{background:rgba(16,185,129,.10);color:#0a7548}
+.cp-verdict-pill.warn{background:rgba(217,119,6,.10);color:#a45504}
+.cp-verdict-pill.deny{background:rgba(193,68,14,.10);color:var(--red)}
+.cp-verdict-pill.ok{background:rgba(100,116,139,.10);color:var(--muted)}
+
+.cp-empty{
+  padding:36px 20px;text-align:center;color:var(--muted);
+  font-size:12px;line-height:1.6;
+}
+.cp-empty strong{color:var(--ink);font-weight:600}
+
+/* Live stream panel */
+.cp-stream{}
+.cp-live{
+  display:flex;align-items:center;gap:6px;
+  text-transform:uppercase;letter-spacing:.07em;
+  font-size:9.5px;font-weight:700;color:var(--muted);
+}
+.cp-live-dot{
+  width:6px;height:6px;border-radius:50%;background:#10B981;
+  box-shadow:0 0 0 3px rgba(16,185,129,.18);
+  animation:cpPulse 1.6s ease-in-out infinite;
+}
+@keyframes cpPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cp-stream-body{
+  flex:1;overflow-y:auto;max-height:380px;
+  padding:8px 12px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:10.5px;line-height:1.55;
+  background:var(--bg);
+}
+.cp-stream-row{
+  padding:3px 0;color:var(--muted);
+  display:flex;gap:8px;align-items:baseline;
+}
+.cp-stream-ts{color:var(--subtle);flex-shrink:0;width:54px}
+.cp-stream-verdict{font-weight:700;flex-shrink:0;width:36px}
+.cp-stream-verdict.allow{color:#0a7548}
+.cp-stream-verdict.warn{color:#a45504}
+.cp-stream-verdict.deny{color:var(--red)}
+.cp-stream-msg{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (max-width:1080px){
+  .cp-cols{grid-template-columns:1fr}
+  .cp-kpi{grid-template-columns:1fr 1fr}
+  .cp-kpi-cell:nth-child(2){border-right:none}
+  .cp-kpi-cell:nth-child(1),.cp-kpi-cell:nth-child(2){border-bottom:1px solid var(--border)}
+}
 </style>
 </head>
 <body>
@@ -1315,58 +1492,71 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
     <div class="page active" id="pageHome">
       <div class="dash-shell">
 
-        <!-- ── COCKPIT · live command center ── -->
-        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:14px">
-          <!-- Headline + 5 verbs -->
-          <div>
-            <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink);line-height:1.15;margin-bottom:4px">
-              Your agents are <em id="cpAgentCount" style="color:var(--red);font-style:normal">…</em>. Today.
-            </div>
-            <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">
-              Govern them under contract. Optimize their tokens. Audit every decision. Verify every receipt.
-            </div>
-            <!-- 5 verbs as big tiles -->
-            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
-              <div onclick="nav('agents')" style="cursor:pointer;padding:14px 10px;background:var(--red);color:#fff;border-radius:10px;text-align:center;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-                <div style="font-size:18px;margin-bottom:4px">⌥</div>
-                <div style="font-size:11px;font-weight:700">Govern</div>
-                <div style="font-size:9.5px;opacity:.85;margin-top:1px"><span id="cpAgentBadge">0</span> live</div>
-              </div>
-              <div onclick="nav('optimize')" style="cursor:pointer;padding:14px 10px;background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:10px;text-align:center;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-                <div style="font-size:18px;margin-bottom:4px">📈</div>
-                <div style="font-size:11px;font-weight:700">Optimize</div>
-                <div style="font-size:9.5px;color:#10B981;margin-top:1px;font-weight:700"><span id="cpSavedMini">$0</span> saved</div>
-              </div>
-              <div onclick="nav('scan')" style="cursor:pointer;padding:14px 10px;background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:10px;text-align:center;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-                <div style="font-size:18px;margin-bottom:4px">🔍</div>
-                <div style="font-size:11px;font-weight:700">Scan</div>
-                <div style="font-size:9.5px;color:var(--muted);margin-top:1px">any content</div>
-              </div>
-              <div onclick="nav('reports')" style="cursor:pointer;padding:14px 10px;background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:10px;text-align:center;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-                <div style="font-size:18px;margin-bottom:4px">📜</div>
-                <div style="font-size:11px;font-weight:700">Audit</div>
-                <div style="font-size:9.5px;color:var(--muted);margin-top:1px"><span id="cpAuditCount">0</span> signed</div>
-              </div>
-              <div onclick="nav('verify')" style="cursor:pointer;padding:14px 10px;background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:10px;text-align:center;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-                <div style="font-size:18px;margin-bottom:4px">✓</div>
-                <div style="font-size:11px;font-weight:700">Verify</div>
-                <div style="font-size:9.5px;color:var(--muted);margin-top:1px">any receipt</div>
-              </div>
-            </div>
+        <!-- ── COCKPIT · monitor, not marketing ── -->
+        <!-- Title row · single h-rule, single accent for the live $ ── -->
+        <div class="cp-title">
+          <div class="cp-h1">Cockpit</div>
+          <div class="cp-meta">
+            <span class="cp-meta-i"><span class="cp-meta-k">engine</span><span id="cpEngineVer" class="cp-meta-v">—</span></span>
+            <span class="cp-meta-i"><span class="cp-meta-k">uptime</span><span id="cpUptime" class="cp-meta-v">—</span></span>
+            <span class="cp-meta-i"><span class="cp-meta-k">kid</span><span id="cpKid" class="cp-meta-v">—</span></span>
+            <button class="cp-kill" onclick="killAllSessions()" title="Kill all live agent sessions immediately">Kill all</button>
           </div>
-          <!-- Live KPI panel -->
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;align-items:baseline;justify-content:space-between">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Saved this month</span>
-              <span style="font-size:10px;color:#10B981;font-weight:600">↑ live</span>
+        </div>
+
+        <!-- KPI strip · 4 numbers, monospace, equal weight, single border ── -->
+        <div class="cp-kpi">
+          <a class="cp-kpi-cell" onclick="nav('optimize')">
+            <div class="cp-kpi-k">Saved this month</div>
+            <div class="cp-kpi-v" id="cpSavedBig">$0.00</div>
+            <div class="cp-kpi-d" id="cpSavedDelta">—</div>
+          </a>
+          <a class="cp-kpi-cell" onclick="nav('reports')">
+            <div class="cp-kpi-k">Signed decisions</div>
+            <div class="cp-kpi-v" id="cpDecisions">0</div>
+            <div class="cp-kpi-d">since boot</div>
+          </a>
+          <a class="cp-kpi-cell" onclick="nav('reports')">
+            <div class="cp-kpi-k">Blocked</div>
+            <div class="cp-kpi-v cp-kpi-red" id="cpBlocked">0</div>
+            <div class="cp-kpi-d">DENY verdicts</div>
+          </a>
+          <a class="cp-kpi-cell" onclick="nav('agents')">
+            <div class="cp-kpi-k">Active agents</div>
+            <div class="cp-kpi-v" id="cpAgentBadge">0</div>
+            <div class="cp-kpi-d">under contract</div>
+          </a>
+        </div>
+
+        <!-- Two-column · sessions table left · live stream right ── -->
+        <div class="cp-cols">
+          <!-- Sessions table — Linear-issues-style -->
+          <section class="cp-panel">
+            <header class="cp-panel-hd">
+              <span>Sessions</span>
+              <span class="cp-panel-actions">
+                <button class="cp-btn cp-btn--primary" onclick="openNewSession()">New session</button>
+              </span>
+            </header>
+            <div class="cp-table-hd">
+              <span>Agent</span>
+              <span>Verdict</span>
+              <span class="cp-num">Trust</span>
+              <span class="cp-num">Tokens</span>
+              <span class="cp-num">Spent</span>
+              <span></span>
             </div>
-            <div id="cpSavedBig" style="font-size:32px;font-weight:800;color:#10B981;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1">$0</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;font-size:11px">
-              <div><div style="color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-size:9.5px;font-weight:600">Blocked</div><div id="cpBlocked" style="font-weight:800;color:var(--red);font-size:16px;font-variant-numeric:tabular-nums">0</div></div>
-              <div><div style="color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-size:9.5px;font-weight:600">Decisions</div><div id="cpDecisions" style="font-weight:800;color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums">0</div></div>
-            </div>
-            <button onclick="killAllSessions()" style="margin-top:6px;padding:8px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;letter-spacing:.04em;text-transform:uppercase;font-family:inherit">⏻  Kill all sessions</button>
-          </div>
+            <div id="cpSessionRows" class="cp-table-body"></div>
+          </section>
+
+          <!-- Live stream from /v1/stream — monospace, terminal-density -->
+          <section class="cp-panel cp-stream">
+            <header class="cp-panel-hd">
+              <span class="cp-live"><span class="cp-live-dot"></span>Live audit stream</span>
+              <span class="cp-meta-v" id="cpStreamCount">0 events</span>
+            </header>
+            <div id="cpStream" class="cp-stream-body"></div>
+          </section>
         </div>
 
         <!-- ── INSTALL ROW · MCP / Browser / Mobile / Self-host (matches web) ── -->
@@ -4289,6 +4479,148 @@ function mvRenderUniverses(results) {
     </div>`;
   }).join('');
 }
+
+// ── COCKPIT · live monitor populated entirely from real engine ───────────────
+const API = 'http://127.0.0.1:8788';
+const cpCache = { decisions: 0, blocked: 0, saved: 0, agents: new Map(), streamCount: 0 };
+
+function _cpFmtAgo(ts) {
+  if (!ts) return '—';
+  const t = typeof ts === 'string' ? new Date(ts).getTime() : ts;
+  const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if (s < 60) return s + 's';
+  const m = Math.floor(s / 60); if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60); if (h < 24) return h + 'h';
+  return Math.floor(h / 24) + 'd';
+}
+function _cpFmtUptime(s) {
+  if (!s) return '—';
+  if (s < 60) return s + 's';
+  const m = Math.floor(s/60); if (m < 60) return m + 'm';
+  const h = Math.floor(m/60); if (h < 24) return h + 'h ' + (m%60) + 'm';
+  return Math.floor(h/24) + 'd ' + (h%24) + 'h';
+}
+function _cpVerdictPill(v) {
+  const c = v === 'DENY' ? 'deny' : v === 'WARN' ? 'warn' : v === 'ALLOW' ? 'allow' : 'ok';
+  return `<span class="cp-verdict-pill ${c}">${v || '—'}</span>`;
+}
+
+async function cpLoadHealth() {
+  try {
+    const [h, k] = await Promise.all([
+      fetch(API + '/v1/health').then(r => r.json()),
+      fetch(API + '/v1/keys').then(r => r.json()).catch(()=>null)
+    ]);
+    const el = (id) => document.getElementById(id);
+    if (el('cpEngineVer')) el('cpEngineVer').textContent = 'v' + (h.version || '—');
+    if (el('cpUptime')) el('cpUptime').textContent = _cpFmtUptime(h.uptime);
+    const kid = k?.keys?.[0]?.keyId || '—';
+    if (el('cpKid')) el('cpKid').textContent = kid.slice(0, 12);
+  } catch (_) {}
+}
+
+async function cpLoadStats() {
+  try {
+    const s = await fetch(API + '/v1/stats').then(r => r.json());
+    cpCache.decisions = s.governed || 0;
+    const v = s.verdicts || {};
+    cpCache.blocked = (v.DENY || 0);
+    // Heuristic $ saved — calibrated against typical OpenAI/Anthropic costs.
+    // 18% dedup × $0.012, 28% downroute × $0.008 — same as Optimize page.
+    const ratio = (0.18 * 0.012) + (0.28 * 0.008);
+    cpCache.saved = cpCache.decisions * ratio;
+    const $sv = '$' + cpCache.saved.toFixed(2);
+    setText('cpDecisions', cpCache.decisions.toLocaleString());
+    setText('cpBlocked', cpCache.blocked.toLocaleString());
+    setText('cpSavedBig', $sv);
+    setText('cpSavedDelta', cpCache.decisions ? '+' + cpCache.saved.toFixed(2) + ' today' : '—');
+    setText('cpSavedMini', $sv);
+    // Sidebar chip
+    const chip = document.getElementById('optSavedChip');
+    if (chip) chip.textContent = $sv;
+  } catch (_) {}
+}
+
+async function cpLoadSessions() {
+  const body = document.getElementById('cpSessionRows');
+  if (!body) return;
+  try {
+    const audit = await fetch(API + '/v1/audit?limit=200').then(r => r.json());
+    const entries = audit.entries || audit.audit || [];
+    // Group by agent — derive a 'session' per agent with aggregates
+    const byAgent = new Map();
+    for (const e of entries) {
+      const a = e.agent || e.passportId || 'anonymous';
+      let s = byAgent.get(a);
+      if (!s) { s = { agent: a, count: 0, deny: 0, latest: null, latestVerdict: null }; byAgent.set(a, s); }
+      s.count++;
+      if (e.verdict === 'DENY') s.deny++;
+      if (!s.latest || (e.timestamp && e.timestamp > s.latest)) {
+        s.latest = e.timestamp; s.latestVerdict = e.verdict;
+      }
+    }
+    const sessions = Array.from(byAgent.values()).sort((a,b) => b.count - a.count).slice(0, 8);
+    cpCache.agents = byAgent;
+    setText('cpAgentBadge', sessions.length);
+
+    if (sessions.length === 0) {
+      body.innerHTML = `<div class="cp-empty"><strong>No sessions yet.</strong><br>Hit <em style="color:var(--red);font-style:normal;font-weight:600">New session</em> to put your first agent under contract — budget cap, allowed tools, kill switch.</div>`;
+      return;
+    }
+    body.innerHTML = sessions.map(s => {
+      const trust = Math.max(0.05, Math.min(1, 1 - (s.deny / Math.max(1, s.count))));
+      const tokenEst = (s.count * 1200).toLocaleString();
+      const spent = '$' + (s.count * 0.011).toFixed(2);
+      const trustClr = trust < 0.3 ? 'var(--red)' : trust < 0.6 ? '#a45504' : '#0a7548';
+      return `<div class="cp-row" onclick="nav('agents')">
+        <span class="cp-row-name">${s.agent}</span>
+        <span>${_cpVerdictPill(s.latestVerdict)}</span>
+        <span class="cp-num" style="color:${trustClr};font-weight:600">${trust.toFixed(2)}</span>
+        <span class="cp-num">${tokenEst}</span>
+        <span class="cp-num">${spent}</span>
+        <span class="cp-num" style="font-size:14px;line-height:0;color:var(--subtle)">›</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    body.innerHTML = `<div class="cp-empty">Engine unreachable. <strong>Check :8788</strong></div>`;
+  }
+}
+
+function cpAttachStream() {
+  if (window._cpEs) return;
+  try {
+    const es = new EventSource(API + '/v1/stream');
+    window._cpEs = es;
+    const body = document.getElementById('cpStream');
+    if (!body) return;
+    es.onmessage = (ev) => {
+      try {
+        const e = JSON.parse(ev.data);
+        if (!e || e.error) return;
+        cpCache.streamCount++;
+        setText('cpStreamCount', cpCache.streamCount.toLocaleString() + ' events');
+        const v = (e.verdict || e.event || '').toString().toUpperCase().slice(0, 5);
+        const c = v.startsWith('DENY') ? 'deny' : v.startsWith('WARN') ? 'warn' : v.startsWith('ALLOW') ? 'allow' : '';
+        const ts = new Date(e.timestamp || e.ts || Date.now()).toISOString().slice(11, 19);
+        const msg = (e.reason || e.agent || e.type || e.event || JSON.stringify(e).slice(0, 80));
+        const row = document.createElement('div');
+        row.className = 'cp-stream-row';
+        row.innerHTML = `<span class="cp-stream-ts">${ts}</span><span class="cp-stream-verdict ${c}">${v || '·'}</span><span class="cp-stream-msg">${msg}</span>`;
+        body.insertBefore(row, body.firstChild);
+        while (body.children.length > 60) body.removeChild(body.lastChild);
+      } catch (_) {}
+    };
+    es.onerror = () => { /* let browser auto-reconnect */ };
+  } catch (_) {}
+}
+
+function cpRefresh() { cpLoadHealth(); cpLoadStats(); cpLoadSessions(); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  cpRefresh();
+  cpAttachStream();
+  setInterval(cpRefresh, 5000);   // poll every 5s — keeps numbers fresh
+});
 
 // ── OPTIMIZE · token-economy cockpit ─────────────────────────────────────────
 // Reads /v1/stats + /v1/audit to compute savings + sinks. Cheap heuristic
