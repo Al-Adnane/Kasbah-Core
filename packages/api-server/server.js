@@ -64,15 +64,40 @@ function getWatcher(pid) {
   return _agentWatchers.get(pid);
 }
 
-// ─── Kasbah Unified Engine — single engine for all products ───────────────────
-const { KasbahAPI } = require('../../kasbah-unified-engine.js');
-const kasbahEngine = new KasbahAPI({
-  enableAllAlgorithms: true,
-  realTimeProcessing: true,
-  threatThreshold: 500,
-  maxProcessingTimeMs: 1000
-});
-const kE = kasbahEngine.engine; // shorthand
+// ─── Kasbah Unified Engine — optional, gracefully stubbed if missing ─────────
+// The legacy `../../kasbah-unified-engine.js` is not in the public repo. When
+// absent, mount a minimal stub that returns honest 503 placeholders for the
+// few /v1/* routes that depended on it; everything else (govern, sign, verify,
+// receipts, audit, well-known, zk, dp, consent) runs on the local modules
+// below and is unaffected.
+let kasbahEngine, kE;
+try {
+  const { KasbahAPI } = require('../../kasbah-unified-engine.js');
+  kasbahEngine = new KasbahAPI({
+    enableAllAlgorithms: true,
+    realTimeProcessing: true,
+    threatThreshold: 500,
+    maxProcessingTimeMs: 1000
+  });
+  kE = kasbahEngine.engine;
+  console.log('[kasbah-engine] full unified engine loaded');
+} catch (e) {
+  console.warn('[kasbah-engine] unified engine not present — running in core-only mode');
+  const _stub503 = () => ({ error: 'unified engine not available in this build', code: 'ENGINE_STUB' });
+  const _asyncStub = async () => _stub503();
+  kasbahEngine = {
+    analyze: _asyncStub, analyzeBatch: _asyncStub,
+    createWorkflow: _stub503, executeWorkflow: _asyncStub,
+    getWorkflowStatus: _stub503, getWorkflowAudit: _stub503, getWorkflowStats: _stub503,
+    evaluateGovernance: _stub503, getGovernanceDimensions: () => [],
+    generateAgentIdentity: _stub503, verifyAgentIdentity: _stub503,
+    trackCost: _stub503,
+    zkProveGrapheme: _stub503, zkVerifyGrapheme: _stub503,
+    zkProveValidUnicode: _stub503, zkProveEquivalence: _stub503, zkGetStats: () => ({}),
+    engine: null
+  };
+  kE = null;
+}
 
 // ─── Governance-Specific Rate Limiter ─────────────────────────────────────────
 // AgentCostWatch loop-detection is designed for AI model calls (repeating LLM
@@ -154,10 +179,18 @@ if (process.env.ALERT_EMAIL) {
   }
 }
 
-// ─── KasbahProductOS — Universal Product Orchestration Hub ───────────────────
-// Single entry point for all 11 products, wiring 90+ algorithms to every analysis
-const { getProductOS, KasbahProductOS } = require('../../src/kasbah-product-os.js');
-const _productOS = getProductOS();
+// ─── KasbahProductOS — optional, stubbed when missing ────────────────────────
+let _productOS, KasbahProductOS;
+try {
+  const m = require('../../src/kasbah-product-os.js');
+  KasbahProductOS = m.KasbahProductOS;
+  _productOS = m.getProductOS();
+  console.log('[product-os] loaded');
+} catch (_) {
+  console.warn('[product-os] not present — products router will return 503');
+  KasbahProductOS = class {};
+  _productOS = { analyze: async () => ({ error: 'product-os not available', code: 'STUB' }), list: () => [], stats: () => ({}) };
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PHASE 4 + 5: Cross-Cutting Innovations + Testing Integration
@@ -1370,7 +1403,7 @@ app.get('/v1/health', (req, res) => {
   const activeSystems = Object.values(allSystems).filter(Boolean).length;
   res.json({
     status: 'ok',
-    version: require('../../package.json').version || '9.1.0',
+    version: ((()=>{ try { return require('../../package.json').version; } catch(_) { return '9.1.0'; } })()),
     engine: stats.engine,
     uptime: Math.floor(process.uptime()),
     uptime_s: process.uptime().toFixed(1),
@@ -5450,12 +5483,20 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
-  const ue = kasbahEngine.engine;
+  const ue = kasbahEngine && kasbahEngine.engine;
   console.log(`\n╔══════════════════════════════════════════════════╗`);
   console.log(`║  KasbahOS  ·  Port ${PORT}  ·  Unified Engine      ║`);
-  console.log(`║  Algorithms: ${Object.keys(ue.algorithms).length}  Hybrids: ${Object.keys(ue.hybrids).length}  Engine methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(ue)).filter(m => m !== 'constructor' && typeof ue[m] === 'function').length} ║`);
+  if (ue) {
+    const algos = Object.keys(ue.algorithms || {}).length;
+    const hybr  = Object.keys(ue.hybrids || {}).length;
+    const meths = Object.getOwnPropertyNames(Object.getPrototypeOf(ue))
+                    .filter(m => m !== 'constructor' && typeof ue[m] === 'function').length;
+    console.log(`║  Algorithms: ${algos}  Hybrids: ${hybr}  Engine methods: ${meths}  ║`);
+  } else {
+    console.log(`║  Core mode · receipts · audit · zk · dp · consent  ║`);
+  }
   console.log(`╚══════════════════════════════════════════════════╝\n`);
-  app.listen(PORT, () => {});
+  app.listen(PORT, () => { console.log(`[server] listening on http://127.0.0.1:${PORT}`); });
 }
 
 module.exports = app;
