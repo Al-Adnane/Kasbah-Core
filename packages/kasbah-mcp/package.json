@@ -1,0 +1,56 @@
+{
+  "name": "@kasbah/mcp-server",
+  "version": "2.0.0",
+  "description": "Kasbah MCP server — the trust layer for agentic AI. Every tool call signed Ed25519, verifiable offline forever.",
+  "main": "src/index.js",
+  "bin": {
+    "kasbah-mcp": "src/index.js",
+    "kasbah-mcp-server": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node test.js",
+    "prepublishOnly": "node test.js"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE",
+    "test.js"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "claude-code",
+    "cursor",
+    "cline",
+    "agent",
+    "agentic-ai",
+    "governance",
+    "audit",
+    "ed25519",
+    "kasbah",
+    "ai-safety",
+    "ai-security",
+    "receipts"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "homepage": "https://bekasbah.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Al-Adnane/Kasbah-Core.git",
+    "directory": "packages/kasbah-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/Al-Adnane/Kasbah-Core/issues"
+  },
+  "author": "Kasbah <hello@bekasbah.com>",
+  "license": "MIT",
+  "dependencies": {},
+  "publishConfig": {
+    "access": "public"
+  }
+}
