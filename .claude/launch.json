@@ -1,0 +1,108 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kasbah-desktop",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4500",
+        "--directory",
+        "packages/desktop/src"
+      ],
+      "port": 4500
+    },
+    {
+      "name": "kasbah-governance-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "packages/api-server/server.js"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "textxray-app",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "app.js"
+      ],
+      "port": 3002
+    },
+    {
+      "name": "pitch-deck",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "4200",
+        "pitch-deck"
+      ],
+      "port": 4200
+    },
+    {
+      "name": "kasbah-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "apps/web"
+      ],
+      "port": 3001
+    },
+    {
+      "name": "product-page-server",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "3010",
+        "."
+      ],
+      "port": 3010
+    },
+    {
+      "name": "product-page",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "4300",
+        "."
+      ],
+      "port": 4300
+    },
+    {
+      "name": "kasbah-site",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "serve",
+        "-l",
+        "4400",
+        "Kasbah-site/public"
+      ],
+      "port": 4400
+    },
+    {
+      "name": "kasbah-vpn-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "packages/kasbah-vpn/webui/server.js"
+      ],
+      "port": 4501
+    },
+    {
+      "name": "kasbah-desktop-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4600",
+        "--directory",
+        "packages/desktop/preview-harness"
+      ],
+      "port": 4600
+    }
+  ]
+}

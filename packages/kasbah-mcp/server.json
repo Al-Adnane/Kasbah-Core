@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Al-Adnane/kasbah-mcp",
+  "description": "Governance layer for agentic AI — signed, verifiable receipts for every agent action.",
+  "repository": {
+    "url": "https://github.com/Al-Adnane/Kasbah-Core",
+    "source": "github",
+    "subfolder": "packages/kasbah-mcp"
+  },
+  "version": "3.0.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@yobekasbah/mcp-server",
+      "version": "3.0.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Kasbah API key — get a free one via POST https://kasbah-api.fly.dev/v1/auth/signup",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true,
+          "name": "KASBAH_API_KEY"
+        },
+        {
+          "description": "Kasbah gateway base URL (defaults to http://127.0.0.1:8788 for local dev)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "KASBAH_API",
+          "default": "https://kasbah-api.fly.dev"
+        }
+      ]
+    }
+  ]
+}

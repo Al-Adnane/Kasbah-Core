@@ -1,0 +1,11 @@
+{
+  "name": "@yobekasbah/nomos-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-tradition ethics consensus engine (transparent norm lexicons, weighted consensus, adversarial debate)",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node ../../tests/capabilities.test.js"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kasbah — Receipt Verification</title>
+<meta name="description" content="Verify a Kasbah governance receipt. Cryptographic proof that an AI action was checked.">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --bg2: #101823;
+    --card: #121a24;
+    --ink: #e6edf3;
+    --muted: #8b9cb3;
+    --line: #243041;
+    --accent: #3d9cf0;
+    --ok: #10b981;
+    --warn: #f5a623;
+    --bad: #e25555;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; font-family: var(--sans); color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(61,156,240,.12), transparent 55%),
+      radial-gradient(900px 500px at 90% 10%, rgba(16,185,129,.08), transparent 50%),
+      var(--bg);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+  .brand {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 28px;
+    font-weight: 650; letter-spacing: .2px;
+  }
+  .shield {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(145deg, #1a2b3f, #0f1a26);
+    border: 1px solid var(--line); display: grid; place-items: center; font-size: 18px;
+  }
+  .brand small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -.3px; }
+  .lead { color: var(--muted); margin: 0 0 28px; line-height: 1.55; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px; margin-bottom: 16px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+    border-radius: 999px; font-size: 13px; font-weight: 650; letter-spacing: .3px;
+  }
+  .badge.ok   { background: rgba(16,185,129,.14); color: var(--ok); border: 1px solid rgba(16,185,129,.35); }
+  .badge.warn { background: rgba(245,166,35,.14); color: var(--warn); border: 1px solid rgba(245,166,35,.35); }
+  .badge.bad  { background: rgba(226,85,85,.14); color: var(--bad); border: 1px solid rgba(226,85,85,.35); }
+  .badge.idle { background: rgba(61,156,240,.12); color: var(--accent); border: 1px solid rgba(61,156,240,.3); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0 8px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  .cell {
+    background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  .cell .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .cell .v { font-family: var(--mono); font-size: 13px; word-break: break-all; line-height: 1.45; }
+  .cell .v.big { font-size: 22px; font-weight: 650; font-family: var(--sans); letter-spacing: -.2px; }
+  pre {
+    margin: 0; padding: 14px; background: #0b121a; border: 1px solid var(--line);
+    border-radius: 12px; overflow: auto; font-family: var(--mono); font-size: 11.5px;
+    color: #b7c7d9; max-height: 280px; line-height: 1.5;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  button, .btn {
+    appearance: none; border: 1px solid var(--line); background: var(--bg2); color: var(--ink);
+    border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+  }
+  button.primary, .btn.primary {
+    background: linear-gradient(180deg, #3d9cf0, #2b7fd0); border-color: transparent; color: white;
+  }
+  button:hover, .btn:hover { filter: brightness(1.08); }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 28px; line-height: 1.6; }
+  .foot a { color: var(--accent); text-decoration: none; }
+  .mono { font-family: var(--mono); }
+  .split { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #152030; border: 1px solid var(--line); color: var(--ink);
+    padding: 12px 16px; border-radius: 12px; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: all .25s ease; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .pill {
+    display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px;
+    background: rgba(61,156,240,.12); color: var(--accent); border: 1px solid rgba(61,156,240,.25);
+    margin: 2px 4px 2px 0; font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="shield">🛡</div>
+      <div>
+        Kasbah Guard
+        <small>Portable proof · offline verifiable</small>
+      </div>
+    </div>
+
+    <h1>Receipt verification</h1>
+    <p class="lead">
+      Every Kasbah decision can be proven. This page checks the cryptographic receipt
+      without needing your device, account, or the original prompt contents.
+    </p>
+
+    <div class="card" id="statusCard">
+      <div class="split">
+        <div class="badge idle" id="statusBadge">Waiting for receipt…</div>
+        <div class="mono" style="color:var(--muted);font-size:12px" id="statusTime"></div>
+      </div>
+      <div class="grid" id="summaryGrid" hidden>
+        <div class="cell">
+          <div class="k">Verdict</div>
+          <div class="v big" id="verdictVal">—</div>
+        </div>
+        <div class="cell">
+          <div class="k">Risk</div>
+          <div class="v big" id="riskVal">—</div>
+        </div>
+        <div class="cell">
+          <div class="k">Intervention</div>
+          <div class="v" id="interventionVal">—</div>
+        </div>
+        <div class="cell">
+          <div class="k">Request</div>
+          <div class="v" id="requestVal">—</div>
+        </div>
+        <div class="cell">
+          <div class="k">Subject / surface</div>
+          <div class="v" id="subjectVal">—</div>
+        </div>
+        <div class="cell">
+          <div class="k">Issued</div>
+          <div class="v" id="tsVal">—</div>
+        </div>
+      </div>
+      <div id="threatsWrap" hidden>
+        <div class="k" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px;margin:8px 0 8px">Findings</div>
+        <div id="threats"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="split" style="margin-bottom:12px">
+        <strong style="font-size:14px">Raw receipt</strong>
+        <div class="row" style="margin:0">
+          <button id="btnCopy">Copy receipt</button>
+          <button id="btnCopyLink" class="primary">Copy share link</button>
+        </div>
+      </div>
+      <pre id="rawOut">Paste a receipt with ?r=…&p=… or use the verifier API.</pre>
+    </div>
+
+    <div class="card">
+      <strong style="font-size:14px">Verify yourself</strong>
+      <p style="color:var(--muted);font-size:13px;line-height:1.55;margin:10px 0 12px">
+        This page verified the signature in your browser. You can also call the API
+        or use the offline SDK — receipts are designed to outlive the company that issued them.
+      </p>
+      <pre id="curlOut">curl -X POST https://kasbah-api.fly.dev/v1/receipt/verify \
+  -H 'content-type: application/json' \
+  -d '{"receipt":"kasbah_receipt:…","payload":"…"}'</pre>
+    </div>
+
+    <div class="foot">
+      Verified by <a href="https://bekasbah.com">Kasbah</a> · AI should ask first.<br>
+      No account required to verify. Full findings for shared receipts stay private to the issuer unless they choose to publish a summary.
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const receipt = params.get('r') || params.get('receipt') || '';
+  const payload = params.get('p') || params.get('payload') || '';
+
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function b64urlToJson(s) {
+    try {
+      let b = String(s).replace(/-/g, '+').replace(/_/g, '/');
+      while (b.length % 4) b += '=';
+      return JSON.parse(decodeURIComponent(escape(atob(b))));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function verdictBadge(verdict) {
+    const v = (verdict || '').toUpperCase();
+    if (v === 'ALLOW') return { cls: 'ok', text: 'Verified · ALLOW' };
+    if (v === 'WARN') return { cls: 'warn', text: 'Verified · WARN' };
+    if (v === 'DENY') return { cls: 'bad', text: 'Verified · DENY' };
+    return { cls: 'idle', text: 'Receipt present' };
+  }
+
+  function fmtTs(ts) {
+    try {
+      const d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
+      if (isNaN(d.getTime())) return String(ts || '—');
+      return d.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+    } catch (_) { return String(ts || '—'); }
+  }
+
+  function render(decoded, verify) {
+    const badge = $('statusBadge');
+    const vb = verdictBadge(decoded?.verdict);
+    if (verify && verify.valid === false) {
+      badge.className = 'badge bad';
+      badge.textContent = 'Signature invalid';
+    } else if (verify && verify.valid) {
+      badge.className = 'badge ' + vb.cls;
+      badge.textContent = vb.text;
+    } else {
+      badge.className = 'badge ' + vb.cls;
+      badge.textContent = vb.text + ' (local decode)';
+    }
+    $('statusTime').textContent = decoded?.ts ? fmtTs(decoded.ts) : '';
+
+    $('summaryGrid').hidden = false;
+    $('verdictVal').textContent = decoded?.verdict || '—';
+    $('riskVal').textContent = decoded?.risk != null ? Math.round(Number(decoded.risk) * 100) + '%' : '—';
+    $('interventionVal').textContent = decoded?.intervention || decoded?.seatbelt?.intervention || inferredIntervention(decoded);
+    $('requestVal').textContent = decoded?.requestId || decoded?.id || '—';
+    $('subjectVal').textContent = [decoded?.subject, decoded?.surface].filter(Boolean).join(' · ') || '—';
+    $('tsVal').textContent = fmtTs(decoded?.ts);
+
+    const threats = decoded?.threats || decoded?.findings || [];
+    if (threats.length) {
+      $('threatsWrap').hidden = false;
+      $('threats').innerHTML = threats.map(t => `<span class="pill">${String(t).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</span>`).join('');
+    }
+  }
+
+  function inferredIntervention(decoded) {
+    const r = Number(decoded?.risk || 0);
+    if (r >= 0.7) return 'Hard Block';
+    if (r >= 0.3) return 'Warning Toast';
+    return 'Silent Pass';
+  }
+
+  async function verifyRemote() {
+    if (!receipt || !payload) return null;
+    try {
+      const res = await fetch('/v1/receipt/verify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ receipt, payload }),
+      });
+      return await res.json();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  (async function init() {
+    if (!receipt) {
+      $('rawOut').textContent = 'No receipt in URL.\n\nShare links look like:\n  /demo/verify?r=kasbah_receipt:…&p=…\n  or /verify/:id for a published summary.';
+      return;
+    }
+    $('rawOut').textContent = (receipt || '') + (payload ? '\n\npayload: ' + payload : '');
+    const decoded = b64urlToJson(payload);
+    const verify = await verifyRemote();
+    render(decoded || verify?.decoded || {}, verify);
+    if (verify && verify.valid) {
+      $('statusBadge').textContent = (decoded?.verdict ? 'Verified · ' + decoded.verdict : 'Signature valid');
+    }
+    $('curlOut').textContent =
+      `curl -X POST ${location.origin}/v1/receipt/verify \\\n` +
+      `  -H 'content-type: application/json' \\\n` +
+      `  -d '${JSON.stringify({ receipt, payload }).replace(/'/g, "'\\''")}'`;
+  })();
+
+  $('btnCopy').onclick = async () => {
+    const text = receipt + (payload ? '\n' + payload : '');
+    try { await navigator.clipboard.writeText(text); toast('Receipt copied'); } catch (_) { toast('Copy failed'); }
+  };
+  $('btnCopyLink').onclick = async () => {
+    try { await navigator.clipboard.writeText(location.href); toast('Share link copied — paste into a bug report'); } catch (_) { toast('Copy failed'); }
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "name": "@yobekasbah/sdk",
+  "version": "6.0.1",
+  "description": "KasbahOS — govern any AI agent in one line. Cryptographic receipts, multi-layer threat detection, drop-in middleware for OpenAI, Anthropic, LangChain.",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/index.js",
+    "src/index.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node src/test.js"
+  },
+  "keywords": [
+    "ai",
+    "security",
+    "governance",
+    "llm",
+    "openai",
+    "anthropic",
+    "langchain",
+    "prompt-injection",
+    "kasbah",
+    "kasbah-os",
+    "receipt",
+    "audit",
+    "compliance",
+    "hipaa",
+    "soc2",
+    "middleware"
+  ],
+  "author": "Kasbah Guard <hello@bekasbah.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kasbah-guard/kasbah"
+  },
+  "homepage": "https://bekasbah.com",
+  "bugs": {
+    "url": "https://github.com/kasbah-guard/kasbah/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

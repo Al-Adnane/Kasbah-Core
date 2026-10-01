@@ -1,0 +1,14 @@
+{
+  "_comment": "Add the kasbah block to ~/.claude/mcp.json (Claude Code) or your Claude Desktop config. Get a free API key at https://bekasbah.com/signup",
+  "mcpServers": {
+    "kasbah": {
+      "command": "npx",
+      "args": ["-y", "@kasbah/mcp-server"],
+      "env": {
+        "KASBAH_API":     "https://api.bekasbah.com",
+        "KASBAH_API_KEY": "ksk_replace_with_your_key",
+        "KASBAH_AGENT":   "my-agent"
+      }
+    }
+  }
+}

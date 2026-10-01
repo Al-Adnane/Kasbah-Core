@@ -1,0 +1,22 @@
+{
+  "dataset": "FaceForensics++",
+  "url": "https://github.com/ondyix/FaceForensics",
+  "access": "Request form required",
+  "content": {
+    "deepfake_videos": 1000,
+    "real_videos": 1000,
+    "manipulation_types": [
+      "Deepfakes",
+      "Face2Face",
+      "FaceSwap",
+      "NeuralTextures"
+    ]
+  },
+  "instructions": [
+    "1. Visit https://github.com/ondyix/FaceForensics",
+    "2. Fill out the access request form",
+    "3. Wait for approval (typically 1-2 weeks)",
+    "4. Download using provided credentials",
+    "5. Extract frames using: ffmpeg -i video.mp4 -vf fps=1 frame_%04d.jpg"
+  ]
+}

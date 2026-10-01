@@ -1,0 +1,18 @@
+{
+  "startedAt": "2026-09-12T12:15:33.244Z",
+  "command": "node scripts/kasbah_evidence.js",
+  "node": "v25.9.0",
+  "mesh": "scripts/kasbah_mesh.js",
+  "publicPem": "issuer-public.pem",
+  "receipts": "receipts.jsonl",
+  "merkle": "merkle-root.json",
+  "sourceRoot": "source-root.json",
+  "verifier": "verify.mjs",
+  "honestScope": [
+    "Ed25519 receipts — not PQ signatures",
+    "Private key is NOT in evidence/ (verification uses public PEM only)",
+    "OpenTimestamps anchor is optional and may be missing if ots CLI/network unavailable",
+    "Reader must write/run verify.mjs independently for Tier 3–4"
+  ],
+  "otsError": "ots CLI unavailable or network blocked: spawnSync ots ENOENT"
+}

@@ -1,0 +1,190 @@
+{
+  "name": "kasbah-guard-desktop",
+  "version": "3.1.0",
+  "description": "Kasbah Privacy \u2014 VPN, private browser, vault, Wi-Fi guard",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "NODE_ENV=development npx electron .",
+    "start": "NODE_ENV=production npx electron .",
+    "build": "npx electron-builder --mac dmg",
+    "build:dmg": "npx electron-builder --mac dmg",
+    "build:all": "npx electron-builder -mwl"
+  },
+  "build": {
+    "appId": "com.kasbah.privacy",
+    "productName": "Kasbah Privacy",
+    "copyright": "Copyright \u00a9 2026 Kasbah Guard",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "files": [
+      "src/**/*",
+      "resources/**/*",
+      "package.json",
+      "!src/**/*.test.*",
+      "!src/index *.html"
+    ],
+    "extraResources": [
+      {
+        "from": "../kasbah-vpn",
+        "to": "packages/kasbah-vpn",
+        "filter": [
+          "**/*",
+          "!node_modules/**",
+          "!test.js",
+          "!test-obfs.js",
+          "!webui/**"
+        ]
+      },
+      {
+        "from": "../api-server",
+        "to": "packages/api-server",
+        "filter": [
+          "**/*",
+          "!node_modules/**",
+          "!tests/**",
+          "!*.test.*",
+          "!Dockerfile",
+          "!coverage/**",
+          "!models/**"
+        ]
+      },
+      {
+        "from": "../agent-cost-watch",
+        "to": "packages/agent-cost-watch",
+        "filter": [
+          "**/*",
+          "!node_modules/**",
+          "!tests/**"
+        ]
+      },
+      {
+        "from": "../control",
+        "to": "packages/control",
+        "filter": [
+          "**/*",
+          "!node_modules/**",
+          "!tests/**",
+          "!*.test.*",
+          "!coverage/**"
+        ]
+      },
+      {
+        "from": "../../kasbah-os",
+        "to": "packages/kasbah-os",
+        "filter": [
+          "zeroday_cli.py",
+          "zeroday_engine.py",
+          "crypto_audit.py",
+          "governance_proxy.py",
+          "binary_engine.py",
+          "neuromorphic_engine.py",
+          "adversarial_selfplay.py",
+          "kernel_fuzzer.py",
+          "bridge.py",
+          "kasbah_types.py"
+        ]
+      },
+      {
+        "from": "../kasbah-receipts",
+        "to": "packages/kasbah-receipts",
+        "filter": ["**/*", "!node_modules/**", "!test.js"]
+      },
+      {
+        "from": "../biometric-detection",
+        "to": "packages/biometric-detection",
+        "filter": ["**/*", "!node_modules/**"]
+      },
+      {
+        "from": "../kasbah-mcp",
+        "to": "packages/kasbah-mcp",
+        "filter": ["**/*", "!node_modules/**", "!test.js"]
+      },
+      {
+        "from": "../kasbah-browser-extension",
+        "to": "packages/kasbah-browser-extension",
+        "filter": ["**/*", "!node_modules/**"]
+      },
+      {
+        "from": "../nomos-engine",
+        "to": "packages/nomos-engine",
+        "filter": ["**/*", "!node_modules/**"]
+      },
+      {
+        "from": "../../bench/results",
+        "to": "packages/bench-results",
+        "filter": [
+          "detection-scorecard-*.json"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.icns",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": true,
+      "identity": null,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist",
+      "bundleVersion": "300",
+      "minimumSystemVersion": "12.0"
+    },
+    "dmg": {
+      "background": null,
+      "sign": false,
+      "window": {
+        "width": 600,
+        "height": 400
+      },
+      "contents": [
+        {
+          "x": 150,
+          "y": 200,
+          "type": "file"
+        },
+        {
+          "x": 450,
+          "y": 200,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "resources/icon.ico",
+      "publisherName": "Kasbah Guard"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Security"
+    }
+  },
+  "dependencies": {
+    "@noble/post-quantum": "^0.6.1",
+    "cors": "^2.8.8",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "electron": "^41.3.0",
+    "electron-builder": "^25.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

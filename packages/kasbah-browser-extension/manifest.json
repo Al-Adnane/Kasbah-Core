@@ -1,0 +1,86 @@
+{
+  "manifest_version": 3,
+  "name": "Kasbah — AI Seatbelt",
+  "version": "0.3.0",
+  "description": "22nd-century AI seatbelt: scan every prompt for secrets, PII, and injection before it leaves your device — Silent Pass / Warning Toast / Hard Block, signed receipts, AI Trust Grade. Works on ChatGPT, Claude, Gemini, Duck.ai, Brave Leo, Opera Aria, and more.",
+  "permissions": ["storage", "activeTab", "tabs", "scripting", "notifications", "webNavigation", "declarativeNetRequest", "declarativeNetRequestFeedback", "clipboardWrite"],
+  "declarative_net_request": {
+    "rule_resources": [{
+      "id": "ai_blocklist",
+      "enabled": true,
+      "path": "ai-blocklist.json"
+    }]
+  },
+  "web_accessible_resources": [{ "resources": ["inject.js"], "matches": ["<all_urls>"] }],
+  "host_permissions": [
+    "http://127.0.0.1:8788/*",
+    "http://localhost:8788/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://www.perplexity.ai/*",
+    "https://poe.com/*",
+    "https://grok.com/*",
+    "https://copilot.microsoft.com/*",
+    "https://www.bing.com/*",
+    "https://copilot.cloud.microsoft/*",
+    "https://duck.ai/*",
+    "https://duckduckgo.com/*",
+    "https://search.brave.com/*",
+    "https://brave.com/*",
+    "https://www.opera.com/*",
+    "https://arc.net/*",
+    "https://www.phind.com/*",
+    "https://you.com/*",
+    "https://chat.mistral.ai/*",
+    "https://gemini.google.com/*",
+    "https://aistudio.google.com/*",
+    "https://chat.deepseek.com/*",
+    "https://www.kimi.com/*",
+    "https://chat.qwen.ai/*",
+    "https://labs.perplexity.ai/*",
+    "https://x.com/*",
+    "https://www.meta.ai/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Kasbah — AI Seatbelt",
+    "default_icon": { "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://www.perplexity.ai/*",
+        "https://poe.com/*",
+        "https://grok.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://www.bing.com/*",
+        "https://copilot.cloud.microsoft/*",
+        "https://duck.ai/*",
+        "https://duckduckgo.com/*",
+        "https://search.brave.com/*",
+        "https://brave.com/*",
+        "https://www.opera.com/*",
+        "https://www.phind.com/*",
+        "https://you.com/*",
+        "https://chat.mistral.ai/*",
+        "https://aistudio.google.com/*",
+        "https://chat.deepseek.com/*",
+        "https://www.kimi.com/*",
+        "https://chat.qwen.ai/*",
+        "https://labs.perplexity.ai/*",
+        "https://www.meta.ai/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

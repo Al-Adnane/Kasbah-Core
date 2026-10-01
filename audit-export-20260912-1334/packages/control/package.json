@@ -1,0 +1,82 @@
+{
+  "name": "kasbah-control",
+  "version": "1.0.0",
+  "description": "KasbahOS — AI governance middleware. Govern every LLM call in real time.",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./hooks": "./hooks/pretooluse.js",
+    "./proxy": "./src/proxy.js",
+    "./openclaw": "./src/openclaw.js"
+  },
+  "bin": {
+    "kasbah-govern": "./hooks/pretooluse.js"
+  },
+  "scripts": {
+    "test": "node tests/run-tests.js",
+    "test:jest": "jest --forceExit",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/ tests/",
+    "prepublishOnly": "npm test"
+  },
+  "files": [
+    "src/",
+    "hooks/",
+    "README.md",
+    "LICENSE"
+  ],
+  "bundledDependencies": [],
+  "keywords": [
+    "ai",
+    "security",
+    "governance",
+    "llm",
+    "prompt-injection",
+    "kasbah",
+    "openai",
+    "anthropic"
+  ],
+  "author": "Kasbah Guard",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Al-Adnane/Kasbah-Core.git"
+  },
+  "homepage": "https://bekasbah.com",
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  },
+  "peerDependencies": {
+    "express": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFiles": [
+      "./tests/setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 0
+      }
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

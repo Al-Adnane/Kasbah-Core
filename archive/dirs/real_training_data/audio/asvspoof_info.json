@@ -1,0 +1,16 @@
+{
+  "dataset": "ASVspoof 2021",
+  "url": "https://www.asvspoof.org/",
+  "access": "Registration required",
+  "content": {
+    "synthetic_speech": "Multiple TTS systems",
+    "converted_speech": "Voice conversion samples",
+    "real_speech": "Bonafide samples"
+  },
+  "instructions": [
+    "1. Visit https://www.asvspoof.org/",
+    "2. Register for dataset access",
+    "3. Download LFCC features or raw audio",
+    "4. Use training set for model training"
+  ]
+}

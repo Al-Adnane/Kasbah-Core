@@ -1,0 +1,40 @@
+{
+  "name": "@yobekasbah/vpn",
+  "version": "0.1.0",
+  "description": "Kasbah VPN — WireGuard orchestration with post-quantum hybrid preshared keys, AI-traffic split tunneling through the Kasbah governance gateway, governed MCP mesh configs, and signed session receipts. Wraps the system WireGuard data plane; does not reimplement it.",
+  "license": "MIT",
+  "main": "src/index.js",
+  "bin": {
+    "kasbah-vpn": "bin/kasbah-vpn.js"
+  },
+  "files": [
+    "src/",
+    "bin/",
+    "deploy/",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@noble/post-quantum": ">=0.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@noble/post-quantum": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "wireguard",
+    "vpn",
+    "post-quantum",
+    "ml-kem",
+    "ai",
+    "governance",
+    "mcp",
+    "receipts"
+  ]
+}

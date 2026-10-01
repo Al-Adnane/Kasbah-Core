@@ -1,0 +1,16 @@
+{
+  "name": "@yobekasbah/cli",
+  "version": "1.0.1",
+  "description": "Kasbah Guard — unified command-line interface. Talks to the local or remote api-server.",
+  "bin": {
+    "kasbah": "bin/kasbah.js"
+  },
+  "main": "bin/kasbah.js",
+  "scripts": {
+    "test": "node bin/kasbah.js --help"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

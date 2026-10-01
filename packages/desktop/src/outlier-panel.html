@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Kasbah Outlier Panel</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0b0f14;color:#e6eef6;margin:0;padding:24px}
+.card{background:#111823;border:1px solid #1f2a38;border-radius:12px;padding:16px;margin:12px 0}
+h1{margin:0 0 12px}
+button{background:#1f8fff;color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+pre{background:#05070a;padding:12px;border-radius:8px;overflow:auto}
+</style>
+</head>
+<body>
+<h1>Kasbah Outlier Dashboard</h1>
+<div class="card">
+<h2>Viral Growth Loop</h2>
+<button id="viral">Get Viral Coefficient</button>
+<pre id="viralOut">–</pre>
+</div>
+<div class="card">
+<h2>13-Moat Layer</h2>
+<button id="moats">Get Moats</button>
+<pre id="moatsOut">–</pre>
+</div>
+<div class="card">
+<h2>Crypto Hardening</h2>
+<button id="crypto">Get Genesis</button>
+<pre id="cryptoOut">–</pre>
+</div>
+<div class="card">
+<h2>On-Device PII ML</h2>
+<input id="piiText" placeholder="Enter text to scan for PII"/>
+<button id="pii">Scan PII</button>
+<pre id="piiOut">–</pre>
+</div>
+<script>
+const out = (id) => document.getElementById(id);
+document.getElementById('viral').onclick = async ()=>{
+  const r = await window.kasbah.viralCoefficient();
+  out('viralOut').textContent = JSON.stringify(r, null, 2);
+};
+document.getElementById('moats').onclick = async ()=>{
+  const r = await window.kasbah.moats();
+  out('moatsOut').textContent = JSON.stringify(r, null, 2);
+};
+document.getElementById('crypto').onclick = async ()=>{
+  const r = await window.kasbah.cryptoGenesis();
+  out('cryptoOut').textContent = JSON.stringify(r, null, 2);
+};
+document.getElementById('pii').onclick = async ()=>{
+  const txt = document.getElementById('piiText').value;
+  const r = await window.kasbah.piiOnDevice(txt);
+  out('piiOut').textContent = JSON.stringify(r, null, 2);
+};
+</script>
+</body>
+</html>

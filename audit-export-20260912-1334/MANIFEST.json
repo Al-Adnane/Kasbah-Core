@@ -1,0 +1,47 @@
+{
+  "product": "Kasbah Guard",
+  "exportType": "external-audit-source-snapshot",
+  "generatedAt": "2026-09-12T13:35:00+08:00",
+  "desktopPackage": "packages/desktop",
+  "tests": { "passed": 153, "failed": 0, "file": "TEST_RESULTS.txt" },
+  "integrity": { "algorithm": "sha256", "file": "SHA256SUMS.txt" },
+  "includes": [
+    "desktop/src",
+    "desktop/test",
+    "packages/control",
+    "packages/kasbah-vpn",
+    "packages/kasbah-receipts",
+    "packages/biometric-detection",
+    "packages/agent-cost-watch",
+    "packages/crypto-utils",
+    "packages/advanced-security",
+    "packages/kasbah-os-root"
+  ],
+  "excludes": [
+    "node_modules",
+    "coverage",
+    "dist",
+    ".git",
+    "user state (~/.kasbah-*)",
+    "private keys / Fly secrets / sudoers helper binary",
+    "notarized .app / DMG"
+  ],
+  "priorityReview": [
+    "desktop/src/shamir-vault.js",
+    "desktop/src/zk-protect.js",
+    "desktop/src/threshold-gov.js",
+    "desktop/src/wgas.js",
+    "desktop/src/fs-audit.js",
+    "desktop/src/ai-governance.js",
+    "desktop/src/biometric-guard.js",
+    "desktop/src/llm-proxy.js",
+    "desktop/src/main-vpn.js",
+    "packages/control/src/kasbah-policy-engine.js"
+  ],
+  "nonClaims": [
+    "No third-party audit yet",
+    "Ed25519 co-sign not PQ signatures",
+    "WGAS witness is public not ZK",
+    "Some /v1/* UI paths are api-server stubs"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "kasbah-guard",
+  "version": "9.1.0",
+  "private": true,
+  "description": "Kasbah \u2014 universal AI gateway: governance, cryptographic receipts, and cost control for every LLM call",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/integration/runtime.test.js && node packages/api-server/src/intervention.test.js && node packages/api-server/src/ai-trust-grade.test.js && node packages/api-server/src/competitive-parity.test.js && node packages/api-server/src/digest.test.js",
+    "lint": "echo \"no linter configured\"",
+    "bench": "node bench/run.js --api http://localhost:8788",
+    "start": "node packages/api-server/server.js",
+    "bench:detection": "node bench/detection-scorecard.js",
+    "bench:injection": "python3 bench/injection-classifier/benchmark.py",
+    "train:injection": "python3 bench/injection-classifier/train.py",
+    "bench:injection:js": "node bench/injection-classifier/benchmark-js.js",
+    "test:capabilities": "node tests/capabilities.test.js",
+    "test:intervention": "node packages/api-server/src/intervention.test.js",
+    "test:trust": "node packages/api-server/src/ai-trust-grade.test.js",
+    "test:digest": "node packages/api-server/src/digest.test.js"
+  },
+  "dependencies": {
+    "@noble/curves": "^2.4.0",
+    "@noble/post-quantum": "^0.6.1",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2"
+  }
+}

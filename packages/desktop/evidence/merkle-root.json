@@ -1,0 +1,88 @@
+{
+  "alg": "sha256-double-prefix",
+  "root": "6755f239d1fa6f82c5a19d6bbcbe1afcbe0e403a81c7374861059b230628cd19",
+  "count": 8,
+  "proofs": [
+    {
+      "id": "ssh-read",
+      "leaf": "5e34b4c8cc3267bc5c1c83fd14b17cd20392264ff9e9d6ddfda5056ffd3969e3",
+      "path": [
+        "e214a9a73cb65b5ecce732431d66360fb7b1400ecc5c1e9bef1c03e01686735b",
+        "8ef328f191a613567518fe0fb22d5e8066fec949b15f16dcf9214b89fd4bfb03",
+        "59ec89c7e23f9e0e0846f99e9eb2f2c8ffd35effcf3f21fd3a1a49799920bd94"
+      ],
+      "index": 0
+    },
+    {
+      "id": "aws-read",
+      "leaf": "e214a9a73cb65b5ecce732431d66360fb7b1400ecc5c1e9bef1c03e01686735b",
+      "path": [
+        "5e34b4c8cc3267bc5c1c83fd14b17cd20392264ff9e9d6ddfda5056ffd3969e3",
+        "8ef328f191a613567518fe0fb22d5e8066fec949b15f16dcf9214b89fd4bfb03",
+        "59ec89c7e23f9e0e0846f99e9eb2f2c8ffd35effcf3f21fd3a1a49799920bd94"
+      ],
+      "index": 1
+    },
+    {
+      "id": "env-read",
+      "leaf": "a2b78ef46d9a53a19ab207da48b3f2026587ced56b29a40b88d940af67ccfe2c",
+      "path": [
+        "6853445061a5fc8b8d962fe700e9398766c27df5a4c130f66413249cfe616f70",
+        "f739ce216ec2a0670919d7138c7c85ec32f2d0c87a0712f92623c4d938edc06c",
+        "59ec89c7e23f9e0e0846f99e9eb2f2c8ffd35effcf3f21fd3a1a49799920bd94"
+      ],
+      "index": 2
+    },
+    {
+      "id": "wallet-read",
+      "leaf": "6853445061a5fc8b8d962fe700e9398766c27df5a4c130f66413249cfe616f70",
+      "path": [
+        "a2b78ef46d9a53a19ab207da48b3f2026587ced56b29a40b88d940af67ccfe2c",
+        "f739ce216ec2a0670919d7138c7c85ec32f2d0c87a0712f92623c4d938edc06c",
+        "59ec89c7e23f9e0e0846f99e9eb2f2c8ffd35effcf3f21fd3a1a49799920bd94"
+      ],
+      "index": 3
+    },
+    {
+      "id": "pay-50k",
+      "leaf": "ce4651f8b8b809842aa5321cb4ceec599ea5a3f1ea53e9d2809b02eb536486e0",
+      "path": [
+        "33fd8749e0b2489bb1465702ab8efc3b1a2959ebfc1d5d28943f533b9e0e1ab9",
+        "2c21d1d1ce0df9cc1879170c5d0bd9228dbe82b62bb8d071ac727b3ed636e618",
+        "6f936eb0e7a9e1a5f9d90939a001a7372f40e7adf45959479bd0c40b461f5091"
+      ],
+      "index": 4
+    },
+    {
+      "id": "llm-pem",
+      "leaf": "33fd8749e0b2489bb1465702ab8efc3b1a2959ebfc1d5d28943f533b9e0e1ab9",
+      "path": [
+        "ce4651f8b8b809842aa5321cb4ceec599ea5a3f1ea53e9d2809b02eb536486e0",
+        "2c21d1d1ce0df9cc1879170c5d0bd9228dbe82b62bb8d071ac727b3ed636e618",
+        "6f936eb0e7a9e1a5f9d90939a001a7372f40e7adf45959479bd0c40b461f5091"
+      ],
+      "index": 5
+    },
+    {
+      "id": "delegate-full",
+      "leaf": "72beb5d35d08da221e31cd5e95857f29c0defce43c6fc404fc24ef887477a702",
+      "path": [
+        "45399157340b8a74a186d56e5ed4684165953ade9ff8be7b05d94e6dec19a900",
+        "d3c35577796294bc767c745ec98349e37bc7ec1df18ae6135a5a41034dbd9aef",
+        "6f936eb0e7a9e1a5f9d90939a001a7372f40e7adf45959479bd0c40b461f5091"
+      ],
+      "index": 6
+    },
+    {
+      "id": "benign",
+      "leaf": "45399157340b8a74a186d56e5ed4684165953ade9ff8be7b05d94e6dec19a900",
+      "path": [
+        "72beb5d35d08da221e31cd5e95857f29c0defce43c6fc404fc24ef887477a702",
+        "d3c35577796294bc767c745ec98349e37bc7ec1df18ae6135a5a41034dbd9aef",
+        "6f936eb0e7a9e1a5f9d90939a001a7372f40e7adf45959479bd0c40b461f5091"
+      ],
+      "index": 7
+    }
+  ],
+  "signedRoot": "PyOeUlUrpZR+G3E+7i9NkaNv5QbCViu7l1SZ5SWFNoK92X2iTocurAR3yGsEdwlJNzQBNWNDx2s1n9A4djg9CA=="
+}

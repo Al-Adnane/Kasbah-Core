@@ -1,0 +1,232 @@
+{
+  "alg": "sha256",
+  "root": "dc3bf93a46d654863160200b0dae844b7c89375124c5d7b8e2fa4b17fe47b7d3",
+  "files": [
+    {
+      "file": "agent-cost.js",
+      "sha256": "83e3d372e1dfd490b9c0c3916b7eee5e5e42dda68f2df553d4d632391d2becc2"
+    },
+    {
+      "file": "agent-guard.js",
+      "sha256": "d122634a0d3b466215c0f10aec3444407f8b750c5e114b3c29c96ce98853c8da"
+    },
+    {
+      "file": "agent-registry.js",
+      "sha256": "f2540c093a1e0ba1bcacf759a4a37ecbe60292bd6d15152d003ea4943a48a874"
+    },
+    {
+      "file": "ai-governance.js",
+      "sha256": "ae4dd6b225c379bbec4445ce9e417b85622b4f7a3fb0030bcdca475aa7c6cc12"
+    },
+    {
+      "file": "biometric-guard.js",
+      "sha256": "b9b44df0943b5ae3a524db763430a77257ee8dc73678ef3cec83b6b91e3059c3"
+    },
+    {
+      "file": "biometric-local.js",
+      "sha256": "5b2144be8f6fe1653d9ac55e63f32d7201fcb608a036c2475aaa268aa0591e8a"
+    },
+    {
+      "file": "browser-store.js",
+      "sha256": "56d13bc18912d968d64fac7073b6cd0bf39a0a34bdb8de3eb84df03f7fc89f91"
+    },
+    {
+      "file": "capability-tokens.js",
+      "sha256": "3f381b9f470802df98fc3b8afefa4309d515ed59ed2c1797bbcc1aef1518bb93"
+    },
+    {
+      "file": "claim-ledger.js",
+      "sha256": "eaf8a0c205d5c0da339800d5b254e0930fe31c415054c6b1a5e102254c64cfab"
+    },
+    {
+      "file": "commit-proof.js",
+      "sha256": "fcc46f008e2835577e10f8b892861379121380dd851de23a9630fa425e926066"
+    },
+    {
+      "file": "deadman.js",
+      "sha256": "8cac195122af674f3aa4e80187c1674bd93afeb3eb9dbcf5162299aa9d6801e5"
+    },
+    {
+      "file": "did-key.js",
+      "sha256": "7f59835b95219678f4ac45c8c207fd7c8e7f9992be0e578a4501a5a4f2081fba"
+    },
+    {
+      "file": "dkg-transport.js",
+      "sha256": "4eaa3ec6a95b72a3cabf5334f70ee7e7de1bd49e52071a14b26b509a9d7bd201"
+    },
+    {
+      "file": "dkg.js",
+      "sha256": "493a939a5bf264fb2d4217af721f27af2b2f5cc315e4aea18e19e0e4a8febb4c"
+    },
+    {
+      "file": "doh-resolver.js",
+      "sha256": "e8431ce4222064ac8ef304ba9d697a62b500f4f0047128f18a377b6a21fc4b93"
+    },
+    {
+      "file": "egress-classifier.js",
+      "sha256": "265c4430d5bb81717ebc7b3bddcaab55f153f0ed51793ec456f160c97f39c06c"
+    },
+    {
+      "file": "exit-market.js",
+      "sha256": "89d7842024307ab88f9ef4cc89ea67acae1e57488389170f802c28e0e1ce765d"
+    },
+    {
+      "file": "ext-gateway.js",
+      "sha256": "0522c2cb7ac13a2cf0407ab6db6c684f01f4a3df6b8e4b506e2fc1c9c8d09fff"
+    },
+    {
+      "file": "fs-audit.js",
+      "sha256": "470190e00571b1d33a9767805a0f4590199af14b5c6ad9e78f0e6d25ae9fd6a2"
+    },
+    {
+      "file": "harden.js",
+      "sha256": "7710955c81ba06efdd324da25b6603e14392efc899241adc4fe263c3b05e7f18"
+    },
+    {
+      "file": "honeytokens.js",
+      "sha256": "714afae9cd17b89f2dd5b240ac9a43def1f8563e7b7b38d22ff6ffdf46db714a"
+    },
+    {
+      "file": "impact.js",
+      "sha256": "7d47423bcb7155c9105faac3321d53f592ed2ae04336f07c5e7baceb014a1aeb"
+    },
+    {
+      "file": "ipc-validate.js",
+      "sha256": "1d09a2f4b9bb1be4b05a51da3718fc25388c9498dad38f2158994f0ff83788a7"
+    },
+    {
+      "file": "llm-proxy.js",
+      "sha256": "1e2ce6ef8e318700dcca501edf3df153e781a4c3a40bec75bfa1328816f8b42f"
+    },
+    {
+      "file": "logger.js",
+      "sha256": "94d11634772eebeb47e37b85121fd30f2eff1f2b26b2e4766cd5290a756c6cab"
+    },
+    {
+      "file": "main-features.js",
+      "sha256": "04d9995346b3b4f63af65646332b745e667d6e5fa77dfc0985a9870291c73b66"
+    },
+    {
+      "file": "main-outlier.js",
+      "sha256": "736ab47a7d4db3c42dd37672dc1eff3f4b6842ef6cd5e9b7f003d3bdefbb09dd"
+    },
+    {
+      "file": "main-vault.js",
+      "sha256": "0ac82d7ffae9ea263540fbaecbc2dbeb4461335e6e11f34d42e38e5ba564ebdd"
+    },
+    {
+      "file": "main-vpn.js",
+      "sha256": "7c9b9e0799fcfb869e2cc0b4e52255dee9ec378f4cf3aab885679cc1458e145c"
+    },
+    {
+      "file": "main.js",
+      "sha256": "3a030f649704921eec828c29d9c9b999122508cb39946e69bf59cb9c542c2391"
+    },
+    {
+      "file": "merkle-batch.js",
+      "sha256": "28260eb91b3da35212e6b3b3d5afaacd7017fd77c9107f9c9b5af8b3c326975a"
+    },
+    {
+      "file": "mmr-backup.js",
+      "sha256": "a8df0ba8d54a754f63373cd89b69b6b2de237524d54ccaefdcdc6309a371107d"
+    },
+    {
+      "file": "net-intel.js",
+      "sha256": "76862c5e1fbc25fbce60d20981ad4677f447cf7c2994315a9e422a2385ee323e"
+    },
+    {
+      "file": "nomos-local.js",
+      "sha256": "8b100a015e0e7df70cac807f5dee59ff1b1fe4a67ddacdb351a490becb070f32"
+    },
+    {
+      "file": "pq-seal.js",
+      "sha256": "cf7181dc198e34434d0094d333055d1d2cb6f27d4d78705ede8efa3b8f784dd9"
+    },
+    {
+      "file": "preload.js",
+      "sha256": "626165a97a8a0fb2a2e584dc83361a6b821e4b055b4c1c6b16ba92af21eacabd"
+    },
+    {
+      "file": "privacy-engine.js",
+      "sha256": "7be3ef7e6fcc67df62f8c0251bdc7e2c5065267a8b9004ccbe96498e79afad7b"
+    },
+    {
+      "file": "pro-license.js",
+      "sha256": "b0bd5924cddaf16bf33a9cfab0c939a3df991887b8a2bd3cef7fedaa6e1553cb"
+    },
+    {
+      "file": "prompt-attest.js",
+      "sha256": "02cd853614de622cc692c1153676902bd6132af3f0c4797837e09096afb69cc9"
+    },
+    {
+      "file": "proof-protection.js",
+      "sha256": "27c2438898589cd62a74f015931767de1ae645edceffa017caa2f352c90b1303"
+    },
+    {
+      "file": "pvs-r.js",
+      "sha256": "669877c4f8236f211e6c6e053c9546a86c25afd79d8bbf6ebd07ccdbd407acc1"
+    },
+    {
+      "file": "range-proof.js",
+      "sha256": "08a4ee75b301aec6c49552555abf67aaa6e0358243f72b6ccea10d6f9aa585fd"
+    },
+    {
+      "file": "self-audit.js",
+      "sha256": "e84df321cf4eb3af775d4b547bf83dc399174a74b29ca687817e9e740da5a146"
+    },
+    {
+      "file": "session-chain.js",
+      "sha256": "b11063e41b38da1451ef1769f984314d998ba22af27a7a58130d1b1a14f27ed1"
+    },
+    {
+      "file": "shamir-vault.js",
+      "sha256": "2cc457d7fa9fc3f73b58c3e8ff256b711d23a0d1a025b1a9befeae692f9ee202"
+    },
+    {
+      "file": "sitrep.js",
+      "sha256": "d2726c5e86a5495a1b63dfdc28da2bbc5ab5367fae295b1217949c7014fbf124"
+    },
+    {
+      "file": "threshold-gov.js",
+      "sha256": "814673accd3ed974262c363e331f7bfdf25a7467e9c050ce0021aa503e64752b"
+    },
+    {
+      "file": "tracker-blocklist.js",
+      "sha256": "1a4f9a6cf183590d8031a698c0575503cd8cca64fd52d2c9dbbd6783fa332105"
+    },
+    {
+      "file": "vc-export.js",
+      "sha256": "4d3e9add84f0ab6f5a20dcd711dca40f0cf023eb5afa57f2649b08782492a21c"
+    },
+    {
+      "file": "voice-privacy.js",
+      "sha256": "575e15fc26567754375732df3e36989d039a9ac85a4bf68e2c0834c903260a13"
+    },
+    {
+      "file": "vpn-resilience.js",
+      "sha256": "ce50bfd027a1e9140f395a17841b6901b9cc2b941f98ea499a01c9ef5a3ec39b"
+    },
+    {
+      "file": "vss-feldman.js",
+      "sha256": "d6d10bd16ce03c8e6bf63836ff33684dc93c48be90fe7b162eaba81d813efa2f"
+    },
+    {
+      "file": "vuln-scanner.js",
+      "sha256": "335fa65d482af2c9c334022c402ebc1d362f44ff99c3b5ba153f3132f2210898"
+    },
+    {
+      "file": "webview-preload.js",
+      "sha256": "6029f65bf312120a114bc5ea5637c860f99355b305aa498f273f1e9c774855a9"
+    },
+    {
+      "file": "wgas.js",
+      "sha256": "1a978f061d1ee533da0b7bc351930aa8088d1cb95f07ffbf493447455add2e87"
+    },
+    {
+      "file": "zk-protect.js",
+      "sha256": "b0bd34df70276bd03fdde6ba83b59989dd4e9cec30875ccc5a4976ac6a2af7a4"
+    }
+  ],
+  "node": "v25.9.0",
+  "platform": "darwin"
+}

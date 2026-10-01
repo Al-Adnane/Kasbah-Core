@@ -1,0 +1,585 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.xctest/Contents/MacOS/KasbahSDKPackageTests",
+      "packagePath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios",
+      "productName" : "KasbahSDKPackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.KasbahSDK-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/sources",
+      "importPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/KasbahClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/Models.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "KasbahSDK",
+      "moduleOutputPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDK.swiftmodule",
+      "objects" : [
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/KasbahClient.swift.o",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/Models.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx12.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/include/KasbahSDK-Swift.h",
+        "-swift-version",
+        "5",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "kasbah_sdk_ios"
+      ],
+      "outputFileMapPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/KasbahClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDK.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/KasbahClient.swift",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/Models.swift"
+      ],
+      "tempsPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.KasbahSDKPackageTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/sources",
+      "importPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDKTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "KasbahSDKPackageTests",
+      "moduleOutputPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDKPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx12.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/include/KasbahSDKPackageTests-Swift.h",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "kasbah_sdk_ios"
+      ],
+      "outputFileMapPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDKPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.KasbahSDKTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/sources",
+      "importPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Tests/KasbahSDKTests/KasbahClientTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDK.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "KasbahSDKTests",
+      "moduleOutputPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDKTests.swiftmodule",
+      "objects" : [
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/KasbahClientTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx12.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "5",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "kasbah_sdk_ios"
+      ],
+      "outputFileMapPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/KasbahClientTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules/KasbahSDKTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Tests/KasbahSDKTests/KasbahClientTests.swift"
+      ],
+      "tempsPath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "KasbahSDK" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "KasbahSDK",
+      "-package-name",
+      "kasbah_sdk_ios",
+      "-c",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/KasbahClient.swift",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/Models.swift",
+      "-I",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx12.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/include/KasbahSDK-Swift.h",
+      "-swift-version",
+      "5",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "kasbah_sdk_ios",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "KasbahSDKPackageTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "KasbahSDKPackageTests",
+      "-package-name",
+      "kasbah_sdk_ios",
+      "-c",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx12.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/include/KasbahSDKPackageTests-Swift.h",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "kasbah_sdk_ios",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "KasbahSDKTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "KasbahSDKTests",
+      "-package-name",
+      "kasbah_sdk_ios",
+      "-c",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Tests/KasbahSDKTests/KasbahClientTests.swift",
+      "-I",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx12.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "5",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "kasbah_sdk_ios",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "KasbahSDK" : [
+
+    ],
+    "KasbahSDKPackageTests" : [
+      "KasbahSDKTests",
+      "KasbahSDK"
+    ],
+    "KasbahSDKTests" : [
+      "KasbahSDK"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/KasbahClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Sources/KasbahSDK/Models.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/sources"
+    },
+    "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/sources"
+    },
+    "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/KasbahClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDK.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/KasbahClientTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/Tests/KasbahSDKTests/KasbahClientTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/KasbahSDKTests.build/sources"
+    },
+    "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/mac/Desktop/KasbahFinal/kasbah-sdk-ios/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

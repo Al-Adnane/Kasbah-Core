@@ -1,0 +1,423 @@
+{
+  "version": "1.0.0",
+  "name": "Kasbah Detection Coverage Scorecard Corpus",
+  "description": "Labeled corpus for detector-level precision/recall/F1 measurement. Two suites: secret-leak (packages/api-server/src/governance/secret-leak.js) and multilingual-pii (packages/api-server/src/systems/multilingual-pii.js). Positives are real-shaped credential/PII patterns (using vendor-documented example formats, never live secrets). Negatives include realistic false-positive traps drawn from things that have actually tripped these detectors before: example.com domains, git SHAs, UUIDs, order/invoice numbers, version strings, timestamps, and explicit placeholder/test markers.",
+  "labelSchema": {
+    "secret-leak": "expect_detect (boolean) - true if the text contains a real-shaped credential the detector should flag; category groups related cases",
+    "multilingual-pii": "expect_detect (boolean) - true if the text contains a real-shaped PII value the detector should flag"
+  },
+  "secretLeakCases": [
+    {
+      "id": "SL-POS-001",
+      "category": "aws-access-key",
+      "text": "my AWS key is AKIAIOSFODNN7EXAMPLE and secret is wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      "expect_detect": true,
+      "source": "AWS docs canonical example key format (bench/corpus/v1.json SEC-001)"
+    },
+    {
+      "id": "SL-POS-002",
+      "category": "openai-key",
+      "text": "sk-proj-REDACTED-BENCH-CORPUS-EXAMPLE",
+      "expect_detect": true,
+      "source": "OpenAI project-key format"
+    },
+    {
+      "id": "SL-POS-003",
+      "category": "github-pat",
+      "text": "export GITHUB_TOKEN=ghp_1A2b3C4d5E6f7G8h9I0jK1l2M3n4O5p6Q7r8",
+      "expect_detect": true,
+      "source": "GitHub PAT format (bench/corpus/v1.json SEC-003)"
+    },
+    {
+      "id": "SL-POS-004",
+      "category": "mongodb-url",
+      "text": "mongodb+srv://admin:supersecret@cluster.mongodb.net/production",
+      "expect_detect": true,
+      "source": "bench/corpus/v1.json SEC-004"
+    },
+    {
+      "id": "SL-POS-005",
+      "category": "private-key-pem",
+      "text": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAxvYc9F3z...\n-----END RSA PRIVATE KEY-----",
+      "expect_detect": true,
+      "source": "bench/corpus/v1.json SEC-005"
+    },
+    {
+      "id": "SL-POS-006",
+      "category": "stripe-live-key",
+      "text": "sk_live_REDACTED_BENCH_CORPUS_EXAMPLE",
+      "expect_detect": true,
+      "source": "Stripe docs key format"
+    },
+    {
+      "id": "SL-POS-007",
+      "category": "sendgrid-key",
+      "text": "SG.REDACTED_BENCH_CORPUS_EXAMPLE",
+      "expect_detect": true,
+      "source": "bench/corpus/v1.json SEC-008"
+    },
+    {
+      "id": "SL-POS-008",
+      "category": "postgres-url",
+      "text": "DATABASE_URL=postgres://admin:SuperSecret123@db.internal.corp:5432/production",
+      "expect_detect": true,
+      "source": "bench/corpus/v1.json SEC-009 (internal host, not example.com)"
+    },
+    {
+      "id": "SL-POS-009",
+      "category": "slack-token",
+      "text": "SLACK_BOT_TOKEN=xoxb-REDACTED-BENCH-CORPUS-EXAMPLE",
+      "expect_detect": true,
+      "source": "Slack token format"
+    },
+    {
+      "id": "SL-POS-010",
+      "category": "google-api-key",
+      "text": "the maps key is AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY",
+      "expect_detect": true,
+      "source": "Google API key format"
+    },
+    {
+      "id": "SL-POS-011",
+      "category": "anthropic-key",
+      "text": "ANTHROPIC_API_KEY=sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJ",
+      "expect_detect": true,
+      "source": "Anthropic key format"
+    },
+    {
+      "id": "SL-POS-012",
+      "category": "gitlab-pat",
+      "text": "glpat-REDACTED-BENCH-CORPUS",
+      "expect_detect": true,
+      "source": "GitLab PAT format"
+    },
+    {
+      "id": "SL-POS-013",
+      "category": "azure-storage-conn",
+      "text": "DefaultEndpointsProtocol=https;AccountName=mystorage;AccountKey=AbCdEfGh1234567890AbCdEfGh1234567890AbCdEfGh1234567890AbCdEfGh1234567890AbCdEfGh1234567890AbCd",
+      "expect_detect": true,
+      "source": "Azure storage connection string format"
+    },
+    {
+      "id": "SL-POS-014",
+      "category": "npm-token",
+      "text": "//registry.npmjs.org/:_authToken=npm_abcdefghijklmnopqrstuvwxyzABCDEFGH12",
+      "expect_detect": true,
+      "source": "npm token format"
+    },
+    {
+      "id": "SL-POS-015",
+      "category": "digitalocean-token",
+      "text": "DO_TOKEN=dop_v1_abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwx0123",
+      "expect_detect": true,
+      "source": "DigitalOcean token format"
+    },
+    {
+      "id": "SL-POS-016",
+      "category": "gcp-service-account",
+      "text": "{\"type\": \"service_account\", \"project_id\": \"my-project\"}",
+      "expect_detect": true,
+      "source": "GCP service-account JSON marker"
+    },
+    {
+      "id": "SL-POS-017",
+      "category": "slack-webhook",
+      "text": "https://hooks.slack.com/services/T0AB12CDE/B0FG34HIJ/aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+      "expect_detect": true,
+      "source": "Slack webhook URL format"
+    },
+    {
+      "id": "SL-POS-018",
+      "category": "redis-url",
+      "text": "REDIS_URL=redis://:p4ssw0rd@cache.internal:6379/0",
+      "expect_detect": true,
+      "source": "redis connection string with credentials"
+    },
+    {
+      "id": "SL-POS-019",
+      "category": "google-oauth-token",
+      "text": "access_token=ya29.a0ARrdaM-abcdefghijklmnopqrstuvwxyz0123456789ABCD",
+      "expect_detect": true,
+      "source": "Google OAuth access token format"
+    },
+    {
+      "id": "SL-POS-020",
+      "category": "generic-env-key",
+      "text": "auth_token: 'zP9k2Lm7xQ4wRt6vY1nJ8cH3sD5fG0aE2bU9iO4kM7pL1qW6'",
+      "expect_detect": true,
+      "source": "generic labeled secret assignment"
+    },
+    {
+      "id": "SL-NEG-001",
+      "category": "example-domain",
+      "text": "contact support@example.com or visit https://api.example.com/docs for the reference implementation",
+      "expect_detect": false,
+      "source": "RFC 2606 reserved example domain, no credential present"
+    },
+    {
+      "id": "SL-NEG-002",
+      "category": "git-sha",
+      "text": "the empty tree sha is 4b825dc642cb6eb9a060e54bf8d69288fbee4904, see git internals docs",
+      "expect_detect": false,
+      "source": "well-known git object hash, high-entropy-looking but not a credential"
+    },
+    {
+      "id": "SL-NEG-003",
+      "category": "uuid",
+      "text": "the request id was 550e8400-e29b-41d4-a716-446655440000, please include it in your bug report",
+      "expect_detect": false,
+      "source": "RFC 4122 nil-adjacent example UUID"
+    },
+    {
+      "id": "SL-NEG-004",
+      "category": "placeholder-key",
+      "text": "// example: API_KEY=your_api_key_here",
+      "expect_detect": false,
+      "source": "explicit placeholder marker, should hit _SAFE_CONTEXT"
+    },
+    {
+      "id": "SL-NEG-005",
+      "category": "placeholder-key-2",
+      "text": "STRIPE_KEY=sk_test_FAKE_KEY_DO_NOT_USE_dummy_key_placeholder",
+      "expect_detect": false,
+      "source": "explicit dummy/placeholder marker (edge case: current detector may still flag prefix match)"
+    },
+    {
+      "id": "SL-NEG-006",
+      "category": "version-string",
+      "text": "upgraded from version 1.2.3.4 to 5.6.7.8 in this release, changelog attached",
+      "expect_detect": false,
+      "source": "semantic version numbers, no secret shape"
+    },
+    {
+      "id": "SL-NEG-007",
+      "category": "hash-reference",
+      "text": "the sha256 checksum of the release tarball is a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+      "expect_detect": false,
+      "source": "published checksum, not a live credential"
+    },
+    {
+      "id": "SL-NEG-008",
+      "category": "generic-prose",
+      "text": "please rotate your credentials regularly and never share your api key with anyone outside the security team",
+      "expect_detect": false,
+      "source": "advice text mentioning 'api key' with no actual key value"
+    },
+    {
+      "id": "SL-NEG-009",
+      "category": "short-token",
+      "text": "the promo code is SAVE20 valid through the end of the month",
+      "expect_detect": false,
+      "source": "short low-entropy alphanumeric string"
+    },
+    {
+      "id": "SL-NEG-010",
+      "category": "phone-lookalike",
+      "text": "reference number AC1234567890123456789012345678 for your records",
+      "expect_detect": false,
+      "source": "long alphanumeric that is not entropy-dense enough to be a credential"
+    },
+    {
+      "id": "SL-NEG-011",
+      "category": "commit-message",
+      "text": "fix: resolve merge conflict in AKIA-prefixed test fixture generator (not a real key)",
+      "expect_detect": false,
+      "source": "prose discussing AWS key prefix without an actual key value"
+    },
+    {
+      "id": "SL-NEG-012",
+      "category": "lorem-ipsum",
+      "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "expect_detect": false,
+      "source": "filler text, no secret shape"
+    },
+    {
+      "id": "SL-NEG-013",
+      "category": "test-key-explicit",
+      "text": "test_key: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' // fake, do not use",
+      "expect_detect": false,
+      "source": "explicit test_key marker should hit _SAFE_CONTEXT"
+    },
+    {
+      "id": "SL-NEG-014",
+      "category": "documentation-example",
+      "text": "// example: const client = new Stripe('sk_test_your_key_here')",
+      "expect_detect": false,
+      "source": "code comment with 'example' marker"
+    }
+  ],
+  "multilingualPiiCases": [
+    {
+      "id": "PII-POS-001",
+      "category": "us-ssn",
+      "text": "SSN: 123-45-6789",
+      "expect_detect": true,
+      "expected_type": "social_security",
+      "source": "bench/corpus/v1.json PII-001, passes SSA structural validator"
+    },
+    {
+      "id": "PII-POS-002",
+      "category": "credit-card",
+      "text": "Card: 4532015112830366",
+      "expect_detect": true,
+      "expected_type": "credit_card",
+      "source": "bench/corpus/v1.json PII-002, valid Luhn checksum Visa-format PAN"
+    },
+    {
+      "id": "PII-POS-003",
+      "category": "email",
+      "text": "contact me at john.doe@gmail.com",
+      "expect_detect": true,
+      "expected_type": "email",
+      "source": "bench/corpus/v1.json PII-004"
+    },
+    {
+      "id": "PII-POS-004",
+      "category": "iban",
+      "text": "please wire to IBAN GB29NWBK60161331926819",
+      "expect_detect": true,
+      "expected_type": "iban",
+      "source": "well-known valid IBAN test vector (MOD-97 check passes)"
+    },
+    {
+      "id": "PII-POS-005",
+      "category": "korean-rrn",
+      "text": "주민등록번호 901231-2123456",
+      "expect_detect": true,
+      "expected_type": "national_id",
+      "source": "Korean RRN with valid checksum digit"
+    },
+    {
+      "id": "PII-POS-006",
+      "category": "aadhaar",
+      "text": "Aadhaar number 234123412346",
+      "expect_detect": true,
+      "expected_type": "national_id",
+      "source": "12-digit number passing Verhoeff checksum"
+    },
+    {
+      "id": "PII-POS-007",
+      "category": "egypt-nid",
+      "text": "الرقم القومي 29001017100015",
+      "expect_detect": true,
+      "expected_type": "national_id",
+      "source": "Egyptian National ID with valid century/governorate code"
+    },
+    {
+      "id": "PII-POS-008",
+      "category": "date-of-birth",
+      "text": "DOB: 1985-03-15, please update our records",
+      "expect_detect": true,
+      "expected_type": "date_of_birth",
+      "source": "ISO date in DOB context"
+    },
+    {
+      "id": "PII-POS-009",
+      "category": "combined-pii",
+      "text": "SSN: 987-65-4321, Card: 4111111111111111, Email: victim@breached-corp.net",
+      "expect_detect": true,
+      "expected_type": "multiple",
+      "source": "bench/corpus/v1.json PII-003 (domain changed from example.com to avoid confounding with SL-NEG-001)"
+    },
+    {
+      "id": "PII-POS-010",
+      "category": "cyrillic-snils",
+      "text": "СНИЛС: 112-233-445 95",
+      "expect_detect": true,
+      "expected_type": "social_security",
+      "source": "Russian SNILS format"
+    },
+    {
+      "id": "PII-POS-011",
+      "category": "phone-number-real",
+      "text": "call +1 (415) 555-0192 for support during business hours",
+      "expect_detect": true,
+      "expected_type": "phone",
+      "source": "matches PHONE_INTL by design; phone numbers are legitimately detectable PII"
+    },
+    {
+      "id": "PII-NEG-001",
+      "category": "uuid-not-phone",
+      "text": "the request id was 550e8400-e29b-41d4-a716-446655440000, please include it in your bug report",
+      "expect_detect": false,
+      "source": "KNOWN FALSE POSITIVE: PHONE_INTL regex currently matches the digit run inside this UUID. Regression target."
+    },
+    {
+      "id": "PII-NEG-002",
+      "category": "invoice-number",
+      "text": "invoice number INV-2024-000123 is now overdue",
+      "expect_detect": false,
+      "source": "KNOWN FALSE POSITIVE: digit run inside an invoice number currently matches PHONE_INTL."
+    },
+    {
+      "id": "PII-NEG-003",
+      "category": "order-date",
+      "text": "order id 2024-01-15 was placed and shipped the next day",
+      "expect_detect": false,
+      "source": "KNOWN FALSE POSITIVE: ISO-shaped order reference currently matches DOB_ISO."
+    },
+    {
+      "id": "PII-NEG-004",
+      "category": "git-sha-not-id",
+      "text": "commit abc1234 fixed the bug referenced in PR #4521",
+      "expect_detect": false,
+      "source": "short hex/PR reference, no PII shape"
+    },
+    {
+      "id": "PII-NEG-005",
+      "category": "ip-address",
+      "text": "the server's IP address 192.168.1.100 was reassigned during the migration",
+      "expect_detect": false,
+      "source": "private IPv4 address, not a national ID or phone"
+    },
+    {
+      "id": "PII-NEG-006",
+      "category": "version-string",
+      "text": "we upgraded the client library from 1.2.3.4 to 5.6.7.8 in this release",
+      "expect_detect": false,
+      "source": "software version numbers"
+    },
+    {
+      "id": "PII-NEG-007",
+      "category": "product-sku",
+      "text": "SKU AB123456 is back in stock as of this morning",
+      "expect_detect": false,
+      "source": "product SKU shaped like a national-ID pattern (e.g. IN_VOTER) but is inventory data"
+    },
+    {
+      "id": "PII-NEG-008",
+      "category": "timestamp",
+      "text": "the batch job started at 10:30:00 and completed 45 minutes later",
+      "expect_detect": false,
+      "source": "clock time, no PII shape"
+    },
+    {
+      "id": "PII-NEG-009",
+      "category": "generic-prose",
+      "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "expect_detect": false,
+      "source": "filler text, no PII shape"
+    },
+    {
+      "id": "PII-NEG-010",
+      "category": "invalid-card-luhn",
+      "text": "Card: 4532015112830367",
+      "expect_detect": false,
+      "source": "last digit changed from valid PII-POS-002 vector; fails Luhn checksum, should NOT be flagged as credit_card"
+    },
+    {
+      "id": "PII-NEG-011",
+      "category": "invalid-ssn-structural",
+      "text": "SSN: 666-45-6789",
+      "expect_detect": false,
+      "source": "area code 666 is never issued by SSA; usSsnValid() should reject"
+    },
+    {
+      "id": "PII-NEG-012",
+      "category": "invalid-iban-checksum",
+      "text": "please wire to IBAN GB29NWBK60161331926820",
+      "expect_detect": false,
+      "source": "last digit changed from valid PII-POS-004 vector; fails MOD-97 checksum"
+    }
+  ]
+}

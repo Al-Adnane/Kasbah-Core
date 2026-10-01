@@ -1,0 +1,107 @@
+{
+  "date": "2026-05-30",
+  "note": "synthetic constructed-GT; external validity pending real data",
+  "empirical": [
+    {
+      "module": "do-bft-consensus",
+      "auc": 0,
+      "p": 0.0004997501249375312,
+      "scoreVar": null,
+      "n": 60,
+      "bhSig": true,
+      "verdict": "INVERTED"
+    },
+    {
+      "module": "chsh-coordination",
+      "auc": 0.5,
+      "p": 1,
+      "scoreVar": 0,
+      "n": 60,
+      "bhSig": false,
+      "verdict": "INCONCLUSIVE(benchmark)"
+    },
+    {
+      "module": "persistent-homology-covert",
+      "auc": 0.5,
+      "p": 1,
+      "scoreVar": 0,
+      "n": 50,
+      "bhSig": false,
+      "verdict": "INCONCLUSIVE(benchmark)"
+    },
+    {
+      "module": "stigmergic-covert-channel",
+      "auc": 0.5,
+      "p": 1,
+      "scoreVar": 0,
+      "n": 40,
+      "bhSig": false,
+      "verdict": "INCONCLUSIVE(benchmark)"
+    },
+    {
+      "module": "hypergraph-collusion-detector",
+      "auc": 0.5,
+      "p": 1,
+      "scoreVar": 0,
+      "n": 40,
+      "bhSig": false,
+      "verdict": "INCONCLUSIVE(benchmark)"
+    },
+    {
+      "module": "critical-slowing-down-monitor",
+      "auc": 0.8416,
+      "p": 0.0004997501249375312,
+      "scoreVar": 8.120222457093217,
+      "n": 50,
+      "bhSig": true,
+      "verdict": "PROMOTE"
+    },
+    {
+      "module": "latent-manifold-intrusion",
+      "auc": 0.5,
+      "p": 1,
+      "scoreVar": 0,
+      "n": 40,
+      "bhSig": false,
+      "verdict": "INCONCLUSIVE(benchmark)"
+    },
+    {
+      "module": "timing-channel-detector",
+      "auc": 0.5,
+      "p": 1,
+      "scoreVar": 0,
+      "n": 50,
+      "bhSig": false,
+      "verdict": "INCONCLUSIVE(benchmark)"
+    },
+    {
+      "module": "kasbah-intent-analyzer",
+      "auc": 1,
+      "p": 0.0004997501249375312,
+      "scoreVar": 0.14951111111111098,
+      "n": 40,
+      "bhSig": true,
+      "verdict": "PROMOTE"
+    },
+    {
+      "module": "surprisal-budget-manager",
+      "auc": 0.5,
+      "p": 1,
+      "scoreVar": 0,
+      "n": 40,
+      "bhSig": false,
+      "verdict": "INCONCLUSIVE(benchmark)"
+    }
+  ],
+  "ecp": {
+    "module": "entropy-complexity-plane",
+    "regimeAccuracy": "3/3",
+    "type": "multiclass"
+  },
+  "recursiveGovernance": {
+    "module": "recursive-governance-fixed-point",
+    "flagsInconsistency": false,
+    "stableWhenConsistent": true,
+    "type": "property"
+  }
+}

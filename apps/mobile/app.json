@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Kasbah",
+    "slug": "kasbah",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "kasbah",
+    "platforms": ["ios", "android", "web"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kasbahguard.mobile",
+      "infoPlist": { "NSPasteboardUsageDescription": "Kasbah reads pasted text to detect scams, manipulation, and AI-generated content." }
+    },
+    "android": {
+      "package": "com.kasbahguard.mobile"
+    },
+    "extra": {
+      "kasbahApi": "http://127.0.0.1:8788"
+    }
+  }
+}

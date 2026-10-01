@@ -1,0 +1,44 @@
+{
+  "name": "@yobekasbah/mcp-server",
+  "version": "3.0.4",
+  "mcpName": "io.github.Al-Adnane/kasbah-mcp",
+  "description": "Kasbah MCP Server — cryptographic trust layer for agentic AI. Govern, sign, and verify every agent action from Claude Code, Cursor, or any MCP host.",
+  "main": "src/index.js",
+  "bin": {
+    "kasbah-mcp": "src/index.js"
+  },
+  "files": [
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node test.js",
+    "prepublishOnly": "npm test",
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Al-Adnane/Kasbah-Core.git",
+    "directory": "packages/kasbah-mcp"
+  },
+  "keywords": [
+    "kasbah",
+    "mcp",
+    "governance",
+    "ai-safety",
+    "security",
+    "claude",
+    "llm",
+    "receipt",
+    "ed25519"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "dependencies": {}
+}

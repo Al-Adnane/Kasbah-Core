@@ -1,0 +1,13 @@
+{
+  "name": "@kasbah/wasm-kernel",
+  "version": "1.0.0",
+  "description": "Kasbah Guard WASM detection kernel — Rust-compiled secret/AI/obfuscation detector",
+  "main": "index.js",
+  "scripts": {
+    "build": "wasm-pack build --target nodejs --out-dir pkg",
+    "test": "node test.js"
+  },
+  "keywords": ["wasm", "detection", "kasbah", "security"],
+  "license": "UNLICENSED",
+  "private": true
+}

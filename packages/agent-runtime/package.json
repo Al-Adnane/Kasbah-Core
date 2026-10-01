@@ -1,0 +1,14 @@
+{
+  "name": "@yobekasbah/agent-runtime",
+  "version": "1.0.0",
+  "description": "Kasbah Agentic Control Plane — govern every tool call an AI agent makes",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest --forceExit --testTimeout=10000"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

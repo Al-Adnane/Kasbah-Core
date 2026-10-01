@@ -1,0 +1,11 @@
+{
+  "name": "@yobekasbah/agent-cost-watch",
+  "version": "1.0.0",
+  "description": "Kasbah AgentCostWatch — AI agent token budget governor. Prevents runaway AI costs with FAST/MID/SLOW frequency bands, brittleness scoring, and hard-block circuit breakers.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node src/test.js"
+  },
+  "keywords": ["ai", "agent", "cost", "governance", "kasbah", "llm", "budget"],
+  "license": "Proprietary"
+}

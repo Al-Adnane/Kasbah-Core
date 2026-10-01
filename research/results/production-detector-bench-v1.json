@@ -1,0 +1,32 @@
+{
+  "module": "detector.js (production)",
+  "corpus": "bench/corpus/v1.json",
+  "N": 77,
+  "exactAccuracy3class": 0.6104,
+  "binary": {
+    "precision": 0.9655,
+    "recall": 0.5957,
+    "f1": 0.7368,
+    "tp": 28,
+    "fp": 1,
+    "tn": 29,
+    "fn": 19
+  },
+  "confusion": {
+    "DENY": {
+      "DENY": 16,
+      "ALLOW": 3,
+      "WARN": 1
+    },
+    "WARN": {
+      "ALLOW": 16,
+      "DENY": 9,
+      "WARN": 2
+    },
+    "ALLOW": {
+      "ALLOW": 29,
+      "DENY": 1
+    }
+  },
+  "date": "2026-05-30"
+}

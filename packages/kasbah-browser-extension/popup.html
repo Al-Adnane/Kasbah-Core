@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kasbah — AI Seatbelt</title>
+<style>
+  :root {
+    --bg: #0c121a; --card: #121a24; --ink: #e8eef6; --muted: #8b9cb3; --line: #243041;
+    --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --grey: #64748b; --accent: #3d9cf0;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; width: 340px; font-family: var(--sans); color: var(--ink);
+    background: var(--bg); font-size: 13px;
+  }
+  .hd {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  .brand { font-weight: 700; font-size: 13px; letter-spacing: .2px; }
+  .brand small { display: block; font-weight: 500; color: var(--muted); font-size: 10px; }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+  .body { padding: 12px 14px 14px; }
+  .ring-row { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .ring { position: relative; width: 88px; height: 88px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .val {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 22px; font-weight: 700;
+  }
+  .ring .tier { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
+  .status-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .st { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .st .lbl { color: var(--muted); width: 58px; }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--grey); flex-shrink: 0;
+  }
+  .dot-green { background: var(--ok); box-shadow: 0 0 6px rgba(34,197,94,.5); }
+  .dot-amber { background: var(--warn); box-shadow: 0 0 6px rgba(245,158,11,.5); }
+  .dot-red { background: var(--bad); box-shadow: 0 0 6px rgba(239,68,68,.5); }
+  .dot-grey { background: var(--grey); }
+  .grade-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 12px;
+  }
+  .grade-chip {
+    width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+    font-weight: 800; font-size: 16px; background: rgba(34,197,94,.15); color: var(--ok);
+    border: 1px solid rgba(34,197,94,.35);
+  }
+  .grade-meta .t { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+  .grade-meta .s { font-size: 12px; color: #b7c7d9; margin-top: 2px; }
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+  }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 6px; text-align: center;
+  }
+  .stat .n { font-size: 15px; font-weight: 700; }
+  .stat .k { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; margin-bottom: 10px;
+  }
+  .panel h3 {
+    margin: 0 0 8px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .7px; color: var(--muted); font-weight: 600;
+  }
+  .verdict-badge {
+    display: inline-block; padding: 3px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; margin-right: 6px;
+  }
+  .vb-allow { background: rgba(34,197,94,.15); color: var(--ok); }
+  .vb-warn { background: rgba(245,158,11,.15); color: var(--warn); }
+  .vb-deny { background: rgba(239,68,68,.15); color: var(--bad); }
+  .threats { color: var(--muted); font-size: 11px; line-height: 1.4; margin-top: 6px; }
+  .attest {
+    margin-top: 8px; font-size: 11px; color: var(--accent); cursor: pointer;
+    text-decoration: underline; background: none; border: 0; padding: 0;
+  }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  button {
+    appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { filter: brightness(1.1); }
+  button.primary {
+    background: linear-gradient(180deg, #3d9cf0, #2b7fd0); border-color: transparent; color: #fff;
+  }
+  button.danger { border-color: rgba(239,68,68,.4); color: var(--bad); }
+  button.active { border-color: var(--ok); color: var(--ok); }
+  .foot {
+    padding: 8px 14px 12px; color: var(--muted); font-size: 10px;
+    border-top: 1px solid var(--line); line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  <div class="hd">
+    <div class="brand">Kasbah Seatbelt<small>AI should ask first</small></div>
+    <div class="toggle-wrap">
+      <span id="enabled-label">On</span>
+      <input type="checkbox" id="enabled" checked>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="ring-row">
+      <div class="ring">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="40" fill="none" stroke="#243041" stroke-width="8"/>
+          <circle id="ring-fill" cx="44" cy="44" r="40" fill="none" stroke="#22c55e"
+                  stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+        </svg>
+        <div class="val" id="ring-score">0</div>
+        <div class="tier" id="ring-tier">—</div>
+      </div>
+      <div class="status-list">
+        <div class="st"><span class="dot" id="dot-gw"></span><span class="lbl">Gateway</span><span id="gw-text">…</span></div>
+        <div class="st"><span class="dot" id="dot-shield"></span><span class="lbl">Shield</span><span id="shield-text">…</span></div>
+        <div class="st"><span class="dot" id="dot-vpn"></span><span class="lbl">VPN</span><span id="vpn-text">…</span></div>
+      </div>
+    </div>
+
+    <div class="grade-row">
+      <div class="grade-chip" id="site-grade">A</div>
+      <div class="grade-meta">
+        <div class="t">AI Trust Grade</div>
+        <div class="s" id="site-grade-tip">Site protection score</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="s-scanned">0</div><div class="k">Scanned</div></div>
+      <div class="stat"><div class="n" id="s-blocked">0</div><div class="k">Blocked</div></div>
+      <div class="stat"><div class="n" id="s-warned">0</div><div class="k">Warned</div></div>
+      <div class="stat"><div class="n" id="s-trackers">0</div><div class="k">Trackers</div></div>
+    </div>
+
+    <div class="panel" id="last-scan-wrap" style="display:none">
+      <h3>Last scan</h3>
+      <div>
+        <span class="verdict-badge vb-allow" id="ls-verdict">ALLOW</span>
+      </div>
+      <div class="threats" id="ls-threats"></div>
+      <button class="attest" id="ls-attest" type="button"></button>
+    </div>
+
+    <div class="btns">
+      <button class="primary" id="btn-open" type="button">Open Kasbah</button>
+      <button id="btn-proof" type="button">Get Proof</button>
+      <button class="danger" id="btn-burn" type="button">AI Session Burn</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    Silent Pass · Warning Toast · Hard Block — local-first seatbelt for every AI host.
+    Receipts verify offline.
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

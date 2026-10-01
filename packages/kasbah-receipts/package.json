@@ -1,0 +1,49 @@
+{
+  "name": "@yobekasbah/receipts",
+  "version": "1.0.1",
+  "description": "Signed, portable, offline-verifiable receipts for AI agent actions. Implements the Kasbah Receipt Spec (v2/v3): Ed25519 + ML-DSA post-quantum signatures, receipt chaining, Merkle batch verification. Zero dependencies.",
+  "license": "MIT",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "bin": {
+    "kasbah-verify": "bin/kasbah-verify.js"
+  },
+  "files": [
+    "src/",
+    "bin/",
+    "SPEC.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "peerDependencies": {
+    "@noble/post-quantum": ">=0.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@noble/post-quantum": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "audit",
+    "receipts",
+    "ed25519",
+    "ml-dsa",
+    "post-quantum",
+    "provenance",
+    "attestation",
+    "governance",
+    "mcp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kasbah-ai/receipts"
+  }
+}

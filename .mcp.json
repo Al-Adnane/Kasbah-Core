@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "kasbah": {
+      "command": "node",
+      "args": ["packages/kasbah-mcp/src/index.js"],
+      "env": {
+        "KASBAH_API": "http://127.0.0.1:8788",
+        "KASBAH_AGENT": "claude-code"
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "synthetic_dir": "/Users/mac/Desktop/KasbahFinal/real_training_data/audio/synthetic",
+  "natural_dir": "/Users/mac/Desktop/KasbahFinal/real_training_data/audio/natural",
+  "synthetic_count": 20,
+  "natural_count": 20,
+  "note": "Replace synthetic data with real datasets for production"
+}

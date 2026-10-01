@@ -1,0 +1,11 @@
+{
+  "name": "@yobekasbah/agent-governance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent identity certificates (Ed25519), constrained decision evaluation (G-CMDP), Maqasid framework",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node ../../tests/capabilities.test.js"
+  },
+  "license": "MIT"
+}

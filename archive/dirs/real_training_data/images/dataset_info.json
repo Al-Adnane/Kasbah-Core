@@ -1,0 +1,7 @@
+{
+  "deepfake_dir": "/Users/mac/Desktop/KasbahFinal/real_training_data/images/deepfakes",
+  "real_dir": "/Users/mac/Desktop/KasbahFinal/real_training_data/images/real",
+  "deepfake_count": 50,
+  "real_count": 50,
+  "note": "Replace synthetic data with real datasets for production"
+}

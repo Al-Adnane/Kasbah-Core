@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-03-08T18:02:50.278Z",
+  "tests": {
+    "secret-detection": {
+      "total": 13,
+      "correct": 13,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "byType": {
+        "AWS Access Key": {
+          "total": 2,
+          "correct": 2
+        },
+        "GitHub PAT": {
+          "total": 1,
+          "correct": 1
+        },
+        "GitHub OAuth": {
+          "total": 1,
+          "correct": 1
+        },
+        "Stripe Secret": {
+          "total": 1,
+          "correct": 1
+        },
+        "Stripe Test": {
+          "total": 1,
+          "correct": 1
+        },
+        "SSN": {
+          "total": 2,
+          "correct": 2
+        },
+        "Visa": {
+          "total": 1,
+          "correct": 1
+        },
+        "Mastercard": {
+          "total": 1,
+          "correct": 1
+        },
+        "Normal": {
+          "total": 3,
+          "correct": 3
+        }
+      }
+    },
+    "obfuscation-detection": {
+      "total": 8,
+      "decoded": 1,
+      "failed": 7,
+      "byType": {
+        "Cyrillic Homoglyph": {
+          "total": 1,
+          "decoded": 0
+        },
+        "Fullwidth Digits": {
+          "total": 1,
+          "decoded": 0
+        },
+        "Base64 AWS Key": {
+          "total": 1,
+          "decoded": 0
+        },
+        "Hex Encoded": {
+          "total": 1,
+          "decoded": 0
+        },
+        "L33t Speak": {
+          "total": 1,
+          "decoded": 0
+        },
+        "Zalgo": {
+          "total": 1,
+          "decoded": 0
+        },
+        "URL Encoded": {
+          "total": 1,
+          "decoded": 0
+        },
+        "Normal": {
+          "total": 1,
+          "decoded": 1
+        }
+      }
+    },
+    "ai-text-detection": {
+      "total": 9,
+      "correct": 5,
+      "falsePositives": 3,
+      "falseNegatives": 1,
+      "byType": {
+        "GPT-4": {
+          "total": 3,
+          "correct": 3
+        },
+        "Claude": {
+          "total": 2,
+          "correct": 1
+        },
+        "Human": {
+          "total": 4,
+          "correct": 1
+        }
+      }
+    },
+    "code-style-analysis": {
+      "total": 3,
+      "correct": 1,
+      "incorrect": 2
+    }
+  },
+  "claims": {
+    "secret-detection": {
+      "claim": "60+ secret patterns with 98%+ accuracy",
+      "actual": "100.0%",
+      "status": "✅ VERIFIED"
+    },
+    "obfuscation-detection": {
+      "claim": "7-layer obfuscation decoding",
+      "actual": "1/8 decoded (12.5%)",
+      "status": "⚠️ NEEDS IMPROVEMENT"
+    },
+    "ai-text-detection": {
+      "claim": "75-85% accuracy with 100% recall",
+      "actual": "55.6% accuracy, 88.9% recall",
+      "status": "⚠️ NEEDS IMPROVEMENT"
+    },
+    "code-style-analysis": {
+      "claim": "75-90% authorship matching accuracy",
+      "actual": "33.3%",
+      "status": "⚠️ NEEDS MORE DATA"
+    }
+  },
+  "summary": {
+    "totalClaims": 4,
+    "verifiedClaims": 1,
+    "verificationRate": 25,
+    "status": "⚠️ NEEDS IMPROVEMENT"
+  }
+}
