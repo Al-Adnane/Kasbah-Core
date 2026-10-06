@@ -1468,13 +1468,18 @@ try {
 }
 
 // ─── Framework Adapters (LangChain, CrewAI, AutoGen) ─────────────────────────
+// The standalone @kasbah/adapters package was retired; framework traffic is
+// governed live via the universal proxy (/v1/proxy/:provider/*), the AI lane
+// (:8790), and SDK wrappers. This block serves the live adapter surface.
 try {
-  const adapters = require('../kasbah-adapters/src/index.js');
+  let adapters = null;
+  try { adapters = require('../kasbah-adapters/src/index.js'); } catch (_) { /* retired package — live paths below */ }
 
   // GET /v1/adapters — list available framework integrations
   app.get('/v1/adapters', (req, res) => {
     res.json({
-      adapters: ['langchain', 'crewai', 'autogen', 'generic'],
+      adapters: ['langchain', 'crewai', 'autogen', 'openai-sdk', 'anthropic-sdk', 'generic'],
+      live: ['proxy', 'ai-lane', 'sdk-wrap', 'cli-shim'],
       usage: 'POST /v1/adapters/:framework/initialize with { sessionId, config }',
       docs: 'https://kasbah-api.fly.dev/docs/adapters'
     });
@@ -4028,7 +4033,7 @@ app.get('/v1/coverage', (_req, res) => {
       { feature: 'Agent single-use tickets + kill switch', competitors: ['Prisma agent id','HiddenLayer'], status: 'live', where: ['/v1/kernel/*'] },
       { feature: 'Agent cost governor', competitors: ['Arthur','LiteLLM','LangSmith'], status: 'live', where: ['agent-cost-watch'] },
       { feature: 'MCP governance', competitors: ['HiddenLayer','Pillar','Nightfall','Portkey'], status: 'partial', where: ['multi-mcp-governor','discovery'], note: 'Governance + discovery; full MCP inventory UI partial' },
-      { feature: 'Shadow AI / discovery', competitors: ['Arthur','Prisma','Nightfall'], status: 'live', where: ['/v1/discovery','overwatch'] },
+      { feature: 'Shadow AI / discovery', competitors: ['Arthur','Prisma','Nightfall'], status: 'live', where: ['/v1/discover','/v1/shim','overwatch'] },
       { feature: 'AI-BOM inventory', competitors: ['Lasso'], status: 'live', where: ['/v1/bom'] },
       { feature: 'NL policy authoring', competitors: ['F5'], status: 'live', where: ['/v1/policy/nl'] },
       { feature: 'Red team / attack simulation', competitors: ['Lakera RT','TrojAI Detect','Pillar','Lasso'], status: 'partial', where: ['live-redteam','kasbah-os/zeroday','adversarial_selfplay'], note: 'Runtime + self-play; packaged SaaS red-team product not shipped' },
