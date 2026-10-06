@@ -99,8 +99,8 @@ const TIER_SENSITIVE_PATH = [
   /\.ssh\//i, /\.env\b/i, /\.aws\//i, /\.gnupg\//i, /id_rsa/i,
   /credential/i, /secret/i, /wallet/i, /\.key\b/i, /keychain/i, /\.p12\b/i,
 ];
-const TIER_EXFIL_TOOL = new Set(['network_post', 'webhook', 'send_email', 'upload', 'transmit', 'publish']);
-const TIER_WRITE_TOOL = new Set(['file_write', 'shell_execute', 'db_mutate', 'db_write', 'git_push', 'deploy', 'send_email']);
+const TIER_EXFIL_TOOL = new Set(['network_post', 'webhook', 'send_email', 'upload', 'transmit', 'publish', 'http_post', 'http_put', 'http_delete']);
+const TIER_WRITE_TOOL = new Set(['file_write', 'shell_execute', 'shell', 'exec', 'bash', 'zsh', 'sh', 'write_file', 'delete_file', 'move_file', 'rm', 'rmdir', 'chmod', 'chown', 'db_mutate', 'db_write', 'git_push', 'deploy', 'send_email', 'pip_install', 'npm_install', 'cargo_run']);
 
 function assess({ action = '', tool = '', args = {} } = {}) {
   const text = [action, tool, JSON.stringify(args || {})].join(' ');
@@ -133,6 +133,11 @@ function stoneVerify(canonical, att) {
   }
   if (att.signer === 'hw-stone') return { pendingHardware: true, reason: 'no secure element attached' };
   return false;
+}
+
+function auditHead() {
+  if (!_audit.length) return 'GENESIS';
+  return crypto.createHash('sha256').update(JSON.stringify(_audit[_audit.length - 1])).digest('hex').slice(0, 16);
 }
 
 function canonicalGate(payload) {
@@ -185,12 +190,15 @@ function tap(id, { approve = true } = {}) {
     p.resolve({ ...g, A: 0, reason: 'human denied' });
     return { ...g, A: 0 };
   }
-  const canonical = canonicalGate({ id, action: g.action, tool: g.tool, S: g.S, n: g.n, agree: g.agree, ts: Date.now() });
+  const ah = auditHead();
+  const canonical = canonicalGate({ id, action: g.action, tool: g.tool, S: g.S, n: g.n, agree: g.agree, ah, ts: Date.now() });
   const att = stoneSign(canonical);
   const ok = stoneVerify(canonical, att);
   const A = g.gateReady && ok === true ? 1 : 0;
   g.status = A ? 'authorized' : 'denied-gate';
-  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer });
+  // Tap elevates epistemic tier: MODEL (statistical guess) -> RULE (human warrant).
+  g.tierElevation = A ? 'MODEL → RULE' : null;
+  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer, ah, tierElevation: g.tierElevation });
   p.resolve({ ...g, A, attestation: att, canonical });
   return { ...g, A, attestation: att, canonical };
 }
