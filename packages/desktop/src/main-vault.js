@@ -176,8 +176,7 @@ module.exports = function registerVaultHandlers(ipcMain, ctx) {
   });
 
   // ─── Wi-Fi ────────────────────────────────────────────────────────────────────
-  ipcMain.handle('wifi:get-network', () => new Promise((resolve) => {
-    const { execFile } = require('child_process');
+  ipcMain.handle('wifi:get-network', () => new Promise((resolve) => {    const { execFile } = require('child_process');
     execFile('networksetup', ['-getairportnetwork', 'en0'], (err, stdout) => {
       if (err) return resolve({ ssid: null, error: err.message });
       const m = stdout.match(/Current Wi-Fi Network:\s*(.+)/);
@@ -189,4 +188,27 @@ module.exports = function registerVaultHandlers(ipcMain, ctx) {
         });
     });
   }));
+
+  // Exposed for device-pairing export/import (main-features.js). Full
+  // entries only while unlocked; import merges by id.
+  ctx._vault = {
+    isUnlocked: () => !!_vp(),
+    listFull: () => (_vp() ? vaultRead(_vp()) : null),
+    importEntries: (entries) => {
+      if (!_vp()) throw new Error('Vault is locked');
+      const cur = vaultRead(_vp());
+      const ids = new Set(cur.map((e) => e.id));
+      let added = 0;
+      for (const e of entries || []) {
+        if (!e || typeof e !== 'object') continue;
+        const entry = { ...e };
+        if (!entry.id || ids.has(entry.id)) entry.id = `v_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        ids.add(entry.id);
+        cur.push(entry);
+        added++;
+      }
+      vaultWrite(cur, _vp());
+      return added;
+    },
+  };
 };

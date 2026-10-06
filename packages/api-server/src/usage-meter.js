@@ -227,14 +227,35 @@ function addCredits(keyId, count) {
   return { keyId, credits: rec.credits };
 }
 
-function getAllUsage() {
-  const out = [];
-  for (const [keyId, rec] of _usage.entries()) {
-    _rollIfNeeded(rec);
-    out.push({ keyId, ...rec });
-  }
-  return out;
+// ─── consume_guard — debit credits on enforcement events ─────────────────────
+// The agentic-world business model: autonomous agents pay for their own
+// governance. Every hard block (SHIELD DENY) debits the calling key. Agents
+// that burn credits get governance; agents that run out get denied service —
+ // the same way they'd be denied any other paid resource.
+function consumeCredits(keyId, count, reason) {
+  const rec = _rollIfNeeded(_usage.get(keyId) || _initRecord(keyId));
+  const amount = Math.max(0, Math.floor(count));
+  rec.consumed      = (rec.consumed || 0) + amount;
+  rec.lastDebit     = { ts: Date.now(), amount, reason: reason || 'shield-enforcement' };
+  rec.credits       = Math.max(0, rec.credits - amount);
+  rec.lastUpdate    = Date.now();
+  _persist(keyId);
+  return {
+    keyId,
+    debited: amount,
+    remainingCredits: rec.credits,
+    exhausted: rec.credits === 0,
+    reason: reason || 'shield-enforcement',
+  };
 }
+
+/** Credit cost of an enforcement event (SHIELD hard block debits most). */
+const ENFORCEMENT_COST = {
+  hard_block: 5,
+  warning_toast: 1,
+  mute_block: 2,
+  silent_pass: 0,
+};
 
 module.exports = {
   TIER_LIMITS,
@@ -242,5 +263,6 @@ module.exports = {
   recordRequest,
   getUsage,
   addCredits,
-  getAllUsage
+  consumeCredits,
+  ENFORCEMENT_COST,
 };

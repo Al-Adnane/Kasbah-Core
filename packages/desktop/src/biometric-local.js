@@ -63,4 +63,40 @@ function rppg(videoFrames, frameRate = 30) {
   }
 }
 
-module.exports = { status, rppg, resolveBiometricDir };
+function neuralFingerprint(samples, opts = {}) {
+  const m = load();
+  if (!m || m.error) return { ok: false, available: false, error: m?.error || 'biometric-detection package not installed' };
+  try {
+    if (m.NeuralFingerprintAnalyzer) {
+      const a = new m.NeuralFingerprintAnalyzer();
+      return { ok: true, available: true, ...a.analyze(samples, opts) };
+    }
+    return { ok: false, available: true, error: 'NeuralFingerprintAnalyzer not exported' };
+  } catch (e) { return { ok: false, available: true, error: e.message }; }
+}
+
+function voiceClone(samples, opts = {}) {
+  const m = load();
+  if (!m || m.error) return { ok: false, available: false, error: m?.error || 'biometric-detection package not installed' };
+  try {
+    if (m.VoiceCloneDetector) {
+      const d = new m.VoiceCloneDetector();
+      return { ok: true, available: true, ...d.detect(samples, opts) };
+    }
+    return { ok: false, available: true, error: 'VoiceCloneDetector not exported' };
+  } catch (e) { return { ok: false, available: true, error: e.message }; }
+}
+
+function neuralCodec(samples, opts = {}) {
+  const m = load();
+  if (!m || m.error) return { ok: false, available: false, error: m?.error || 'biometric-detection package not installed' };
+  try {
+    if (m.NeuralCodecDetector) {
+      const d = new m.NeuralCodecDetector();
+      return { ok: true, available: true, ...d.detect(samples, opts) };
+    }
+    return { ok: false, available: true, error: 'NeuralCodecDetector not exported' };
+  } catch (e) { return { ok: false, available: true, error: e.message }; }
+}
+
+module.exports = { status, rppg, neuralFingerprint, voiceClone, neuralCodec, resolveBiometricDir };

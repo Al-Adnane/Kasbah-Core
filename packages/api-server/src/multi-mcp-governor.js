@@ -181,6 +181,48 @@ function getMultiMCPStatus() {
   };
 }
 
+// ─── Tool-call enforcement (closes the block loop) ──────────────────────────
+// The MCP inventory UI blocks tools via POST /v1/mcp/tool. This is the
+// enforcement side: pre-execution check that a tool call is allowed. The
+// gateway calls governToolCall() before executing any MCP tool — blocked
+// tools are DENIED here, closing the loop between the UI claim and reality.
+
+const _toolBlocks = new Map(); // "serverId:toolName" → blocked:boolean
+
+function setToolBlocked(serverId, toolName, blocked) {
+  _toolBlocks.set(`${serverId}:${toolName}`, !!blocked);
+  return { ok: true, serverId, toolName, blocked: !!blocked };
+}
+
+function getToolBlocks() {
+  return [..._toolBlocks.entries()].map(([key, blocked]) => {
+    const [serverId, toolName] = key.split(':');
+    return { serverId, toolName, blocked };
+  });
+}
+
+function checkToolAllowed(serverId, toolName) {
+  const key = `${serverId}:${toolName}`;
+  const blocked = _toolBlocks.get(key) === true;
+  return {
+    serverId,
+    toolName,
+    allowed: !blocked,
+    reason: blocked ? `tool '${toolName}' is BLOCKED by the MCP governor — denied at pre-execution` : 'allowed',
+    enforcedBy: 'kasbah-mcp-governor',
+    ts: new Date().toISOString(),
+  };
+}
+
+/** Pre-execution enforcement hook for the gateway. Throws nothing; returns a verdict. */
+function governToolCall(serverId, toolName) {
+  const check = checkToolAllowed(serverId, toolName);
+  return {
+    ...check,
+    verdict: check.allowed ? 'ALLOW' : 'DENY',
+  };
+}
+
 module.exports = {
   listGovernedMCPServers,
   getMultiMCPStatus,
@@ -191,4 +233,8 @@ module.exports = {
   setTeamPolicy,
   listSharedPolicies,
   applySharedPolicy,
+  setToolBlocked,
+  getToolBlocks,
+  checkToolAllowed,
+  governToolCall,
 };

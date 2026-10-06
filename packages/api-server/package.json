@@ -12,6 +12,7 @@
     "@noble/post-quantum": "^0.5.4",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "multer": "^2.4.0",
     "stripe": "^22.1.1"
   },
   "optionalDependencies": {

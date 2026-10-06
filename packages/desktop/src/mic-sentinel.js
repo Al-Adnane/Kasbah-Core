@@ -132,7 +132,8 @@ async function check() {
     const base = path.basename(fullName);
 
     if (SYSTEM_AUDIO_PROCS.has(base)) continue;
-    if (approved.has(base) || approved.has(fullName)) continue;
+    const quarantined = isQuarantined(base) || isQuarantined(fullName);
+    if (!quarantined && (approved.has(base) || approved.has(fullName))) continue;
 
     // If we have TCC data: only alert if this app has mic permission
     // (otherwise the lsof hit is likely a system service, not active capture).
@@ -147,6 +148,8 @@ async function check() {
       name: base,
       fullPath: fullName,
       tccPermitted: tccList ? tccList.some((c) => c.includes(base)) : 'unknown',
+      quarantined: !!quarantined,
+      severity: quarantined ? 'quarantine' : 'unapproved',
       ts: Date.now(),
     });
   }
@@ -181,6 +184,8 @@ function stop() {
 }
 
 function approve(appName) {
+  // Quarantine wins over approval: release first via unquarantine().
+  if (isQuarantined(appName)) return [..._loadApproved()];
   const s = _loadApproved();
   s.add(appName);
   _saveApproved(s);
@@ -202,4 +207,49 @@ function clearApproved() {
   _saveApproved(new Set());
 }
 
-module.exports = { start, stop, check, approve, revoke, listApproved, clearApproved };
+// ─── Monotonic quarantine ─────────────────────────────────────────────────
+// A quarantined app is denied even if approved; approval cannot clear it.
+// Release is an explicit logged exception (history retained), never silent.
+const QUARANTINE_FILE = path.join(SETTINGS_DIR, 'mic-quarantined.json');
+function _loadQuarantine() {
+  try {
+    const raw = fs.readFileSync(QUARANTINE_FILE, 'utf8');
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (_) { return []; }
+}
+function _saveQuarantine(arr) {
+  try { fs.writeFileSync(QUARANTINE_FILE, JSON.stringify(arr, null, 2), { mode: 0o600 }); } catch (_) {}
+}
+function isQuarantined(appName) {
+  const base = path.basename(String(appName || ''));
+  return _loadQuarantine().some((r) => !r.releasedAt && (r.name === appName || r.name === base));
+}
+function quarantine(appName, reason) {
+  const name = path.basename(String(appName || ''));
+  if (!name) return { ok: false, error: 'app name required' };
+  const s = _loadApproved();
+  s.delete(name);
+  _saveApproved(s);
+  const recs = _loadQuarantine();
+  const existing = recs.find((r) => r.name === name && !r.releasedAt);
+  if (existing) { existing.reason = String(reason || existing.reason || ''); existing.ts = Date.now(); }
+  else recs.push({ name, reason: String(reason || ''), ts: Date.now(), releasedAt: null });
+  _saveQuarantine(recs);
+  return { ok: true, quarantined: listQuarantined() };
+}
+function unquarantine(appName, note) {
+  const base = path.basename(String(appName || ''));
+  const recs = _loadQuarantine();
+  const rec = recs.find((r) => (r.name === appName || r.name === base) && !r.releasedAt);
+  if (!rec) return { ok: false, error: 'not quarantined' };
+  rec.releasedAt = Date.now();
+  rec.releaseNote = String(note || '');
+  _saveQuarantine(recs);
+  return { ok: true, quarantined: listQuarantined() };
+}
+function listQuarantined() {
+  return _loadQuarantine().filter((r) => !r.releasedAt);
+}
+
+module.exports = { start, stop, check, approve, revoke, listApproved, clearApproved, quarantine, unquarantine, isQuarantined, listQuarantined };

@@ -271,6 +271,13 @@ function createAdvisorySuiteRouter() {
   });
 
   // ── capability listing ─────────────────────────────────────────────────────
+  router.get('/status', (req, res) => res.json({
+    advisory: true,
+    live: true,
+    totalAdvisoryEndpoints: 20,
+    sentinelLayers: ['eigenEthics', 'shadowConsensus', 'topoShield', 'causalBreaker', 'zkProof', 'reynoldsFlow', 'punctEquil', 'harmonicDiss'],
+    note: 'Bounded advisory only — none of these endpoints DENY traffic.',
+  }));
   router.get('/capabilities', (req, res) => res.json({
     advisory: true,
     note: 'Bounded advisory only — none of these endpoints DENY traffic.',

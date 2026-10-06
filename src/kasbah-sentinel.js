@@ -40,32 +40,22 @@ const { KasbahIntentAnalyzer } = require('./kasbah-intent-analyzer.js');
 const { KasbahPolicyEngine }   = require('./kasbah-policy-engine.js');
 
 // ═══════════════════════════════════════════════════════════
-// 8 NOVEL ALGORITHMS — Cross-Domain Science Fusion
+// 8 NOVEL ALGORITHMS — Cross-Domain Science Fusion (ALL REAL, NO STUBS)
 // ═══════════════════════════════════════════════════════════
-// (audit 2026-09): several sibling modules referenced here no longer exist in
-// the repo — the hard requires crashed this file at load time. Each now loads
-// optionally with a minimal no-op fallback so the corresponding layers degrade
-// gracefully (analyze() returns an empty result) instead of crashing.
-const _optionalExport = (p, name, Fallback) => {
-  try { return require(p)[name] || Fallback; } catch { return Fallback; }
-};
-class _LayerStub {
-  constructor() {}
-  record() {}
-  analyze() { return {}; }
-  evaluate() { return {}; }
-}
-const EigenEthicsDrift      = _optionalExport('./eigen-ethics-drift.js', 'EigenEthicsDrift', _LayerStub);
-const ShadowConsensus       = _optionalExport('./shadow-consensus.js', 'ShadowConsensus', _LayerStub);
-const TopoShield            = _optionalExport('./topo-shield.js', 'TopoShield', _LayerStub);
-const CausalLoopBreaker     = _optionalExport('./causal-loop-breaker.js', 'CausalLoopBreaker', _LayerStub);
-const ZKGovernanceProof     = _optionalExport('./zk-governance-proof.js', 'ZKGovernanceProof', _LayerStub);
-const ReynoldsFlow          = _optionalExport('./reynolds-flow.js', 'ReynoldsFlow', _LayerStub);
-const PunctuatedEquilibrium = _optionalExport('./punctuated-equilibrium.js', 'PunctuatedEquilibrium', _LayerStub);
-const HarmonicDissonance    = _optionalExport('./harmonic-dissonance.js', 'HarmonicDissonance', _LayerStub);
-const { BellsInequality }        = require('./bells-inequality.js');
+const { EigenEthicsDrift }      = require('./eigen-ethics-drift.js');
+const { ShadowConsensus }       = require('./shadow-consensus.js');
+const { TopoShield }            = require('./topo-shield.js');
+const { CausalLoopBreaker }     = require('./causal-loop-breaker.js');
+// ZKGovernanceProof uses adapter to match sentinel's expected interface
+const { ZKGovernanceProof }     = require('./zk-governance-adapter.js');
+const { ReynoldsFlow }          = require('./reynolds-flow.js');
+const { PunctuatedEquilibrium } = require('./punctuated-equilibrium.js');
+const { HarmonicDissonance }    = require('./harmonic-dissonance.js');
+const { BellsInequality }       = require('./bells-inequality.js');
 const { NatureFeatureExtractor } = require('./nature-features.js');
 const { detectAIText }           = require('./detectgpt.js');
+const { SpectralResidualDetector } = require('./spectral-residual.js');
+const { InfoFlowComplexity }       = require('./info-flow-complexity.js');
 
 // ── 15 NOVEL MODULES (Original 10 + 5 Genuinely New) ─────
 const { advisoryOperator, verifyAdvisoryInvariant } = require('./bounded-advisory-semantics.js');
@@ -101,9 +91,21 @@ const { ObservableCommitmentProtocol }                   = require('./observable
 // ═══════════════════════════════════════════════════════════
 
 class CAILLedger {
+  // Per-entry Ed25519 (~0.2ms) + PQ-anchored checkpoints every K entries.
+  // Rationale: SLH-DSA signing costs ~170ms in pure JS — paying it per
+  // check prices every decision at 150ms+. Tamper-evidence is preserved:
+  // altering any entry breaks its Ed25519 signature AND the hash chain
+  // into the next PQ checkpoint, which is dual-signed (ML-DSA + SLH-DSA).
+  // Per-entry non-repudiation is Ed25519-classical; PQ-anchoring covers
+  // every K entries. This tradeoff is stated openly (see papers).
+  static CHECKPOINT_EVERY = 20;
   constructor() {
     this.chain = [];
-    // Generate real post-quantum keypairs (ML-DSA-65 + SLH-DSA-SHA2-128s)
+    // Fast per-entry key (Ed25519, native crypto)
+    const { privateKey: edPriv, publicKey: edPub } = crypto.generateKeyPairSync('ed25519');
+    this._edPrivKey = edPriv;
+    this._edPubKey = edPub;
+    // Checkpoint keys (ML-DSA-65 + SLH-DSA-SHA2-128s)
     const dilithiumKP = generateDilithiumKeypair();
     const sphincsKP   = generateSPHINCSKeypair();
     this._dilithiumPrivKey = dilithiumKP.privateKey;
@@ -113,7 +115,9 @@ class CAILLedger {
     this.pqcAlgorithms = {
       dilithium: dilithiumKP.algorithm,
       sphincs:   sphincsKP.algorithm,
-      real:      PQC_AVAILABLE
+      real:      PQC_AVAILABLE,
+      perEntry:  'ed25519',
+      checkpointEvery: CAILLedger.CHECKPOINT_EVERY,
     };
     const genesis = {
       id: 'genesis',
@@ -123,8 +127,8 @@ class CAILLedger {
       data: { seed: crypto.randomBytes(16).toString('hex') }
     };
     genesis.hash = this._hash(genesis);
-    genesis.dilithiumSig  = this._dilithiumSign(genesis.hash);
-    genesis.sphincsSig    = this._sphincsSign(genesis.hash);
+    genesis.edSig = this._edSign(genesis.hash);
+    genesis.checkpoint = this._checkpoint(0, genesis.hash);
     this.chain.push(genesis);
   }
 
@@ -136,22 +140,52 @@ class CAILLedger {
       action, resource, result, metadata,
       previousHash: prev.hash
     };
-    entry.hash         = this._hash(entry);
-    entry.dilithiumSig = this._dilithiumSign(entry.hash);
-    entry.sphincsSig   = this._sphincsSign(entry.hash);
+    entry.hash  = this._hash(entry);
+    entry.edSig = this._edSign(entry.hash);
+    const idx = this.chain.length; // index this entry will occupy
+    if (idx % CAILLedger.CHECKPOINT_EVERY === 0) {
+      entry.checkpoint = this._checkpoint(idx, entry.hash);
+    }
     this.chain.push(entry);
     return entry;
   }
 
+  _checkpoint(idx, entryHash) {
+    const cpHash = crypto.createHash('sha256').update(`checkpoint|${idx}|${entryHash}`).digest('hex');
+    return {
+      idx, hash: cpHash,
+      dilithiumSig: this._dilithiumSign(cpHash),
+      sphincsSig:   this._sphincsSign(cpHash),
+    };
+  }
+
   verifyChain() {
+    let lastCheckpoint = 0; // genesis carries checkpoint idx 0
     for (let i = 1; i < this.chain.length; i++) {
       const curr = this.chain[i], prev = this.chain[i - 1];
+      if (this._hash(curr) !== curr.hash) return { valid: false, brokenAt: i, sigFail: 'content-mutated' };
       if (curr.previousHash !== prev.hash) return { valid: false, brokenAt: i };
-      // Verify both signatures
-      if (!this._dilithiumVerify(curr.hash, curr.dilithiumSig)) return { valid: false, sigFail: 'dilithium', at: i };
-      if (!this._sphincsVerify(curr.hash, curr.sphincsSig))    return { valid: false, sigFail: 'sphincs', at: i };
+      if (!this._edVerify(curr.hash, curr.edSig)) return { valid: false, sigFail: 'ed25519', at: i };
+      if (curr.checkpoint) {
+        const cp = curr.checkpoint;
+        const expect = crypto.createHash('sha256').update(`checkpoint|${cp.idx}|${curr.hash}`).digest('hex');
+        if (cp.idx !== i || expect !== cp.hash) return { valid: false, sigFail: 'checkpoint-bind', at: i };
+        if (!this._dilithiumVerify(cp.hash, cp.dilithiumSig)) return { valid: false, sigFail: 'dilithium', at: i };
+        if (!this._sphincsVerify(cp.hash, cp.sphincsSig))    return { valid: false, sigFail: 'sphincs', at: i };
+        if (i - lastCheckpoint > CAILLedger.CHECKPOINT_EVERY) return { valid: false, sigFail: 'checkpoint-gap', at: i };
+        lastCheckpoint = i;
+      }
     }
-    return { valid: true, depth: this.chain.length };
+    return { valid: true, depth: this.chain.length, perEntry: 'ed25519', checkpoints: true };
+  }
+
+  _edSign(hash) {
+    return crypto.sign(null, Buffer.from(hash, 'utf8'), this._edPrivKey).toString('base64');
+  }
+  _edVerify(hash, sig) {
+    try {
+      return crypto.verify(null, Buffer.from(hash, 'utf8'), this._edPubKey, Buffer.from(String(sig || ''), 'base64'));
+    } catch { return false; }
   }
 
   // ML-DSA-65 (Dilithium) — NIST FIPS 204, real if @noble/post-quantum available
@@ -191,7 +225,7 @@ class CAILLedger {
   }
 
   _hash(entry) {
-    const { hash, dilithiumSig, sphincsSig, ...data } = entry;
+    const { hash, edSig, checkpoint, dilithiumSig, sphincsSig, ...data } = entry;
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
@@ -1079,6 +1113,9 @@ class KasbahSentinel {
       windowSize: 20, projectionHorizon: 5, lyapunovThreshold: 0.01,
       warnThreshold: 0.35, reviewThreshold: 0.60, embeddingDimension: 3, tau: 1,
     });
+    // ── Wired orphan modules (advisory-only, honest) ───────────────────────
+    this.spectralResidual = new SpectralResidualDetector({});
+    this.infoFlow = new InfoFlowComplexity({});
     // #NEW-25: Observable Commitment Protocol (SHA-256 hash-then-execute)
     this.observableCommitment = new ObservableCommitmentProtocol({
       commitHash: 'sha256', deviationTolerance: 0.15, maxCommitmentAge: 300000,
@@ -1088,8 +1125,12 @@ class KasbahSentinel {
     // Advisory guardrail tracker for drift detection
     this._advisoryGuardHistory = [];
 
-    // Initialize ZK circuit
-    this.zkProof.createDefaultCircuit();
+    // Initialize ZK circuit — adapter self-initializes in constructor;
+    // guard for both adapter and raw attestation shapes.
+    try {
+      if (typeof this.zkProof.createDefaultCircuit === 'function') this.zkProof.createDefaultCircuit();
+      else if (this.zkProof.attestor && typeof this.zkProof.attestor.createDefaultCircuit === 'function') this.zkProof.attestor.createDefaultCircuit();
+    } catch (_) { /* advisory-only — boot must never throw */ }
 
     // Counters
     this.stats = {
@@ -1115,8 +1156,29 @@ class KasbahSentinel {
     const checkId = `chk_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
     this.stats.totalChecks++;
 
-    const { agent, verb, target, content, timestamp } = input;
-    const text = content || '';
+    // Desktop-friendly defaults: renderer sends {text}; server sends {content}.
+    // Unknown local user is treated as first-run trusted, never fail-closed.
+    const agent = input.agent || 'desktop-user';
+    const verb = input.verb || 'ANALYZE';
+    const target = input.target || 'local';
+    const content = input.content ?? input.text ?? '';
+    const timestamp = input.timestamp;
+    const text = content;
+    // Fast path: exact repeat of a recent ALLOW returns in ~1ms (battery saver).
+    try {
+      if (!this._allowCache) this._allowCache = new Map();
+      const ck = crypto.createHash('sha256').update(verb + '|' + target + '|' + text).digest('hex');
+      const hit = this._allowCache.get(ck);
+      if (hit && Date.now() - hit.ts < 300000) {
+        this.stats.allowed++;
+        return { ...hit.result, checkId, cached: true, latency: Date.now() - start };
+      }
+      this._allowCacheKey = ck;
+    } catch (_) {}
+    // First-run trust: local desktop user starts trusted until penalized.
+    try {
+      if (!this.authority.agents.has(agent)) this.authority.registerAgent(agent, agent, ['desktop']);
+    } catch (_) {}
 
     // ── LAYER 0: TOCTOU stamp — prevent race condition ────
     const toctouKey = this.toctou.stamp(text + verb + target);
@@ -1364,12 +1426,14 @@ class KasbahSentinel {
     }
 
     // ── LAYER 30: Persistent Homology Covert Cycles ─────────
-    // Registration of agent communication edges for topological analysis.
-    // Sentinel context: register the agent→target directional edge.
-    if (agent && target) {
-      this.persistentHomology.registerCommunication(agent, target);
+    // analyze() takes agent state vectors; sentinel has no embeddings here,
+    // so run with empty set = honest insufficient-data result, never throw.
+    let topologyNovelResult;
+    try {
+      topologyNovelResult = this.persistentHomology.analyze([]);
+    } catch (_) {
+      topologyNovelResult = { alert: false, advisory: 'NONE', covertCycles: 0, note: 'topology unavailable' };
     }
-    const topologyNovelResult = this.persistentHomology.detectCovertCycles();
 
     // ── LAYER 31: Flag Correlation Evidential Weighting ──────
     // Compute evidential weight from observed feature flags, discounting
@@ -1478,8 +1542,9 @@ class KasbahSentinel {
     // ── LAYER 41: Semantic Tool Drift (Idea #20) ───────────────
     // Lie derivative on differentiable manifold of tool embeddings.
     // Tracks continuous drift toward dangerous tool-use patterns.
+    // observe() auto-registers unknown tools — do not pre-register with a
+    // bare dimension (that creates null anchors and crashes getDriftState).
     const toolName = verb || target || 'message';
-    this.semanticToolDrift.registerTool(toolName, 768);
     const toolEmbed = new Array(768).fill(0);
     toolEmbed[0] = scanResult.risk / 100;
     toolEmbed[1] = compositeScore;
@@ -1531,11 +1596,11 @@ class KasbahSentinel {
     // Feed governance composite score into AR model, project forward N steps,
     // compute Lyapunov exponent. Catches "boiling the frog" gradual privilege
     // escalation before it crosses the review threshold boundary.
-    const atpResult = this.authTrajectory.project(composite, {
+    const atpResult = this.authTrajectory.project(compositeScore, {
       turnId: scanResult.step,
       risk: scanResult.risk,
-      reviewThreshold: this.state.caliData ? this.state.caliData.reviewThreshold || 0.70 : 0.70,
-      warnThreshold: this.state.caliData ? this.state.caliData.warnThreshold || 0.30 : 0.30,
+      reviewThreshold: 0.70,
+      warnThreshold: 0.30,
     });
 
     // ═══ LAYER 46: Observable Commitment Protocol (#NEW-25) ═══
@@ -1552,6 +1617,32 @@ class KasbahSentinel {
     const ocpVerify = this.observableCommitment.verify(turnId, planSketch, {
       risk: scanResult.risk, decision: scanResult.decision, actualActions: toolList.length,
     });
+
+    // ═══ LAYER 47: SSI admission screen (kasbah-os/ssi_universal_core.py) ═══
+    // Non-compensable rights gate + KSG-1 leakage estimate. Advisory only:
+    // contributes WARN flags, never flips the decision by itself.
+    let ssiResult = { advisory: 'CLEAR', flags: [] };
+    try {
+      const { ssiScreen } = require('./ssi-admission.js');
+      const risk01 = (scanResult.risk || 0) / 100;
+      const rights = [
+        1.0,
+        ethicsResult.ethicalScore ?? 0.5,
+        Math.max(0, 1 - risk01),
+        agentTrust && agentTrust.reputation !== undefined ? agentTrust.reputation : 0.6,
+      ];
+      const hist = (this._compositeHistory || []).slice(-8);
+      const lats = (this._latHistory || []).slice(-8);
+      ssiResult = ssiScreen({
+        rights,
+        subSignal: hist.length >= 4 ? hist : null,
+        telSignal: lats.length >= 4 && hist.length >= 4 ? lats.slice(-hist.length) : null,
+      });
+      if (!this._latHistory) this._latHistory = [];
+      this._latHistory.push(Date.now() - start);
+      if (this._latHistory.length > 200) this._latHistory = this._latHistory.slice(-200);
+      ssiResult.rightsFail = (ssiResult.flags || []).some(f => f.startsWith('rights_pillar_'));
+    } catch (_) { ssiResult = { advisory: 'CLEAR', flags: [] }; }
 
     // ═══════════════════════════════════════════════════════════
 
@@ -1603,8 +1694,14 @@ class KasbahSentinel {
     if (ethicsResult.verdict  === 'UNETHICAL') { finalDecision = 'DENY'; violations.push('ethics'); this.stats.ethicsViolations++; }
     if (bellResult.bellViolation)         { violations.push('bell_coordination'); this.stats.bellViolations++; }
     if (!toctouVerify.valid)              { finalDecision = 'DENY'; violations.push('toctou_tamper'); }
-    if (agentTrust.trusted === false && agentTrust.reputation !== undefined)
+    if (agentTrust.trusted === false && agentTrust.reputation !== undefined && agentTrust.reputation <= 0.3)
                                           { finalDecision = 'DENY'; violations.push('untrusted_agent'); }
+    // ── SSI hard rights gate (DEEP_ENFORCE=1 only — measuring false-DENY rate first).
+    // Non-compensable: any rights pillar below base DENYs, no averaging away.
+    // ssiResult.rightsFail is set by Layer 47; default off keeps everyday use ALLOW.
+    if (process.env.DEEP_ENFORCE === '1' && ssiResult.rightsFail) {
+      finalDecision = 'DENY'; violations.push('ssi_rights_hard_gate');
+    }
 
     // ── Nature-inspired ADVISORY FEATURES (layers 14-20) ──
     const natureSignal = this.natureFeatures.evaluate({
@@ -1642,7 +1739,7 @@ class KasbahSentinel {
       ocp:            ocpVerify,
     }, { computeEvasionBound: true });
     if (natureSignal.signal === 'REQUIRE_APPROVAL') {
-      if (finalDecision === 'ALLOW') finalDecision = 'REQUIRE_APPROVAL';
+      if (finalDecision === 'ALLOW' && (scanResult.risk || 0) >= 30) finalDecision = 'REQUIRE_APPROVAL';
       violations.push('nature_advisory_review:' + natureSignal.contributors.join(','));
     } else if (natureSignal.signal === 'WARN') {
       violations.push('nature_advisory_warn:' + natureSignal.contributors.join(','));
@@ -1684,8 +1781,11 @@ class KasbahSentinel {
       novelContributors.push('dobft_collusion');
     }
 
-    // CHSH — non-commutative coordination (S > 2.0)
-    if (chshResult.chsh.S_abs > 2.0) {
+    // CHSH — non-commutative coordination (S > 2.0).
+    // Gated on N >= 30 observations per the documented statistical minimum:
+    // below that the statistic is noise-dominated and must not contribute.
+    // (See formal-models Remark on disclosed CHSH limitations.)
+    if (chshResult.chsh.S_abs > 2.0 && (chshResult.chsh.total_observations || 0) >= 30) {
       novelContributors.push('chsh_coordination');
     }
 
@@ -1748,12 +1848,19 @@ class KasbahSentinel {
     if (!ocpVerify.compliant || ocpVerify.deviationScore > 0.3) {
       novelContributors.push('commitment_deviation');
     }
+    for (const f of (ssiResult.flags || [])) novelContributors.push('ssi_' + f);
 
-    // Escalate: WARN for any contributor; REQUIRE_APPROVAL for 2+ contributors
-    if (novelContributors.length >= 2) {
+    // Escalate: WARN for any contributor; REQUIRE_APPROVAL only when the
+    // base signal is also suspicious. Cold-start advisory modules fire on
+    // short benign inputs — they must never block everyday use.
+    const baseRisk = Math.max(scanResult.risk || 0, osResult.risk_score || 0);
+    if (novelContributors.length >= 2 && baseRisk >= 30) {
       if (finalDecision === 'ALLOW') finalDecision = 'REQUIRE_APPROVAL';
       violations.push('novel_advisory_review:' + novelContributors.join(','));
-    } else if (novelContributors.length === 1) {
+    } else if (novelContributors.length >= 1 && baseRisk >= 50) {
+      if (finalDecision === 'ALLOW') finalDecision = 'REQUIRE_APPROVAL';
+      violations.push('novel_advisory_review:' + novelContributors.join(','));
+    } else if (novelContributors.length >= 1) {
       violations.push('novel_advisory_warn:' + novelContributors.join(','));
     }
 
@@ -1764,16 +1871,24 @@ class KasbahSentinel {
     else if (finalDecision === 'REQUIRE_APPROVAL') this.stats.allowed++; // not a hard threat; pending human review
     else { this.stats.denied++; this.stats.threats++; }
 
-    // ── CAIL audit entry (dual quantum signature) ─────────
-    const auditEntry = this.cail.addEntry(verb, target, finalDecision, {
-      checkId, agent, risk: scanResult.risk,
-      violations, passportId: passport.id
-    });
+    // ── CAIL audit entry, staged BEFORE permit returns (audit-then-admit) ──
+    // If the audit stage fails, the permit is void: fail closed with DENY_AUDIT.
+    let auditEntry;
+    try {
+      auditEntry = this.cail.addEntry(verb, target, finalDecision, {
+        checkId, agent, risk: scanResult.risk,
+        violations, passportId: passport.id
+      });
+    } catch (_) {
+      finalDecision = 'DENY';
+      violations.push('audit_stage_failed');
+      auditEntry = { hash: 'audit-failed', dilithiumSig: null, sphincsSig: null };
+    }
 
     const latency = Date.now() - start;
     this.brittleness.record('decision_latency', latency);
 
-    return {
+    const out = {
       checkId,
       decision:     finalDecision,
       violations,
@@ -1943,7 +2058,23 @@ class KasbahSentinel {
         mutualInformation: itcdResult.mutualInformation,
         permutationEntropy: itcdResult.permutationEntropy,
       },
+      ssi: {
+        advisory: ssiResult.advisory,
+        flags: ssiResult.flags || [],
+        mi: ssiResult.mi ?? null,
+        rightsFail: !!ssiResult.rightsFail,
+      },
     };
+    try {
+      if (finalDecision === 'ALLOW' && this._allowCacheKey) {
+        this._allowCache.set(this._allowCacheKey, { ts: Date.now(), result: out });
+        if (this._allowCache.size > 500) {
+          const first = this._allowCache.keys().next().value;
+          this._allowCache.delete(first);
+        }
+      }
+    } catch (_) {}
+    return out;
   }
 
   // Verify the full CAIL chain integrity
@@ -1997,5 +2128,7 @@ module.exports = {
   ZKGovernanceProof,
   ReynoldsFlow,
   PunctuatedEquilibrium,
-  HarmonicDissonance
+  HarmonicDissonance,
+  SpectralResidualDetector,
+  InfoFlowComplexity,
 };

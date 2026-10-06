@@ -15,7 +15,9 @@
       "api.internal.kasbah.com",
       "data.kasbah.com",
       "research.internal",
-      "analytics.internal"
+      "analytics.internal",
+      "desktop",
+      "local"
     ],
     "rate_limits": {
       "READ_per_minute": 500,

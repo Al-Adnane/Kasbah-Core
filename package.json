@@ -5,7 +5,7 @@
   "description": "Kasbah \u2014 universal AI gateway: governance, cryptographic receipts, and cost control for every LLM call",
   "license": "MIT",
   "scripts": {
-    "test": "node tests/integration/runtime.test.js && node packages/api-server/src/intervention.test.js && node packages/api-server/src/ai-trust-grade.test.js && node packages/api-server/src/competitive-parity.test.js && node packages/api-server/src/digest.test.js",
+    "test": "node tests/integration/runtime.test.js && node packages/api-server/src/intervention.test.js && node packages/api-server/src/ai-trust-grade.test.js && node packages/api-server/src/competitive-parity.test.js && node packages/api-server/src/digest.test.js && node tests/mcp-block-loop.test.js && node tests/enforcer.test.js",
     "lint": "echo \"no linter configured\"",
     "bench": "node bench/run.js --api http://localhost:8788",
     "start": "node packages/api-server/server.js",

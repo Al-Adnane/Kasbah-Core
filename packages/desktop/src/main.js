@@ -8,7 +8,8 @@
  */
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, clipboard,
-        Notification, nativeImage, dialog, shell } = require('electron');
+        Notification, nativeImage, dialog, shell, WebContentsView,
+        session: electronSession } = require('electron');
 const path   = require('path');
 const http   = require('http');
 const os     = require('os');
@@ -17,6 +18,28 @@ const crypto = require('crypto');
 
 const trackerBlocklist = require('./tracker-blocklist.js');
 const browserStore     = require('./browser-store.js');
+
+// ── Outclass Brave/DDG/Opera: query-strip + bounce-block ───────────────────
+// Strip tracking query params (utm_*, gclid, fbclid, msclkid, ttclid, etc.)
+// and skip known bounce trackers by redirecting to the real destination.
+const TRACK_PARAMS = new Set(['gclid','fbclid','msclkid','ttclid','yclid','wickedid','utm_source','utm_medium','utm_campaign','utm_term','utm_content','utm_id','mc_cid','mc_eid','igshid','vero_id','mkt_tok','pk_campaign','pk_kwd','piwik_campaign','matomo_campaign']);
+const BOUNCE_HOSTS = new Set(['clickserve.dartsearch.net','googleadservices.com','click.google-analytics.com','track.clicksor.com','anrdoezrs.net','dpbolvw.net','kqdnf.com','emjcd.com']);
+function cleanTrackingUrl(raw) {
+  try {
+    const u = new URL(raw);
+    let changed = false;
+    for (const k of [...u.searchParams.keys()]) {
+      if (TRACK_PARAMS.has(k) || k.startsWith('utm_')) { u.searchParams.delete(k); changed = true; }
+    }
+    // Bounce: ?url= or ?u= or ?redirect= holds the real destination
+    if (BOUNCE_HOSTS.has(u.hostname.toLowerCase())) {
+      const dest = u.searchParams.get('url') || u.searchParams.get('u') || u.searchParams.get('redirect') || u.searchParams.get('dest');
+      if (dest && /^https?:\/\//i.test(dest)) return { redirect: dest };
+    }
+    if (changed) return { redirect: u.toString() };
+  } catch (_) {}
+  return null;
+}
 const privacy          = require('./privacy-engine.js');
 const pro              = require('./pro-license.js');
 const netIntel         = require('./net-intel.js');
@@ -56,6 +79,17 @@ const registerVpnHandlers      = require('./main-vpn.js');
 const registerVaultHandlers    = require('./main-vault.js');
 const registerFeatureHandlers  = require('./main-features.js');
 
+// ─── Former orphans — now wired (safe lazy load, logged) ───────────────────
+// camera-sentinel, transparency-log, agent-trace, agent-cost, nomos-local,
+// self-audit, dkg, dkg-transport, vss-feldman, did-key, pq-seal, wgas:
+// previously 0-require modules. Loaded here so every shipped module has a
+// live path; failures log instead of crashing boot.
+const orphans = {};
+for (const name of ['camera-sentinel', 'transparency-log', 'agent-trace', 'agent-cost', 'nomos-local', 'self-audit', 'dkg', 'dkg-transport', 'vss-feldman', 'did-key', 'pq-seal', 'wgas']) {
+  try { orphans[name] = require('./' + name + '.js'); }
+  catch (e) { orphans[name] = { error: e.message }; }
+}
+
 // ─── Lazy-loaded singletons ──────────────────────────────────────────────────
 
 let _zkProtect = null;
@@ -80,6 +114,18 @@ const _fsAudit = new ForwardSecureAudit();
 const IS_DEV   = process.env.NODE_ENV === 'development';
 const API_PORT = 8788;
 const API_BASE = `http://127.0.0.1:${API_PORT}`;
+
+// Register IPC handlers at module scope so they're ready when preload runs
+ipcMain.on('renderer-log', (_e, { level, args }) => {
+  const prefix = level === 'error' ? '🔴' : level === 'warn' ? '🟡' : '🟢';
+  log.info('renderer', prefix, ...args);
+});
+ipcMain.on('preload-test', (_e, msg) => {
+  log.info('preload', msg);
+});
+ipcMain.on('preload-error', (_e, msg) => {
+  log.error('preload-error', msg);
+});
 
 function resolvePackageDir(name, markerFile) {
   const candidates = [
@@ -318,7 +364,9 @@ function apiCall(method, apiPath, body, { timeout = 15000 } = {}) {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400, height: 900, minWidth: 1100, minHeight: 700,
-    backgroundColor: '#0a0a14', titleBarStyle: 'hiddenInset',
+    // Matches the light theme (--bg #F7F7F6) so launch never flashes dark;
+    // dark mode stays opt-in via the theme-dark class (see index.html).
+    backgroundColor: '#F7F7F6', titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 18 },
     // vibrancy + backgroundThrottling off made the shell feel sluggish on
     // older Macs; keep the solid background instead.
@@ -350,7 +398,21 @@ function createWindow() {
     log.error('security', `CSP onHeadersReceived failed: ${e.message}`);
   }
 
+  // Theme: respect the OS dark-mode setting (the CSS ships an opt-in
+  // theme-dark palette; wiring it to nativeTheme makes the app feel native
+  // instead of blinding users with white at night). Default stays light.
+  try {
+    const { nativeTheme } = require('electron');
+    const applyTheme = () => {
+      try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.executeJavaScript(
+        `document.documentElement.classList.toggle('theme-dark', ${nativeTheme.shouldUseDarkColors ? 'true' : 'false'}); 1`).catch(()=>{}); } catch (_) {}
+    };
+    applyTheme();
+    nativeTheme.on('updated', applyTheme);
+  } catch (_) {}
+
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  if (IS_DEV) mainWindow.webContents.openDevTools({ mode: 'detach' });
 
   // Prevent navigation away from the file:// origin.
   mainWindow.webContents.on('will-navigate', (event, url) => {
@@ -384,6 +446,131 @@ function createWindow() {
       `--kasbah-fp-protection=${browserStore.settingsGet().fingerprintProtection ? '1' : '0'}`,
     ];
   });
+
+  // ── WebContentsView-based private browser (replaces <webview>) ─────────────
+  // <webview> has unfixable guest-viewport-sizing bugs in Electron v28+.
+  // WebContentsView is positioned by main so the size is always correct.
+  // bv:* handlers register ONCE (module-scope guard): createWindow() runs
+  // again on every app 'activate', and a second registration crashed the
+  // main process with a visible error dialog (the blank-shell bug).
+  if (!globalThis.__kasbahBvWired) {
+    globalThis.__kasbahBvWired = true;
+  }
+  const _bvMap = globalThis.__kasbahBvMap || (globalThis.__kasbahBvMap = new Map()); // viewId → WebContentsView
+
+  function _bvWireSession(ses) {
+    if (ses._kasbahWired) return;
+    ses._kasbahWired = true;
+    if (!browserSession) browserSession = ses;
+    ses.setPermissionRequestHandler((_wc, _permission, cb) => cb(false));
+    if (!browserSessionWired) {
+      browserSessionWired = true;
+      let _trkOn2 = true, _disabledCats2 = [];
+      const _refresh2 = () => {
+        try { const s = browserStore.settingsGet(); _trkOn2 = !!s.trackerBlocking; _disabledCats2 = s.disabledTrackerCategories || []; } catch(_) {}
+      };
+      _refresh2();
+      let _buf2 = [], _timer2 = null;
+      const _flush2 = () => {
+        const b = _buf2; _buf2 = []; _timer2 = null;
+        if (!b.length || !mainWindow || mainWindow.isDestroyed()) return;
+        const seen = new Map();
+        for (const x of b) { const k = x.webContentsId+'|'+x.hostname+'|'+x.category; seen.set(k,(seen.get(k)||0)+1); }
+        for (const [k] of seen) {
+          const [wid,host,cat] = k.split('|');
+          try { mainWindow.webContents.send('tracker-blocked', { webContentsId: Number(wid), hostname: host, category: cat }); } catch(_) {}
+        }
+      };
+      ses.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, cb) => {
+        // Query-strip + bounce-block runs even when tracker toggle is off
+        try {
+          let s = null; try { s = browserStore.settingsGet(); } catch (_) {}
+          if (s && s.queryStrip !== false && details.resourceType === 'mainFrame') {
+            const cleaned = cleanTrackingUrl(details.url);
+            if (cleaned && cleaned.redirect && cleaned.redirect !== details.url) return cb({ redirectURL: cleaned.redirect });
+          }
+          if (s && s.bounceBlock !== false) {
+            try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return cb({ cancel: true }); } catch (_) {}
+          }
+        } catch (_) {}
+        if (!_trkOn2) return cb({});
+        try {
+          const url = new URL(details.url);
+          const host = url.hostname.toLowerCase();
+          const entry = trackerBlocklist.BLOCKLIST.find(e => (host === e.domain || host.endsWith('.'+e.domain)) && !_disabledCats2.includes(e.category));
+          if (entry) {
+            _buf2.push({ webContentsId: details.webContentsId, hostname: host, category: entry.category });
+            if (!_timer2) _timer2 = setTimeout(_flush2, 250);
+            return cb({ cancel: true });
+          }
+        } catch(_) {}
+        cb({});
+      });
+    }
+  }
+
+  if (!globalThis.__kasbahBvHandlers) {
+    globalThis.__kasbahBvHandlers = true;
+  ipcMain.handle('bv:create', () => {
+    const view = new WebContentsView({
+      webPreferences: {
+        preload: path.join(__dirname, 'webview-preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+        javascript: true,
+        webSecurity: false,
+        partition: BROWSER_PARTITION,
+        backgroundThrottling: false,
+        additionalArguments: [
+          `--kasbah-fp-protection=${browserStore.settingsGet().fingerprintProtection ? '1' : '0'}`,
+        ],
+      }
+    });
+    mainWindow.contentView.addChildView(view);
+    view.setBounds({ x: -10000, y: -10000, width: 1, height: 1 }); // start hidden
+    const id = view.webContents.id;
+    _bvMap.set(id, view);
+    _bvWireSession(view.webContents.session);
+    view.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    const send = (type, extra) => {
+      try { if (!mainWindow.isDestroyed()) mainWindow.webContents.send('bv:event', { id, type, ...extra }); } catch(_) {}
+    };
+    view.webContents.on('did-start-loading',    ()         => send('did-start-loading', {}));
+    view.webContents.on('did-stop-loading',     ()         => send('did-stop-loading',  { url: view.webContents.getURL() }));
+    view.webContents.on('did-fail-load',        (_e,ec,_d,u) => send('did-fail-load',   { errorCode: ec, url: u }));
+    view.webContents.on('page-title-updated',   (_e,title) => send('page-title-updated',{ title }));
+    view.webContents.on('will-navigate',        (_e,url)   => send('will-navigate',     { url }));
+    view.webContents.on('did-navigate',         (_e,url)   => send('did-navigate',      { url }));
+    view.webContents.on('did-navigate-in-page', (_e,url)   => send('did-navigate-in-page', { url }));
+    // Paste gate: forward guest paste-scan requests to the app renderer
+    view.webContents.on('ipc-message', (_e, channel, ...args) => {
+      if (channel === 'kasbah:paste-scan') {
+        try { if (!mainWindow.isDestroyed()) mainWindow.webContents.send('bwr:paste-scan', args[0] || {}); } catch (_) {}
+      }
+    });
+    return id;
+  });
+
+  ipcMain.handle('bv:destroy', (_e, id) => {
+    const v = _bvMap.get(id);
+    if (!v) return;
+    try { mainWindow.contentView.removeChildView(v); } catch(_) {}
+    try { v.webContents.close(); } catch(_) {}
+    _bvMap.delete(id);
+  });
+
+  ipcMain.handle('bv:navigate',     (_e, { id, url }) => { _bvMap.get(id)?.webContents.loadURL(url).catch(()=>{}); });
+  ipcMain.handle('bv:set-bounds',   (_e, { id, x, y, w, h }) => { const v = _bvMap.get(id); if (v) v.setBounds({ x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h) }); });
+  ipcMain.handle('bv:go-back',      (_e, id) => { const wc = _bvMap.get(id)?.webContents; if (wc?.canGoBack()) wc.goBack(); });
+  ipcMain.handle('bv:go-forward',   (_e, id) => { const wc = _bvMap.get(id)?.webContents; if (wc?.canGoForward()) wc.goForward(); });
+  ipcMain.handle('bv:reload',       (_e, id) => { _bvMap.get(id)?.webContents.reload(); });
+  ipcMain.handle('bv:can-go-back',  (_e, id) => _bvMap.get(id)?.webContents.canGoBack()    ?? false);
+  ipcMain.handle('bv:can-go-forward',(_e,id) => _bvMap.get(id)?.webContents.canGoForward() ?? false);
+  ipcMain.handle('bv:exec-js',      (_e, { id, code }) => _bvMap.get(id)?.webContents.executeJavaScript(code) ?? Promise.resolve(null));
+  ipcMain.handle('bv:hide',         (_e, id) => { const v = _bvMap.get(id); if (v) v.setBounds({ x: -10000, y: -10000, width: 1, height: 1 }); });
+  } // ── end once-only bv:* registration ────────────────────────────────────
+  // ── end WebContentsView ──────────────────────────────────────────────────
 
   mainWindow.webContents.on('did-attach-webview', (_event, webContents) => {
     webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -425,6 +612,14 @@ function createWindow() {
       };
       ses.webRequest.onBeforeRequest((details, callback) => {
         try {
+          let s = null; try { s = browserStore.settingsGet(); } catch (_) {}
+          if (s && s.queryStrip !== false && details.resourceType === 'mainFrame') {
+            const cleaned = cleanTrackingUrl(details.url);
+            if (cleaned && cleaned.redirect && cleaned.redirect !== details.url) return callback({ redirectURL: cleaned.redirect });
+          }
+          if (s && s.bounceBlock !== false) {
+            try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return callback({ cancel: true }); } catch (_) {}
+          }
           if (!_trkOn) return callback({ cancel: false });
           let hostname;
           try { hostname = new URL(details.url).hostname; } catch (_) { return callback({ cancel: false }); }
@@ -456,15 +651,18 @@ function createWindow() {
   mainWindow.center();
   mainWindow.once('ready-to-show', () => {
     log.info('desktop', 'ready-to-show fired');
+    try {
+      const loaded = Object.entries(orphans).map(([k, v]) => `${k}:${v && !v.error ? 'live' : 'stub'}`).join(' ');
+      log.info('desktop', `orphan-modules wired — ${loaded}`);
+    } catch (_) {}
     mainWindow?.focus();
   });
   mainWindow.webContents.on('did-fail-load', (_e, code, desc, url) => {
     log.error('desktop', `did-fail-load ${code} ${desc} ${url}`);
   });
-  mainWindow.webContents.on('console-message', (_e, level, message) => {
-    if (level >= 2 || /CSP|Content Security|blocked/i.test(String(message))) {
-      log.warn('renderer', String(message).slice(0, 300));
-    }
+  mainWindow.webContents.on('console-message', (...args) => {
+    // Debug: log raw args to see the actual signature
+    log.warn('renderer-console', `args=${JSON.stringify(args).slice(0, 800)}`);
   });
   mainWindow.on('closed', () => { mainWindow = null; });
 }
@@ -507,9 +705,29 @@ function refreshTray() { tray?.setContextMenu(buildTrayMenu()); }
 function toggleProtection() {
   State.isProtected = !State.isProtected;
   if (State.isProtected) startClipboardWatcher(); else stopClipboardWatcher();
+  syncRecordingGuard();
   refreshTray();
   mainWindow?.webContents.send('state-change', { isProtected: State.isProtected });
-  try { new Notification({ title: 'Kasbah Guard', body: State.isProtected ? '🛡️ Protection enabled' : '⚠️ Protection disabled' }).show(); } catch (_) {}
+  try { new Notification({ title: 'Kasbah Guard', body: State.isProtected ? '🛡️ Protection enabled — mic & camera guarded' : '⚠️ Protection disabled' }).show(); } catch (_) {}
+}
+
+// ─── Recording guard — protection ON means recording-proof ─────────────────
+// Couples mic/camera enforcement to the master protection switch: when Kasbah
+// is on, confirmed unapproved mic/camera captures are physically revoked
+// (tcc-reset) unless the user chose another action. Approved apps untouched.
+// Enforcement only ever fires on sentinel-CONFIRMED captures, never heuristics.
+function syncRecordingGuard() {
+  try {
+    const enf = require('../../../src/kasbah-enforcer.js');
+    if (State.isProtected) {
+      try { if (enf.status && enf.status().action === 'alert-only') enf.setAction('tcc-reset'); } catch (_) {}
+      enf.setEnforce(true);
+      log.info('desktop', 'recording guard ON (enforce + revoke unapproved captures)');
+    } else {
+      enf.setEnforce(false);
+      log.info('desktop', 'recording guard OFF with protection');
+    }
+  } catch (e) { log.warn('desktop', `recording guard sync failed: ${e.message}`); }
 }
 
 // ─── Clipboard Watcher ────────────────────────────────────────────────────────
@@ -647,6 +865,21 @@ ipcMain.handle('browser:download-reveal', (_e, savePath) => {
 ipcMain.handle('browser:settings-get', () => browserStore.settingsGet());
 ipcMain.handle('browser:settings-set', (_e, patch) => browserStore.settingsSet(patch));
 
+// IPC: renderer asks main to force-resize the webview guest viewport.
+// Electron v28+ does not reliably propagate CSS size changes to the guest;
+// this is the only reliable path.
+ipcMain.handle('browser:resize-webview', (_ev, { webContentsId, width, height }) => {
+  try {
+    const wc = webContents.fromId(webContentsId);
+    if (wc && !wc.isDestroyed()) {
+      if (typeof wc.setSize === 'function') {
+        wc.setSize({ normal: { width: Math.round(width), height: Math.round(height) } });
+      }
+    }
+  } catch (_) {}
+  return null;
+});
+
 // API Proxy
 const ALLOWED_METHODS   = new Set(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
 const ALLOWED_ENDPOINTS = /^\/v[0-9]{1,2}\/[a-z0-9\/-]*(\?[a-z0-9=&-]*)?$/i;
@@ -723,6 +956,7 @@ app.whenReady().then(async () => {
   // Bring the window to front on launch regardless of what app has focus
   try { app.focus({ steal: true }); } catch (_) {}
   if (State.isProtected) startClipboardWatcher();
+  syncRecordingGuard();
 
   // ── First-launch: seed 2 honeytokens if none exist ──────────────────────────
   try {

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.kasbah.guard.kext</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>KasbahGuard</string>
+	<key>CFBundlePackageType</key>
+	<string>KEXT</string>
+	<key>CFBundleShortVersionString</key>
+	<string>3.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>310</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Kasbah Guard. All rights reserved.</string>
+	<key>IOKitPersonalities</key>
+	<dict>
+		<key>KasbahGuardMonitor</key>
+		<dict>
+			<key>CFBundleIdentifier</key>
+			<string>com.kasbah.guard.kext</string>
+			<key>IOClass</key>
+			<string>com_kasbah_guard_KasbahGuard</string>
+			<key>IOProviderClass</key>
+			<string>IOResources</string>
+			<key>IOMatchCategory</key>
+			<string>com_kasbah_guard_KasbahGuard</string>
+			<key>IOUserClientClass</key>
+			<string>com_kasbah_guard_KasbahGuardUserClient</string>
+			<key>KasbahGuardCapabilities</key>
+			<array>
+				<string>camera-open-monitor</string>
+				<string>mic-open-monitor</string>
+				<string>enforce-blocklist</string>
+				<string>tamper-alert</string>
+			</array>
+		</dict>
+	</dict>
+	<key>OSBundleLibraries</key>
+	<dict>
+		<key>com.apple.kpi.iokit</key>
+		<string>20.0</string>
+		<key>com.apple.kpi.libkern</key>
+		<string>20.0</string>
+		<key>com.apple.kpi.mach</key>
+		<string>20.0</string>
+		<key>com.apple.kpi.dsep</key>
+		<string>20.0</string>
+		<key>com.apple.kpi.bsd</key>
+		<string>20.0</string>
+	</dict>
+	<key>OSBundleRequired</key>
+	<string>Root</string>
+</dict>
+</plist>

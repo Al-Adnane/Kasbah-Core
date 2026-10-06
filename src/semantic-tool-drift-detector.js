@@ -97,11 +97,11 @@ class SemanticToolDriftDetector {
    * @returns {object} drift assessment
    */
   observe(toolName, semanticEmbedding, context = {}) {
-    const tool = this._resolveTool(toolName);
+    const resolvedKey = this._resolveTool(toolName);
     const emb = this._ensureVector(semanticEmbedding);
     if (!emb) return { mode: 'no_data', tool: toolName };
 
-    if (!tool) {
+    if (!resolvedKey) {
       // Auto-register unknown tool
       const safe = new Float64Array(this.semanticDim);
       const danger = new Float64Array(this.semanticDim);
@@ -117,7 +117,8 @@ class SemanticToolDriftDetector {
       };
     }
 
-    const t = this._tools[toolName];
+    const t = this._tools[resolvedKey];
+    if (!t || !Array.isArray(t.trajectory)) return { mode: 'no_data', tool: toolName };
     t.trajectory.push({ embedding: emb, tag: context.tag || 'use', ts: context.ts || Date.now() });
     if (t.trajectory.length > this.windowSize * 10) {
       t.trajectory = t.trajectory.slice(-this.windowSize * 10);
@@ -201,15 +202,21 @@ class SemanticToolDriftDetector {
   getDriftState() {
     const state = {};
     for (const [name, tool] of Object.entries(this._tools)) {
-      const recent = tool.driftHistory.slice(-10);
+      const recent = (tool.driftHistory || []).slice(-10);
+      const trajLen = Array.isArray(tool.trajectory) ? tool.trajectory.length : 0;
+      let safeAnchor = []; let dangerAnchor = [];
+      try {
+        if (tool.safe) safeAnchor = Array.from(tool.safe).map(v => +Number(v).toFixed(3));
+        if (tool.danger) dangerAnchor = Array.from(tool.danger).map(v => +Number(v).toFixed(3));
+      } catch (_) { /* leave empty on malformed anchors */ }
       state[name] = {
-        trajectoryPoints: tool.trajectory.length,
+        trajectoryPoints: trajLen,
         recentDriftMean: recent.length > 0
           ? +(recent.reduce((a, b) => a + b, 0) / recent.length).toFixed(4) : 0,
         recentDriftMax: recent.length > 0
           ? +Math.max(...recent).toFixed(4) : 0,
-        safeAnchor: Array.from(tool.safe).map(v => +v.toFixed(3)),
-        dangerAnchor: Array.from(tool.danger).map(v => +v.toFixed(3)),
+        safeAnchor,
+        dangerAnchor,
       };
     }
     return state;

@@ -66,9 +66,52 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   const vcExport         = (() => { try { return require('./vc-export.js');        } catch (e) { return { error: e.message }; } })();
   const sessionChain     = (() => { try { return require('./session-chain.js');    } catch (e) { return { error: e.message }; } })();
   const micSentinel      = (() => { try { return require('./mic-sentinel.js');     } catch (e) { return { error: e.message }; } })();
+  const cameraSentinel   = (() => { try { return require('./camera-sentinel.js');  } catch (e) { return { error: e.message }; } })();
+  const enforcer = (() => {
+    const candidates = [
+      './kasbah-enforcer-local.js',
+      '../../src/kasbah-enforcer.js',
+      '../../../src/kasbah-enforcer.js',
+    ];
+    // Packaged extraResources also ships root src as packages/kasbah-src
+    try {
+      const pr = process.resourcesPath ? require('path').join(process.resourcesPath, 'packages', 'kasbah-src', 'kasbah-enforcer.js') : null;
+      if (pr) candidates.push(pr);
+    } catch (_) {}
+    for (const c of candidates) { try { return require(c); } catch (_) {} }
+    try { return require(require('path').join(__dirname, '../../../src/kasbah-enforcer.js')); }
+    catch (e) { return { error: e.message }; }
+  })();
   const transparencyLog  = (() => { try { return require('./transparency-log.js'); } catch (e) { return { error: e.message }; } })();
   const { AgentTrace }   = (() => { try { return require('./agent-trace.js');      } catch (e) { return { AgentTrace: null, error: e.message }; } })();
   const voicePrivacy     = (() => { try { return require('./voice-privacy.js');    } catch (e) { return { error: e.message }; } })();
+  // Capability bridges — local-first, api-server fallback. All resolve in dev
+  // and in packaged DMG via extraResources (packages/kasbah-src, mcise-core, etc).
+  function tryRequire(candidates) {
+    for (const c of candidates) { try { return require(c); } catch (_) {} }
+    return { error: 'module unavailable: ' + candidates[0] };
+  }
+  const siemLocal = (() => { try {
+    return tryRequire(['../../api-server/src/siem-connectors.js', '../../../api-server/src/siem-connectors.js',
+      require('path').join(__dirname, '../../packages/api-server/src/siem-connectors.js')]);
+  } catch (e) { return { error: e.message }; } })();
+  const lineageLocal = (() => { try {
+    return tryRequire(['../../api-server/src/data-lineage.js', '../../../api-server/src/data-lineage.js']);
+  } catch (e) { return { error: e.message }; } })();
+  const maqasidLocal = (() => { try {
+    return tryRequire(['../../agent-governance/src/maqasid-framework.js', '../../../packages/agent-governance/src/maqasid-framework.js',
+      require('path').join(__dirname, '../../packages/agent-governance/src/maqasid-framework.js')]);
+  } catch (e) { return { error: e.message }; } })();
+  let _sentinelSingleton = null; let _sentinelError = null;
+  function sentinelLocal() {
+    if (_sentinelSingleton || _sentinelError) return _sentinelSingleton;
+    try {
+      const mod = tryRequire(['../../../src/kasbah-sentinel.js', '../../src/kasbah-sentinel.js']);
+      if (mod.error || !mod.KasbahSentinel) { _sentinelError = mod.error || 'no KasbahSentinel'; return null; }
+      _sentinelSingleton = new mod.KasbahSentinel({});
+      return _sentinelSingleton;
+    } catch (e) { _sentinelError = e.message; return null; }
+  }
 
   // ─── Privacy analyzers ────────────────────────────────────────────────────────
   ipcMain.handle('privacy:scam',        (_e, text) => privacy.analyzeScam(V.str(text, { name: 'text' })));
@@ -214,6 +257,89 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
       exitIp = probe.ip;
     }
     return privacy.leakTest({ vpnOn: !!vpnState.activeLocation, exitIp });
+  });
+
+  // ─── Voice Privacy / Silent Speech ZK ────────────────────────────────────────
+  // Zero-knowledge voice-auth and silent-speech primitives (voice-privacy.js).
+  // All handlers are rate-limited and never log secrets.
+  const voiceRL = rateLimit('voice:*', { maxPerSecond: 5 });
+  const voiceSafe = () => {
+    if (voicePrivacy.error) return { error: 'voice-privacy module unavailable' };
+    return true;
+  };
+  ipcMain.handle('voice:self-test', async () => {
+    try { voiceRL(); voiceSafe() || []; return voicePrivacy.selfTest(); } catch (e) { auditError('voice:self-test', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:simulate-silent-speech', async (_e, tokens) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      const t = Array.isArray(tokens) ? tokens.map(Number) : [];
+      return voicePrivacy.simulateSilentSpeech(t);
+    } catch (e) { auditError('voice:simulate-silent-speech', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:simulate-voiceprint', async (_e, seed) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      return voicePrivacy.simulateVoiceprint(String(seed || ''));
+    } catch (e) { auditError('voice:simulate-voiceprint', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:build-registry', async (_e, voiceprints) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      const vp = Array.isArray(voiceprints) ? voiceprints : [];
+      const { registry, creds } = voicePrivacy.buildRegistry(vp);
+      // Never return raw creds; return only registry metadata.
+      return { ok: true, registrySize: registry.length };
+    } catch (e) { auditError('voice:build-registry', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:auth-prove', async (_e, payload) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      // payload is for demo only – real app would hold private creds locally.
+      return { ok: false, error: 'demo stub – credentials must be held client-side' };
+    } catch (e) { auditError('voice:auth-prove', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:auth-verify', async (_e, args) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      return { ok: false, error: 'demo stub – verification requires registry + proof' };
+    } catch (e) { auditError('voice:auth-verify', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:commit-utterance', async (_e, tokens) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      const t = Array.isArray(tokens) ? tokens.map(Number) : [];
+      const { utterance } = voicePrivacy.commitUtterance(t);
+      // Return only the public commitment, not the secret.
+      return { ok: true, numTokens: utterance.numTokens, commitments: utterance.commitments.slice(0, 3) };
+    } catch (e) { auditError('voice:commit-utterance', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:rerandomize-utterance', async (_e, payload) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      return { ok: false, error: 'demo stub – requires secret' };
+    } catch (e) { auditError('voice:rerandomize-utterance', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:or-sigma-prove-keyword', async (_e, payload) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      return { ok: false, error: 'demo stub – requires utterance + secret + keyword' };
+    } catch (e) { auditError('voice:or-sigma-prove-keyword', e); return { error: e.message }; }
+  });
+  ipcMain.handle('voice:or-sigma-verify-keyword', async (_e, payload) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      return { ok: false, error: 'demo stub – requires utterance + keyword + proof' };
+    } catch (e) { auditError('voice:or-sigma-verify-keyword', e); return { error: e.message }; }
   });
 
   // ─── Pro license ──────────────────────────────────────────────────────────────
@@ -1037,21 +1163,13 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     catch (e) { return { ok: false, error: e.message }; }
   });
 
-  // ─── Voice: silent-speech ZK + anonymous voiceprint auth ─────────────────────
-  ipcMain.handle('voice:self-test', () => {
-    try { return require('./voice-privacy.js').selfTest(); }
-    catch (e) { return { ok: false, error: e.message }; }
-  });
-  ipcMain.handle('voice:commit-utterance', (_e, body = {}) => {
-    try {
-      const v = require('./voice-privacy.js');
-      const tokens = Array.isArray(body.tokens) ? body.tokens.map(Number)
-        : v.simulateUtterance ? v.simulateUtterance() : null;
-      if (!tokens) return { ok: false, error: 'tokens required' };
-      return { ok: true, ...v.commitUtterance(tokens) };
-    } catch (e) { return { ok: false, error: e.message }; }
-  });
-  ipcMain.handle('voice:prove-keyword', (_e, body = {}) => {
+  // ─── Voice: silent-speech ZK + anonymous voiceprint auth (merge) ────────────
+  // The EARLIER block (L270-337) already registered voice:self-test etc.
+  // A second registration throws and killed every handler after it
+  // (mic/camera/enforcer/app) — the root cause of the blank-shell bug.
+  // These variants handle a different shape; expose only the missing ones.
+  const _voiceReg = (ch, fn) => { try { ipcMain.handle(ch, fn); } catch (_) {} };
+  _voiceReg('voice:prove-keyword', (_e, body = {}) => {
     try {
       const v = require('./voice-privacy.js');
       const utt = body.utterance || body.public;
@@ -1062,30 +1180,20 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
       return { ok: true, proof: { A: proof.A, c: proof.c, z: proof.z } };
     } catch (e) { return { ok: false, error: e.message }; }
   });
-  ipcMain.handle('voice:verify-keyword', (_e, body = {}) => {
+  _voiceReg('voice:verify-keyword', (_e, body = {}) => {
     try {
       const v = require('./voice-privacy.js');
       const valid = v.orSigmaVerifyKeyword(body.utterance, Number(body.keyword), body.proof);
       return { ok: true, valid: !!valid };
     } catch (e) { return { ok: false, valid: false, error: e.message }; }
   });
-  ipcMain.handle('voice:build-registry', (_e, body = {}) => {
-    try {
-      const v = require('./voice-privacy.js');
-      const prints = Array.isArray(body.voiceprints) && body.voiceprints.length
-        ? body.voiceprints.map(Number)
-        : (v.simulateVoiceprint ? [1111, 2222, 3333, 4444] : null);
-      if (!prints) return { ok: false, error: 'voiceprints required' };
-      return { ok: true, ...v.buildRegistry(prints) };
-    } catch (e) { return { ok: false, error: e.message }; }
-  });
-  ipcMain.handle('voice:auth-prove', (_e, body = {}) => {
+  _voiceReg('voice:auth-prove', (_e, body = {}) => {
     try {
       const v = require('./voice-privacy.js');
       return { ok: true, ...v.voiceAuthProve(Number(body.voiceprint), body.registry) };
     } catch (e) { return { ok: false, error: e.message }; }
   });
-  ipcMain.handle('voice:auth-verify', (_e, body = {}) => {
+  _voiceReg('voice:auth-verify', (_e, body = {}) => {
     try {
       const v = require('./voice-privacy.js');
       return v.voiceAuthVerify(body.registry, body.proof);
@@ -1145,6 +1253,18 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   });
   ipcMain.handle('bio:rppg', (_e, body = {}) => {
     if (bioLocal?.rppg) return bioLocal.rppg(body.frames || [], Number(body.frameRate) || 30);
+    return { ok: false, available: false, error: 'biometric-local missing' };
+  });
+  ipcMain.handle('bio:neural-fingerprint', (_e, body = {}) => {
+    if (bioLocal?.neuralFingerprint) return bioLocal.neuralFingerprint(body.samples || [], body.opts || {});
+    return { ok: false, available: false, error: 'biometric-local missing' };
+  });
+  ipcMain.handle('bio:voice-clone', (_e, body = {}) => {
+    if (bioLocal?.voiceClone) return bioLocal.voiceClone(body.samples || [], body.opts || {});
+    return { ok: false, available: false, error: 'biometric-local missing' };
+  });
+  ipcMain.handle('bio:neural-codec', (_e, body = {}) => {
+    if (bioLocal?.neuralCodec) return bioLocal.neuralCodec(body.samples || [], body.opts || {});
     return { ok: false, available: false, error: 'biometric-local missing' };
   });
 
@@ -1430,7 +1550,45 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
       try {
         const win = ctx.mainWindow?.();
         if (win && !win.isDestroyed()) win.webContents.send('mic:alert', result);
+        // Tier-3 enforcement on confirmed alerts (no-op unless enforce mode is on)
+        if (enforcer && !enforcer.error && result.alerts) {
+          result.alerts.forEach(a => enforcer.actOnAlert({ device: 'mic', name: a.name, pid: a.pid }).catch(() => {}));
+        }
       } catch (_) {}
+    });
+  }
+
+  // ─── Camera Sentinel — face-detection / rPPG harvesting watch ────────────────
+  if (cameraSentinel && !cameraSentinel.error) {
+    cameraSentinel.start((result) => {
+      try {
+        const win = ctx.mainWindow?.();
+        if (win && !win.isDestroyed()) win.webContents.send('camera:alert', result);
+        // Tier-3 enforcement on confirmed alerts (no-op unless enforce mode is on)
+        if (enforcer && !enforcer.error && result.alerts) {
+          result.alerts.forEach(a => enforcer.actOnAlert({ device: 'camera', name: a.name, pid: a.pid }).catch(() => {}));
+        }
+      } catch (_) {}
+    });
+  }
+
+  // ─── Enforcer — user-space enforcement (Tier 3) ──────────────────────────────
+  if (enforcer && !enforcer.error) {
+    ipcMain.handle('enforcer:status', (_e) => {
+      assertOrigin(_e);
+      return enforcer.status();
+    });
+    ipcMain.handle('enforcer:set-enforce', (_e, on) => {
+      assertOrigin(_e);
+      return enforcer.setEnforce(!!on);
+    });
+    ipcMain.handle('enforcer:set-action', (_e, action) => {
+      assertOrigin(_e);
+      return enforcer.setAction(String(action || ''));
+    });
+    ipcMain.handle('enforcer:recent-actions', (_e, n) => {
+      assertOrigin(_e);
+      return enforcer.recentActions(typeof n === 'number' ? n : 20);
     });
   }
 
@@ -1456,6 +1614,79 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     assertOrigin(_e);
     if (micSentinel?.error) return { error: micSentinel.error };
     return micSentinel.listApproved();
+  });
+
+  // ─── Quarantine — monotonic deny that approval cannot clear ───────────────
+  ipcMain.handle('mic:quarantine', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('mic:quarantine', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    if (micSentinel?.error) return { ok: false, error: micSentinel.error };
+    try {
+      const r = micSentinel.quarantine(V.str(body.app || body.appName || '', { name: 'app', max: 128 }), String(body.reason || '').slice(0, 256));
+      try { _fsAudit.append({ event: 'mic_quarantine', app: body.app || body.appName, reason: body.reason || '' }); } catch (_) {}
+      return r;
+    } catch (e) { auditError('mic:quarantine', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('mic:unquarantine', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('mic:unquarantine', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    if (micSentinel?.error) return { ok: false, error: micSentinel.error };
+    try {
+      const r = micSentinel.unquarantine(V.str(body.app || body.appName || '', { name: 'app', max: 128 }), String(body.note || '').slice(0, 256));
+      try { _fsAudit.append({ event: 'mic_unquarantine', app: body.app || body.appName }); } catch (_) {}
+      return r;
+    } catch (e) { auditError('mic:unquarantine', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('mic:quarantined', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    if (micSentinel?.error) return { ok: false, error: micSentinel.error };
+    return { ok: true, quarantined: micSentinel.listQuarantined() };
+  });
+
+  // ─── Camera Sentinel — face-detection / rPPG harvesting watch ────────────────
+  ipcMain.handle('camera:status', async (_e) => {
+    assertOrigin(_e);
+    if (cameraSentinel?.error) return { error: cameraSentinel.error };
+    return cameraSentinel.check();
+  });
+
+  ipcMain.handle('camera:approve', (_e, appName) => {
+    assertOrigin(_e);
+    if (cameraSentinel?.error) return { error: cameraSentinel.error };
+    return cameraSentinel.approve(V.str(appName, { name: 'appName' }));
+  });
+
+  ipcMain.handle('camera:revoke', (_e, appName) => {
+    assertOrigin(_e);
+    if (cameraSentinel?.error) return { error: cameraSentinel.error };
+    return cameraSentinel.revoke(V.str(appName, { name: 'appName' }));
+  });
+
+  ipcMain.handle('camera:list-approved', (_e) => {
+    assertOrigin(_e);
+    if (cameraSentinel?.error) return { error: cameraSentinel.error };
+    return cameraSentinel.listApproved();
+  });
+  ipcMain.handle('camera:quarantine', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('camera:quarantine', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    if (cameraSentinel?.error) return { ok: false, error: cameraSentinel.error };
+    try {
+      const r = cameraSentinel.quarantine(V.str(body.app || body.appName || '', { name: 'app', max: 128 }), String(body.reason || '').slice(0, 256));
+      try { _fsAudit.append({ event: 'camera_quarantine', app: body.app || body.appName, reason: body.reason || '' }); } catch (_) {}
+      return r;
+    } catch (e) { auditError('camera:quarantine', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('camera:unquarantine', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('camera:unquarantine', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    if (cameraSentinel?.error) return { ok: false, error: cameraSentinel.error };
+    try {
+      const r = cameraSentinel.unquarantine(V.str(body.app || body.appName || '', { name: 'app', max: 128 }), String(body.note || '').slice(0, 256));
+      try { _fsAudit.append({ event: 'camera_unquarantine', app: body.app || body.appName }); } catch (_) {}
+      return r;
+    } catch (e) { auditError('camera:unquarantine', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('camera:quarantined', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    if (cameraSentinel?.error) return { ok: false, error: cameraSentinel.error };
+    return { ok: true, quarantined: cameraSentinel.listQuarantined() };
   });
 
   // ─── Transparency Log ─────────────────────────────────────────────────────────
@@ -1552,13 +1783,20 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   });
 
   // ── Fire Button (DDG) — nuke all in-process AI session state ─────────────────
-  // Clears: mic approved list, clipboard dedup hash, active agent traces,
-  // and posts a kill-switch to the API server for the current session.
-  // Desktop-side equivalent of the browser extension BURN_SESSION message.
+  // Clears: mic approved list, clipboard, browser cookies/cache/storage,
+  // active agent traces, and posts a kill-switch to the API server.
+  // Beats DDG: one tap clears web traces AND AI traces, with a signed proof.
   ipcMain.handle('session:burn', async (_e) => {
     assertOrigin(_e);
     // Clear mic approved list
     if (!micSentinel?.error && micSentinel.clearApproved) micSentinel.clearApproved();
+    try { clipboard.clear(); } catch (_) {}
+    try {
+      const { session } = require('electron');
+      const ses = session.fromPartition('persist:private');
+      await ses.clearStorageData();
+      await ses.clearCache();
+    } catch (e) { auditError('session:burn-clear', e); }
     // Agent traces live in server.js process — the kill-switch POST below handles them.
     // Notify API server kill-switch (best-effort)
     try {
@@ -1572,4 +1810,308 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     ctx.mainWindow?.()?.webContents?.send('session:burned', { ts: Date.now() });
     return { ok: true, burned: true, ts: Date.now() };
   });
+
+  // ─── MCISE OS Desktop IPC ───────────────────────────────────────────────────
+  const mciseHttp = (path, method, body) => {
+    return new Promise((resolve) => {
+      try {
+        const http = require('http');
+        const data = body ? JSON.stringify(body) : '';
+        const req = http.request({
+          host: '127.0.0.1',
+          port: process.env.KASBAH_API_PORT || 8788,
+          path: `/v1/mcise${path}`,
+          method,
+          headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(data) }
+        }, (res) => {
+          let out = '';
+          res.on('data', c => out += c);
+          res.on('end', () => {
+            try { resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, data: JSON.parse(out) }); }
+            catch { resolve({ ok: false, data: out }); }
+          });
+        });
+        req.on('error', () => resolve({ ok: false, data: null }));
+        if (data) req.write(data);
+        req.end();
+      } catch { resolve({ ok: false, data: null }); }
+    });
+  };
+
+  ipcMain.handle('mcise:fixed-core:list', async () => {
+    const r = await mciseHttp('/fixed-core', 'GET');
+    return r.data;
+  });
+  ipcMain.handle('mcise:audit:verify', async () => {
+    const r = await mciseHttp('/audit/verify', 'GET');
+    return r.data;
+  });
+  ipcMain.handle('mcise:ladder:status', async (_e, agentId) => {
+    const r = await mciseHttp(`/ladder/${agentId}`, 'GET');
+    return r.data;
+  });
+
+  // ─── SSI admission gate (kasbah-os/ssi_universal_core.py mirror) ──────────
+  const ssiLocal = (() => { try {
+    return tryRequire(['../../../src/ssi-admission.js', '../../src/ssi-admission.js']);
+  } catch (e) { return { error: e.message }; } })();
+  ipcMain.handle('ssi:status', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      if (ssiLocal && !ssiLocal.error) {
+        const t = ssiLocal.selfTest();
+        return { ok: t.passed === t.total, selfTest: t, rightsBase: ssiLocal.RIGHTS_BASE, epsilon: ssiLocal.EPSILON_LEAK };
+      }
+      return { ok: false, error: (ssiLocal && ssiLocal.error) || 'ssi unavailable' };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('ssi:screen', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('ssi:screen', { maxPerSecond: 10 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      if (ssiLocal && !ssiLocal.error) return { ok: true, ...ssiLocal.ssiScreen(body || {}) };
+      return { ok: false, error: (ssiLocal && ssiLocal.error) || 'ssi unavailable' };
+    } catch (e) { auditError('ssi:screen', e); return { ok: false, error: e.message }; }
+  });
+
+  // ─── SSI Python cores via api-server HTTP (spawns ssi_cli bridge) ─────────
+  // Falls back to 503-shaped payloads when the embedded api-server is down.
+  const _ssiHttp = (apiPath, method, body) => new Promise((resolve) => {
+    try {
+      const http = require('http');
+      const data = body ? JSON.stringify(body) : '';
+      const req = http.request({
+        host: '127.0.0.1', port: process.env.KASBAH_API_PORT || 8788,
+        path: apiPath, method,
+        headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(data) },
+      }, (res) => {
+        let out = '';
+        res.on('data', (c) => { out += c; });
+        res.on('end', () => {
+          try { resolve(JSON.parse(out)); }
+          catch { resolve({ ok: false, error: 'bad gateway response' }); }
+        });
+      });
+      req.on('error', () => resolve({ ok: false, error: 'api-server unreachable' }));
+      req.setTimeout(65000, () => { try { req.destroy(); } catch (_) {} resolve({ ok: false, error: 'ssi timeout' }); });
+      if (data) req.write(data);
+      req.end();
+    } catch { resolve({ ok: false, error: 'ssi bridge failed' }); }
+  });
+  ipcMain.handle('ssi:admit', async (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('ssi:admit', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    return _ssiHttp('/v1/ssi/admit', 'POST', body || {});
+  });
+  ipcMain.handle('ssi:engine-admit', async (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('ssi:engine-admit', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    return _ssiHttp('/v1/ssi/engine/admit', 'POST', body || {});
+  });
+  ipcMain.handle('ssi:engine-selftest', async (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    return _ssiHttp('/v1/ssi/engine/selftest', 'GET');
+  });
+
+  // ─── Travel mode — one toggle for the whole world ───────────────────────
+  // On: VPN auto-connect on boot + kill switch enforced. Off: restore prefs.
+  ipcMain.handle('travel:status', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      const s = ctx.loadSettings ? ctx.loadSettings() : {};
+      return { ok: true, on: !!s.travelMode, autoConnect: !!s.autoConnect, killSwitch: s.killSwitch !== false };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('travel:set', (_e, on) => {
+    try { assertOrigin(_e); rateLimit('travel:set', { maxPerSecond: 3 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      const s = ctx.loadSettings ? ctx.loadSettings() : {};
+      const next = ctx.saveSettings ? ctx.saveSettings({
+        travelMode: !!on,
+        autoConnect: !!on ? true : !!s.autoConnect,
+        killSwitch: !!on ? true : s.killSwitch,
+      }) : s;
+      try { _fsAudit.append({ event: 'travel_mode', on: !!on }); } catch (_) {}
+      return { ok: true, on: !!on, settings: { travelMode: !!next.travelMode } };
+    } catch (e) { auditError('travel:set', e); return { ok: false, error: e.message }; }
+  });
+
+  // ─── My data — see it, take it, delete it ─────────────────────────────────
+  const KASBAH_FILES = () => {
+    const home = os.homedir();
+    const cands = ['.kasbah-settings.json', '.kasbah-backup', '.kasbah-vault.json', '.kasbah-audit.jsonl'];
+    const out = [];
+    for (const c of cands) {
+      const p = path.join(home, c);
+      try {
+        const st = fs.statSync(p);
+        out.push({ file: c, bytes: st.isDirectory() ? null : st.size, dir: st.isDirectory() });
+      } catch (_) {}
+    }
+    return out;
+  };
+  ipcMain.handle('data:inventory', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      return { ok: true, files: KASBAH_FILES(), home: os.homedir() };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('data:export', (_e) => {
+    try { assertOrigin(_e); rateLimit('data:export', { maxPerSecond: 2 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      const bundle = { exportedAt: new Date().toISOString(), settings: null, browser: null, honeytokens: 0 };
+      try { bundle.settings = ctx.loadSettings ? ctx.loadSettings() : null; } catch (_) {}
+      try { bundle.browser = { history: browserStore.historyList(1000), bookmarks: browserStore.bookmarkList() }; } catch (_) {}
+      try { bundle.honeytokens = (honey.list() || []).length; } catch (_) {}
+      try { bundle.audit = (_fsAudit.entries || []).slice(-500); } catch (_) {}
+      const dest = path.join(os.homedir(), 'Downloads', `kasbah-my-data-${Date.now()}.json`);
+      fs.writeFileSync(dest, JSON.stringify(bundle, null, 2), { mode: 0o600 });
+      try { _fsAudit.append({ event: 'data_export', file: path.basename(dest) }); } catch (_) {}
+      return { ok: true, file: dest };
+    } catch (e) { auditError('data:export', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('data:erase', (_e) => {
+    try { assertOrigin(_e); rateLimit('data:erase', { maxPerSecond: 2 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      const done = [];
+      try { browserStore.historyClear(); done.push('history'); } catch (_) {}
+      try { browserStore.downloadsClear(); done.push('downloads'); } catch (_) {}
+      try { if (ctx.State && Array.isArray(ctx.State.recentActivity)) { ctx.State.recentActivity.length = 0; done.push('activity'); } } catch (_) {}
+      // Vault and audit log are NEVER touched here — vault needs its own
+      // delete per entry, the audit log is append-only by design.
+      try { _fsAudit.append({ event: 'data_erase', cleared: done }); } catch (_) {}
+      return { ok: true, cleared: done, kept: ['vault', 'audit-log'] };
+    } catch (e) { auditError('data:erase', e); return { ok: false, error: e.message }; }
+  });
+
+  // ─── Device pairing — your protection on every Mac, no cloud ─────────────
+  // Export: password-locked bundle (settings + vault + approved lists).
+  // Carry the file yourself (AirDrop/USB); import it on the other Mac.
+  function _pairKey(password, salt) {
+    return crypto.pbkdf2Sync(String(password || ''), salt, 100000, 32, 'sha256');
+  }
+  ipcMain.handle('device:export-pair', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('device:export-pair', { maxPerSecond: 2 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      const password = String(body.password || '');
+      if (password.length < 8) return { ok: false, error: 'Use a password of 8+ characters.' };
+      const bundle = { v: 1, exportedAt: new Date().toISOString(), settings: null, vault: [], mic: [], camera: [] };
+      try { bundle.settings = ctx.loadSettings ? ctx.loadSettings() : null; } catch (_) {}
+      // Vault entries only while unlocked; locked vault exports settings only.
+      try {
+        if (ctx._vault && ctx._vault.isUnlocked()) {
+          const full = ctx._vault.listFull() || [];
+          bundle.vault = full.slice(0, 500);
+          bundle.vaultLocked = false;
+        } else {
+          bundle.vaultLocked = true;
+        }
+      } catch (_) { bundle.vaultLocked = true; }
+      try { if (!micSentinel?.error && micSentinel.listApproved) bundle.mic = micSentinel.listApproved(); } catch (_) {}
+      try { if (!cameraSentinel?.error && cameraSentinel.listApproved) bundle.camera = cameraSentinel.listApproved(); } catch (_) {}
+      const salt = crypto.randomBytes(16);
+      const key = _pairKey(password, salt);
+      const iv = crypto.randomBytes(12);
+      const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+      const enc = Buffer.concat([cipher.update(JSON.stringify(bundle), 'utf8'), cipher.final()]);
+      const out = { v: 1, salt: salt.toString('base64'), iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64'), data: enc.toString('base64') };
+      const dest = path.join(os.homedir(), 'Downloads', `kasbah-pair-${Date.now()}.kpair`);
+      fs.writeFileSync(dest, JSON.stringify(out), { mode: 0o600 });
+      try { _fsAudit.append({ event: 'device_pair_export', vaultEntries: bundle.vault.length }); } catch (_) {}
+      return { ok: true, file: dest, vaultEntries: bundle.vault.length };
+    } catch (e) { auditError('device:export-pair', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('device:import-pair', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('device:import-pair', { maxPerSecond: 2 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      const file = safePathInside(path.join(os.homedir(), 'Downloads'), path.basename(String(body.file || '')));
+      const password = String(body.password || '');
+      const outer = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (outer.v !== 1) return { ok: false, error: 'Unknown pairing file version.' };
+      const key = _pairKey(password, Buffer.from(outer.salt, 'base64'));
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(outer.iv, 'base64'));
+      decipher.setAuthTag(Buffer.from(outer.tag, 'base64'));
+      const bundle = JSON.parse(Buffer.concat([decipher.update(Buffer.from(outer.data, 'base64')), decipher.final()]).toString('utf8'));
+      const restored = { settings: false, vault: 0 };
+      try {
+        if (bundle.settings && ctx.saveSettings) { ctx.saveSettings({ ...bundle.settings, travelMode: !!bundle.settings.travelMode }); restored.settings = true; }
+      } catch (_) {}
+      try {
+        if (Array.isArray(bundle.vault) && bundle.vault.length && ctx._vault && ctx._vault.isUnlocked()) {
+          restored.vault = ctx._vault.importEntries(bundle.vault) || 0;
+        } else if (Array.isArray(bundle.vault) && bundle.vault.length) {
+          restored.vaultSkipped = 'unlock vault first, then import again';
+        }
+      } catch (e) { restored.vaultError = e.message; }
+      try { _fsAudit.append({ event: 'device_pair_import', file: path.basename(file), restored }); } catch (_) {}
+      return { ok: true, restored, note: 'Microphone/camera approvals are per-Mac and were not transferred.' };
+    } catch (e) { return { ok: false, error: e.message && e.message.includes('auth') ? 'Wrong password or damaged file.' : e.message }; }
+  });
+
+  // ─── SIEM connectors (local-first) ──────────────────────────────────────
+  ipcMain.handle('siem:status', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      if (siemLocal && !siemLocal.error && typeof siemLocal.status === 'function') return { ok: true, ...siemLocal.status() };
+      return { ok: false, error: siemLocal.error || 'siem unavailable' };
+    } catch (e) { auditError('siem:status', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('siem:forward', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('siem:forward', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      if (siemLocal && !siemLocal.error && typeof siemLocal.forwardEvent === 'function') return { ok: true, forwarded: siemLocal.forwardEvent(body || {}) };
+      return { ok: false, error: siemLocal.error || 'siem unavailable' };
+    } catch (e) { auditError('siem:forward', e); return { ok: false, error: e.message }; }
+  });
+
+  // ─── Data lineage (local-first) ─────────────────────────────────────────
+  ipcMain.handle('lineage:stats', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      if (lineageLocal && !lineageLocal.error) return { ok: true, ...lineageLocal.stats() };
+      return { ok: false, error: lineageLocal.error || 'lineage unavailable' };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('lineage:chain', (_e, body = {}) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      if (lineageLocal && !lineageLocal.error) return { ok: true, edges: lineageLocal.chain(body.keyId || 'anonymous', { surface: body.surface, limit: body.limit }) };
+      return { ok: false, error: lineageLocal.error || 'lineage unavailable' };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('lineage:provenance', (_e, body = {}) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      if (lineageLocal && !lineageLocal.error) return { ok: true, ...lineageLocal.provenance(body.keyId || 'anonymous') };
+      return { ok: false, error: lineageLocal.error || 'lineage unavailable' };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
+
+  // ─── Maqasid 5-pillar (local, no API hop) ───────────────────────────────
+  ipcMain.handle('maqasid:evaluate', (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('maqasid:evaluate', { maxPerSecond: 10 }); } catch (err) { return { ok: false, error: err.message }; }
+    try {
+      const text = String(body.text || body.content || '');
+      if (!text) return { ok: false, error: 'text required' };
+      if (maqasidLocal && !maqasidLocal.error) return { ok: true, ...new maqasidLocal.MaqasidFramework().evaluate(text) };
+      return { ok: false, error: maqasidLocal.error || 'maqasid unavailable' };
+    } catch (e) { auditError('maqasid:evaluate', e); return { ok: false, error: e.message }; }
+  });
+
+  // ─── Unified sentinel (advisory-only, local) ────────────────────────────
+  ipcMain.handle('sentinel:status', (_e) => {
+    try { assertOrigin(_e); } catch (err) { return { ok: false, error: err.message }; }
+    const s = sentinelLocal();
+    if (!s) return { ok: false, error: _sentinelError || 'sentinel unavailable' };
+    try { return { ok: true, stats: s.stats, layers: ['eigenEthics','shadowConsensus','topoShield','causalBreaker','zkProof','reynoldsFlow','punctEquil','harmonicDiss'].map((k) => ({ layer: k, loaded: !!s[k] })) }; }
+    catch (e) { return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('sentinel:scan', async (_e, body = {}) => {
+    try { assertOrigin(_e); rateLimit('sentinel:scan', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
+    const s = sentinelLocal();
+    if (!s) return { ok: false, error: _sentinelError || 'sentinel unavailable' };
+    try {
+      const text = String(body.text ?? body.content ?? '');
+      const r = await s.sentinelCheck({ agent: body.agent || 'desktop-user', verb: body.verb || 'ANALYZE', target: body.target || 'local', content: text });
+      return { ok: true, verdict: r.decision || r.verdict, risk: r.governance?.risk ?? r.scan?.risk ?? r.risk, decision: r.decision, violations: r.violations, advisory: true };
+    } catch (e) { auditError('sentinel:scan', e); return { ok: false, error: e.message }; }
+  });
+
 };

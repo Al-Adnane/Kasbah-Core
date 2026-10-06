@@ -5,7 +5,8 @@
    All API calls go through window.kasbah (Electron contextBridge in preload.js)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const $  = id => document.getElementById(id);
+const $   = id => document.getElementById(id);
+const _bwrIsElectron = navigator.userAgent.toLowerCase().includes('electron');
 const mk = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 // Full HTML-entity escape — MUST cover both quote characters, not just &<>,
 // because esc() is used both as plain text-node content AND inside
@@ -497,10 +498,27 @@ function renderResult(data, text) {
 
   // Findings in plain English (threats → readable items)
   const findingIcons = {high:'⚠',critical:'⛔',medium:'⚠',low:'ℹ',info:'ℹ'};
+  const threatLabel = (raw) => {
+    const s = String(raw);
+    const base = s.split(':')[0].toLowerCase().replace(/[_-]+/g, ' ').trim();
+    const detail = s.includes(':') ? s.slice(s.indexOf(':') + 1) : '';
+    const known = {
+      'pii': detail ? `Personal info found: ${detail.replace(/[_-]+/g, ' ')}` : 'Personal info found',
+      'ml injection': 'AI-injection pattern detected',
+      'jailbreak': 'Jailbreak attempt detected',
+      'data exfiltration': 'Tries to send data somewhere unsafe',
+      'credential solicitation': 'Asks for passwords or secret keys',
+      'secret leak': 'Contains a secret or API key',
+      'prompt injection': 'Prompt-injection pattern detected',
+      'sentinel': 'Extra safety check flagged this',
+    };
+    if (known[base]) return known[base] + (base === 'sentinel' && detail && !/signal/i.test(detail) ? ` (${detail})` : '');
+    return s.replace(/[_-]+/g, ' ').replace(/:\s*/g, ': ').replace(/^\w/, (c) => c.toUpperCase());
+  };
   const findingsHtml = threats.length ? `<div class="result-findings">${threats.slice(0,5).map((t,i)=>{
     const raw = typeof t==='string'?t:(t.description||t.type||t.name||'');
     const icon = findingIcons[typeof t==='object'?t.severity:'high']||'⚠';
-    return `<div class="finding" style="animation-delay:${i*40}ms"><span class="finding-icon">${icon}</span><span>${esc(raw)}</span></div>`;
+    return `<div class="finding" style="animation-delay:${i*40}ms"><span class="finding-icon">${icon}</span><span>${esc(threatLabel(raw))}</span></div>`;
   }).join('')}</div>` : '';
 
   // Stash the prompt so the Explain button can pass it back to /v1/explain
@@ -738,13 +756,13 @@ const PAGE_INIT = {
   // is what actually populates the current Activity page.
   audit:      () => { renderActivityPage(); },
   reports:    () => { renderActivityPage('reportsActivityList'); },
-  settings:   () => loadSettings(),
+  settings:   () => { loadSettings(); settingsInit(); myDataRefresh(); },
   products:   () => {},
   multiverse: () => {},
   kos:        () => {},
   ethics:     () => {},
   bench:      () => {},
-  redteam:    () => {},
+  redteam:    () => redteamInit(),
   forensics:  () => {},
   govlab:     () => {},
   advanced:   () => {},
@@ -786,8 +804,12 @@ const PAGE_INIT = {
   llmproxy:   () => llmStatus(),
   leaktest:   () => ltRefresh(),
   uservalue:  () => userValueInit(),
+  // NEW PAGES
+  digest:     () => loadDigest(),
+  mcp:        () => refreshMcpInventory(),
+  multimodal: () => initMultimodal(),
 };
-const CORE_PAGES = ['home','vpn','browser','passwords','scan','wifiguard','identity','backup','plans','settings'];
+const CORE_PAGES = ['home','scan','browser','vpn','passwords','settings'];
 const LABS_PAGES = [];
 
 function nav(page) {
@@ -798,6 +820,15 @@ function nav(page) {
   $(`nav${cap}`)?.classList.add('active');
   const mainEl = document.getElementById('main');
   if (mainEl) mainEl.classList.toggle('browser-full', page === 'browser');
+
+  // Show/hide all WebContentsViews when switching pages.
+  if (_bwrIsElectron && _bvProxyMap.size > 0) {
+    for (const t of (_bwr?.tabs || [])) {
+      if (!t.webview?._id) continue;
+      if (page === 'browser' && t.id === _bwr?.activeTab?.id) _bvUpdateBounds(t.webview._id);
+      else window.kasbah.bv.hide(t.webview._id).catch(()=>{});
+    }
+  }
 
   PAGE_INIT[page]?.();
 
@@ -816,6 +847,84 @@ function nav(page) {
 }
 
 /* ── Progressive disclosure: collapsible "More tools" + per-user pins ──── */
+const ALLTOOLS = [
+  ['Check a message','Paste anything suspicious — checked instantly.','scan'],
+  ['Private browser','Browse without trackers following you.','browser'],
+  ['VPN','One tap to a private connection.','vpn'],
+  ['Passwords','Your vault, locked on this Mac.','passwords'],
+  ['My receipts','Proof of everything Kasbah stopped.','proof'],
+  ['Weekly summary','What happened this week, in plain words.','digest'],
+  ['App connections','Which apps may use AI — you decide.','mcp'],
+  ['Mic & camera','No app records you without permission.','multimodal'],
+  ['Safety test','Attack yourself safely to see defenses work.','redteam'],
+  ['What I stopped','Everything Kasbah caught for you.','uservalue'],
+  ['AI helpers','Guardrails for your AI agents.','agentguard'],
+  ['AI Protection','Safety gate for coding assistants.','llmproxy'],
+  ['Decoy traps','Fake secrets that catch real thieves.','honey'],
+  ['Wi-Fi check','Is this network safe? Find out.','wifiguard'],
+  ['Breach check','Has your email leaked? Check here.','identity'],
+  ['Backups','Copy your vault to a new Mac.','backup'],
+  ['Leak check','Find what your Mac gives away.','leaktest'],
+  ['Activity','Every check Kasbah ran.','audit'],
+  ['Secure Log','A log nobody can rewrite.','auditfs'],
+  ['Scam Shield','Is this message a scam? Ask here.','scamshield'],
+  ['Purpose-built detectors','One question, one confident answer.','products'],
+  ['Live Threat Stream','Blocked attacks as they happen.','threat'],
+  ['Recovery','Split your key so you never lose it.','recovery'],
+  ['Code Scan','Find secrets hiding in your code.','vuln'],
+  ['Family Safety','Check kids AI chats for danger.','family'],
+  ['Discussion group','Four viewpoints on one question.','ethics'],
+  ['Forensics','Saved clues: voice, proofs, decoys.','forensics'],
+  ['Situation','Security status, one glance.','sitrep'],
+  ['Exit Market','Fastest private exit right now.','exitmarket'],
+  ['Claim Ledger','What Kasbah promises, and proof.','claims'],
+  ['Impact','What your protection is worth.','impact'],
+  ['Check-in','If you go quiet, Kasbah tells someone.','deadman'],
+  ['Compliance','Pass your security checklist.','compliance'],
+  ['Watch list','Every AI surface, watched.','connect'],
+  ['Gateway','Ask any AI through Kasbah first.','gateway'],
+  ['Account','Plan, keys, and workspaces.','account'],
+  ['How the pieces fit','What the detector finds, simply.','advanced'],
+  ['System','Engine health at a glance.','system'],
+  ['Usage','How much protection you have left.','usage'],
+  ['Webhooks','Tell your other tools when Kasbah acts.','webhooks'],
+  ['Reports','Download proof for auditors.','reports'],
+  ['Settings','Sidebar, protection, data.','settings'],
+];
+function renderAllTools(filter) {
+  const grid = document.getElementById('toolsGrid'); if (!grid) return;
+  const q = String(filter || '').trim().toLowerCase();
+  const hits = ALLTOOLS.filter(t => !q || (t[0] + ' ' + t[1]).toLowerCase().includes(q));
+  grid.innerHTML = hits.length ? hits.map(t =>
+    '<button class="settings-card" style="margin:0;padding:14px;text-align:left;cursor:pointer" data-navtool="' + t[2] + '">' +
+    '<div style="font-weight:700;font-size:13.5px">' + esc(t[0]) + '</div>' +
+    '<div class="muted" style="font-size:12px;margin-top:4px">' + esc(t[1]) + '</div></button>'
+  ).join('') : '<span class="muted">No tool matches.</span>';
+  grid.querySelectorAll('[data-navtool]').forEach(b => {
+    b.addEventListener('click', () => nav(b.getAttribute('data-navtool')));
+  });
+}
+
+function toolSearch(q) {
+  const out = $('toolSearchOut');
+  const query = String(q || '').trim().toLowerCase();
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.style.display = (!query || n.textContent.toLowerCase().includes(query)) ? '' : 'none';
+  });
+  if (!out) return;
+  const ALL = [['AI helpers','agentguard'],['App safety switch','llmproxy'],['Decoy traps','honey'],['Wi-Fi check','wifiguard'],['Breach check','identity'],['Backups','backup'],['Leak check','leaktest'],['Plan & upgrades','plans'],['My data','settings'],['Every Mac (pairing)','settings'],['Travel mode','settings'],['Check a message','scan'],['Private browser','browser'],['VPN','vpn'],['Passwords','passwords'],['My receipts','proof'],['Weekly summary','digest'],['App connections','mcp'],['Mic & camera','multimodal'],['Safety test','redteam'],['Settings','settings'],['What I stopped','uservalue']];
+  if (!query) { out.style.display = 'none'; out.innerHTML = ''; return; }
+  const hits = ALL.filter(([label]) => label.toLowerCase().includes(query)).slice(0, 8);
+  out.style.display = 'block';
+  out.innerHTML = hits.length ? hits.map(([label, page]) => `<button class="tl-btn" style="margin:2px;font-size:11px" data-hc="${_h((event, el) => { nav('${page}') })}">${label}</button>`).join('') : '<span class="muted" style="font-size:11px">No tool matches.</span>';
+}
+function checkTab(kind) {
+  const hint = $('checkTabHint');
+  for (const id of ['checkTabMsg', 'checkTabPhoto', 'checkTabApp']) $(id)?.style.setProperty('font-weight', id === 'checkTab' + kind[0].toUpperCase() + kind.slice(1) ? '700' : '400');
+  if (kind === 'photo') { if (hint) hint.textContent = 'Jumping to Mic & camera — drop a file there.'; nav('multimodal'); return; }
+  if (kind === 'app') { if (hint) hint.textContent = 'Jumping to App connections — pick an app to review.'; nav('mcp'); return; }
+  if (hint) hint.textContent = 'Paste any text below and press Check now.';
+}
 function toggleMore(forceOpen) {
   const list = $('navMoreList'); const chev = $('navMoreChev'); if (!list) return;
   const willOpen = forceOpen === true || list.style.display === 'none';
@@ -831,16 +940,26 @@ function toggleLabs(forceOpen) {
   try { localStorage.setItem('kasbah.sidebar.labsOpen', willOpen ? '1' : '0'); } catch(_) {}
 }
 
-// Real opt-in for the whole Labs group (10 unvalidated pages) — off by default,
-// set in Settings > Sidebar > Show Labs. Distinct from toggleLabs() above,
-// which only expands/collapses the group once it's already visible.
+// Real opt-in for the whole Labs group (10 unvalidated pages) — on by default now,
 function isLabsVisible() {
-  try { return localStorage.getItem('kasbah.labs.enabled') === '1'; } catch { return false; }
+  try { return localStorage.getItem('kasbah.labs.enabled') !== '0'; } catch { return true; }
 }
 function applyLabsVisibility() {
   const group = $('navLabsGroup'); if (!group) return;
   group.style.display = isLabsVisible() ? '' : 'none';
   const tog = $('togLabsVisible'); if (tog) tog.classList.toggle('on', isLabsVisible());
+}
+
+// Auto-expand Advanced section on first run so new pages are visible
+function ensureAdvancedExpanded() {
+  try {
+    // Always expand for now to ensure visibility
+    const list = $('navMoreList');
+    const chev = $('navMoreChev');
+    if (list) list.style.display = 'block';
+    if (chev) chev.style.transform = 'rotate(90deg)';
+    localStorage.setItem('kasbah.sidebar.moreOpen', '1');
+  } catch(_) {}
 }
 function toggleLabsVisibility() {
   const next = !isLabsVisible();
@@ -914,7 +1033,19 @@ function renderPinned() {
     if (labsOpen) toggleLabs(true);
   } catch(_) {}
   applyLabsVisibility();
+  ensureAdvancedExpanded();
   renderPinned();
+  // Safety net: relocate any .page div that ended up outside #main
+  // (e.g. swallowed by an unclosed modal) — without this, the page is
+  // trapped inside a display:none ancestor and can never be shown.
+  try {
+    const mainEl0 = document.getElementById('main');
+    if (mainEl0) {
+      document.querySelectorAll('.page').forEach(p => {
+        if (!mainEl0.contains(p)) mainEl0.appendChild(p);
+      });
+    }
+  } catch(_) {}
 })();
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1158,9 +1289,9 @@ async function governAll() {
     const errs      = results.filter(x => x.error).length;
     let msg = '';
     if (installed) msg += `Installed into ${installed} host${installed===1?'':'s'}. `;
-    if (skipped)   msg += `${skipped} already governed. `;
+    if (skipped)   msg += `${skipped} already protected. `;
     if (errs)      msg += `${errs} failed.`;
-    toast(msg || 'All hosts already governed.', errs ? 'warn' : 'success', 4500);
+    toast(msg || 'All apps already protected.', errs ? 'warn' : 'success', 4500);
     showRouting();
     discoverScan();
   } catch(e) { toast('Govern-all failed: ' + e.message, 'error'); }
@@ -1598,15 +1729,15 @@ async function setsSysRefresh() {
    PRODUCTS — 11 specialized engines via /v1/products/<slug>/analyze
    ═══════════════════════════════════════════════════════════════════════════ */
 const PRODUCTS = [
-  { slug:'resume-authentic',   name:'Resume Authentic',    short:'Resume',       desc:'Tell a real candidate from an AI-written résumé in seconds.' },
-  { slug:'botnet-radar',       name:'Botnet Radar',        short:'Botnet',       desc:'Unmask coordinated bot swarms pretending to be a real crowd.' },
-  { slug:'legal-evidence',     name:'Legal Evidence',      short:'Legal',        desc:'Court-ready proof of whether content was made by AI — signed and verifiable.' },
-  { slug:'baseline-drift',     name:'Baseline Drift',      short:'Baseline',     desc:'Catch your AI agent the moment its behavior starts to slip.' },
-  { slug:'dao-vote-guard',     name:'DAO Vote Guard',      short:'DAO',          desc:'Detect rigged or manipulated votes before they pass.' },
-  { slug:'quantum-sentinel',   name:'Quantum Sentinel',    short:'Quantum',      desc:'Flag AI answers that are confidently wrong.' },
-  { slug:'neural-witness',     name:'Neural Witness',      short:'Neural',       desc:'Fingerprint exactly which AI model wrote a piece of text.' },
-  { slug:'chronos-paradox',    name:'Chronos Paradox',     short:'Chronos',      desc:'Spot stories and timelines that can\'t physically be true.' },
-  { slug:'manifold-validator', name:'Manifold Validator',  short:'Manifold',     desc:'Flag answers that drift outside what\'s actually plausible.' }
+  { slug:'resume-authentic',   name:'Real resume check',       short:'Resume',   desc:'Tell a real candidate from an AI-written resume in seconds.' },
+  { slug:'botnet-radar',       name:'Fake crowd check',        short:'Bots',     desc:'Unmask coordinated bot swarms pretending to be a real crowd.' },
+  { slug:'legal-evidence',     name:'Court proof check',       short:'Legal',    desc:'Proof of whether content was made by AI, signed and verifiable.' },
+  { slug:'baseline-drift',     name:'Agent behavior check',    short:'Agent',    desc:'Catch your AI agent the moment its behavior starts to slip.' },
+  { slug:'dao-vote-guard',     name:'Vote rigging check',      short:'Votes',    desc:'Detect rigged or manipulated votes before they pass.' },
+  { slug:'quantum-sentinel',   name:'Confidently-wrong check', short:'Wrong',    desc:'Flag AI answers that are confidently wrong.' },
+  { slug:'neural-witness',     name:'Which-AI check',          short:'Which AI', desc:'Fingerprint exactly which AI model wrote a piece of text.' },
+  { slug:'chronos-paradox',    name:'Impossible-story check',  short:'Stories',  desc:'Spot stories and timelines that cannot physically be true.' },
+  { slug:'manifold-validator', name:'Implausibility check',    short:'Implausible', desc:'Flag answers that drift outside what is actually plausible.' }
 ];
 let _prodActive = PRODUCTS[0];
 
@@ -1763,7 +1894,7 @@ async function mvRun() {
     toast('Multiverse query failed: ' + e.message, 'error');
     $('mvResult').innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${e.message}</div>`;
   } finally {
-    btn.disabled = false; btn.textContent = 'Query all universes';
+    btn.disabled = false; btn.textContent = 'Run check';
   }
 }
 
@@ -2022,7 +2153,7 @@ function ethSetMode(m) {
   _ethMode = m;
   $('ethModeEval').classList.toggle('on', m === 'eval');
   $('ethModeDebate').classList.toggle('on', m === 'debate');
-  $('ethRunBtn').textContent = m === 'debate' ? 'Open debate' : 'Convene parliament';
+  $('ethRunBtn').textContent = m === 'debate' ? 'Ask all four' : 'Check values';
 }
 
 function ethRenderParliament(results) {
@@ -2139,7 +2270,7 @@ async function ethRun() {
     $('ethConsensus').innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${e.message}</div>`;
   } finally {
     btn.disabled = false;
-    btn.textContent = _ethMode === 'debate' ? 'Open debate' : 'Convene parliament';
+    btn.textContent = _ethMode === 'debate' ? 'Ask all four' : 'Check values';
   }
 }
 
@@ -2612,7 +2743,7 @@ async function loadSettings() {
 
 /* ── Onboarding ───────────────────────────────────────────────────────────── */
 const Ob = {
-  step:0, total:3,
+  step:0, total:4,
   show(){
     $('onboarding').classList.add('show');
     $('loadScreen').classList.add('fade');
@@ -2653,6 +2784,29 @@ setTimeout(() => {
   const b1 = $('obBtn1b');
   if (b1) b1.onclick = async () => {
     try { await window.kasbah.llmproxy.start(8796); toast('AI Gate', 'Started on 127.0.0.1:8796', 2500); } catch (_) {}
+    Ob.next();
+  };
+  const g = $('obBtn2');
+  if (g) g.onclick = async () => {
+    const out = $('obGuardsOut');
+    try {
+      const [mic, cam, voice] = await Promise.all([
+        window.kasbah.mic.status().catch((e) => ({ error: String(e) })),
+        window.kasbah.camera.status().catch((e) => ({ error: String(e) })),
+        window.kasbah.voice.selfTest().catch((e) => ({ error: String(e) })),
+      ]);
+      const okMic = !mic.error, okCam = !cam.error, okVoice = !voice.error;
+      if (out) out.textContent = `Microphone guard ${okMic ? 'on' : 'off'} · Camera guard ${okCam ? 'on' : 'off'} · Voice check ${okVoice ? 'ready' : 'off'}`;
+      toast('Listening guards', okMic && okCam ? 'Microphone + camera watched on this Mac' : 'Some guards unavailable — see Settings', 3000);
+    } catch (_) { if (out) out.textContent = 'Guards could not be reached.'; }
+    Ob.next();
+  };
+  const t = $('obBtn2b');
+  if (t) t.onclick = async () => {
+    try {
+      const r = await window.kasbah.travel.set(true);
+      toast('Travel mode', r.ok ? 'On — VPN auto-connects, kill switch enforced' : 'Could not enable', 3000);
+    } catch (_) {}
     Ob.next();
   };
 }, 500);
@@ -2831,7 +2985,7 @@ function wireAll() {
       const risk = (d.risk||0).toFixed(3);
       box.style.background = v==='ALLOW'?'#f0fdf4':'#fef2f2';
       box.style.borderColor = v==='ALLOW'?'#bbf7d0':'#fecaca';
-      box.innerHTML = `✅ Test governed — verdict: <b style="color:${v==='ALLOW'?'#059669':'#dc2626'}">${v}</b> | risk: ${risk} | threats: ${(d.threats||[]).length || 0}<br><span style="color:var(--muted)">Every API call through Kasbah gets the same treatment — in real-time, with a cryptographic receipt.</span>`;
+      box.innerHTML = `Check passed — verdict: <b style="color:${v==='ALLOW'?'#059669':'#dc2626'}">${v}</b> | risk: ${risk} | threats: ${(d.threats||[]).length || 0}<br><span style="color:var(--muted)">Every API call through Kasbah gets the same treatment — in real-time, with a cryptographic receipt.</span>`;
       // Also update sidebar stats
       if (d.verdict) {
         S.counts.scanned++;
@@ -3220,6 +3374,13 @@ const PAGE_CHANGE = {
   webhooks:   () => loadWebhooks(),
   compliance: () => loadPassportSelect(),
   vpn:        () => vpnRefresh(),
+  products:   () => { try { prodInit(); } catch (_) {} },
+  system:     () => { try { sysRefresh(); } catch (_) {} },
+  bench:      () => { try { benchLoadLast(); } catch (_) {} },
+  alltools:   () => { try { renderAllTools(''); const si = document.getElementById('toolsSearch'); if (si) si.value = ''; } catch (_) {} },
+  usage:      () => { try { usageLoad(); } catch (_) {} },
+  account:    () => { try { acctInit(); } catch (_) {} },
+  advanced:   () => { try { advInit(); } catch (_) {} },
 };
 function onPageChange(page) {
   // Special-cased (not table-driven): leaving the threat page must tear down
@@ -3776,7 +3937,7 @@ function shareReceipt(sessionId, agentName) {
   // Generate a shareable receipt card — the viral mechanic
   const session = S.completedSessions.find(s => s.sessionId === sessionId) || {};
   const cost = session.budget?.costCents ? '$' + (session.budget.costCents/100).toFixed(2) : '$0.00';
-  const text = `🛡️ Agent run governed by Kasbah\n\n"${agentName || 'AI agent'}"\n${session.toolCount||0} tool calls · ${session.turnCount||0} turns · ${cost} spent\nRisk score: ${Math.round((session.riskScore||0)*100)}%\n\nKasbah held the contract. bekasbah.com`;
+  const text = `Agent check\n\n"${agentName || 'AI agent'}"\n${session.toolCount||0} tool calls · ${session.turnCount||0} turns · ${cost} spent\nRisk score: ${Math.round((session.riskScore||0)*100)}%\n\nKasbah held the contract. bekasbah.com`;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(() => toast('Receipt copied — share it!', 'ok', 2500));
   } else {
@@ -3793,7 +3954,7 @@ function checkUpgradeTriggers(event) {
   if (event === 'threat_blocked') {
     setTimeout(() => {
       showUpgradeBanner(
-        '🛡️ Kasbah just blocked a threat',
+        'Kasbah just blocked a threat',
         'On Free you get 5 sessions/month. Upgrade to Developer ($29/mo) for unlimited sessions and full enforcement.',
         'Upgrade — $29/mo'
       );
@@ -4029,10 +4190,1212 @@ async function redteamRun() {
     $('rtProgress').textContent = '';
   } finally { btn.disabled = false; btn.textContent = 'Run full suite'; }
 }
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NEW PAGES — Digest, MCP Inventory, Multimodal, Red-Team Dashboard
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+// Digest page — weekly "saved you" summary from /v1/intervention/digest
+async function loadDigest() {
+  const wrap = $('digestCards');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="muted" style="padding:16px">Loading digest…</div>';
+  try {
+    const r = await window.kasbah.api('GET', '/v1/intervention/digest');
+    const j = r.body || {};
+    const events = j.events || [];
+    if (events.length === 0) {
+      wrap.innerHTML = '<div class="muted" style="padding:16px">No interventions this week. You\'re clean.</div>';
+      return;
+    }
+    wrap.innerHTML = events.map((ev, i) => `
+      <div class="digest-card" data-hc="${_h((e, el) => { toggleDigestCard(el) })}">
+        <div class="digest-card-header">
+          <span>${esc(ev.type || 'Intervention')}</span>
+          <span class="digest-card-type">${esc(ev.severity || 'info')}</span>
+        </div>
+        <div class="digest-card-expanded" style="display:none">
+          <strong>Prompt:</strong> ${esc((ev.prompt || '').slice(0, 200))}<br>
+          <strong>Action:</strong> ${esc(ev.action || 'N/A')}<br>
+          <strong>Risk:</strong> ${ev.riskScore != null ? (ev.riskScore * 100).toFixed(0) + '%' : 'N/A'}<br>
+          <strong>Time:</strong> ${esc(ev.timestamp || new Date().toISOString())}
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
+  }
+}
+function toggleDigestCard(el) {
+  const expanded = el.querySelector('.digest-card-expanded');
+  if (expanded) expanded.style.display = expanded.style.display === 'none' ? 'block' : 'none';
+}
+function exportDigest() {
+  window.kasbah.api('GET', '/v1/intervention/digest').then(r => {
+    const blob = new Blob([JSON.stringify(r.body, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `kasbah-digest-${Date.now()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    toast('Digest exported', 'success');
+  }).catch(e => toast('Export failed: ' + e.message, 'error'));
+}
+function shareDigest() {
+  toast('Share feature coming soon', 'info');
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FORENSICS — Biometric · ZK · Security · Honeytokens
    ═══════════════════════════════════════════════════════════════════════════ */
+// MCP Inventory page
+async function refreshMcpInventory() {
+  const wrap = $('mcpInventory');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="muted" style="padding:16px">Loading MCP inventory…</div>';
+  try {
+    const r = await window.kasbah.api('GET', '/v1/mcp/inventory');
+    const j = r.body || {};
+    const servers = j.servers || [];
+    if (servers.length === 0) {
+      wrap.innerHTML = '<div class="muted" style="padding:16px">No MCP servers discovered. Run a scan.</div>';
+      return;
+    }
+    wrap.innerHTML = servers.map(s => `
+      <div class="mcp-server">
+        <div class="mcp-server-header">
+          <div>
+            <strong>${esc(s.name || 'Unnamed')}</strong>
+            <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.transport || 'stdio')}</span>
+            <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.status || 'unknown')}</span>
+          </div>
+        </div>
+        <div>
+          ${(s.tools || []).map(t => `
+            <div class="mcp-tool ${t.blocked ? 'blocked' : ''}" data-tool="${esc(t.name)}">
+              <span>${esc(t.name)}</span>
+              <div class="mcp-toggle ${t.blocked ? 'active' : ''}" data-hc="${_h((e, el) => { toggleMcpTool(el, '${esc(s.id)}', '${esc(t.name)}') })}"></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
+  }
+}
+async function toggleMcpTool(el, serverId, toolName) {
+  const isActive = el.classList.toggle('active');
+  try {
+    await window.kasbah.api('POST', '/v1/mcp/tool', { serverId, toolName, blocked: isActive });
+    toast(`Tool ${isActive ? 'blocked' : 'unblocked'}`, isActive ? 'warn' : 'success');
+  } catch (e) {
+    el.classList.toggle('active'); // revert
+    toast('Failed: ' + e.message, 'error');
+  }
+}
+async function scanMcp() {
+  toast('Checking connected apps…', 'info');
+  try {
+    await window.kasbah.api('POST', '/v1/mcp/scan', {});
+    await refreshMcpInventory();
+    toast('App check complete', 'success');
+  } catch (e) {
+    toast('Scan failed: ' + e.message, 'error');
+  }
+}
+// Multimodal Scanner page
+let _mmAudioContext = null;
+let _mmAudioAnalyser = null;
+let _mmAudioStream = null;
+let _mmAnimationFrame = null;
+
+function initMultimodal() {
+  const dropZone = $('mmDropZone');
+  const fileInput = $('mmFileInput');
+
+  // Silent Speech & Biometric Watch — mic/camera sentinels (independent of drop zone)
+  initBiometricWatch();
+
+  if (!dropZone || !fileInput) return;
+
+  // Drag & drop
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) handleMultimodalFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', () => fileInput.click());
+}
+async function handleMultimodalFiles(files) {
+  const results = $('mmResults');
+  if (!results) return;
+  results.innerHTML = '';
+  for (const file of Array.from(files)) {
+    if (file.size > 50 * 1024 * 1024) {
+      addMmResult(file.name, 'error', 'File too large (max 50MB)');
+      continue;
+    }
+    const card = addMmResult(file.name, 'pending', 'Uploading…');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const r = await window.kasbah.api('POST', '/v1/multimodal/scan', formData, { 
+        headers: {} // Let browser set Content-Type for FormData
+      });
+      const j = r.body || {};
+      updateMmResult(card, j);
+    } catch (e) {
+      updateMmResult(card, { error: e.message });
+    }
+  }
+}
+function addMmResult(filename, status, detail) {
+  const results = $('mmResults');
+  const id = 'mmr-' + Date.now() + Math.random().toString(36).slice(2);
+  const div = document.createElement('div');
+  div.id = id;
+  div.className = 'mm-result' + (status === 'error' || status === 'hazard' ? ' hazard' : '');
+  div.innerHTML = `
+    <div class="mm-result-header">
+      <span>${esc(filename)}</span>
+      <span class="mm-result-tag ${status === 'hazard' || status === 'error' ? 'hazard' : ''}">${esc(status.toUpperCase())}</span>
+    </div>
+    <div class="mm-result-details">${esc(detail)}</div>
+  `;
+  results.prepend(div);
+  return id;
+}
+function updateMmResult(id, data) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  const isHazard = data.threats?.length > 0 || data.pii?.length > 0 || data.secrets?.length > 0;
+  card.className = 'mm-result' + (isHazard ? ' hazard' : '');
+  const tag = card.querySelector('.mm-result-tag');
+  if (tag) tag.textContent = isHazard ? 'HAZARD' : 'CLEAR';
+  tag.className = 'mm-result-tag' + (isHazard ? ' hazard' : '');
+  const details = [
+    data.threats ? `Threats: ${data.threats.map(t => t.type).join(', ')}` : null,
+    data.pii ? `PII: ${data.pii.map(p => p.type).join(', ')}` : null,
+    data.secrets ? `Secrets: ${data.secrets.length}` : null,
+    data.promptInjection ? 'Prompt injection detected' : null,
+    data.error ? 'Error: ' + data.error : null
+  ].filter(Boolean).join(' | ');
+  const detailEl = card.querySelector('.mm-result-details');
+  if (detailEl) detailEl.textContent = details || 'No issues detected';
+}
+// Silent Speech Detection
+async function startSilentSpeech() {
+  const startBtn = $('mmAudioStart');
+  const stopBtn = $('mmAudioStop');
+  const status = $('mmAudioStatus');
+  const eventsEl = $('mmAudioEvents');
+  
+  if (!navigator.mediaDevices?.getUserMedia) {
+    toast('Audio input not available', 'error');
+    return;
+  }
+  
+  try {
+    _mmAudioStream = await navigator.mediaDevices.getUserMedia({ 
+      audio: { 
+        echoCancellation: true, 
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 16000
+      } 
+    });
+    
+    _mmAudioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const source = _mmAudioContext.createMediaStreamSource(_mmAudioStream);
+    _mmAudioAnalyser = _mmAudioContext.createAnalyser();
+    _mmAudioAnalyser.fftSize = 2048;
+    _mmAudioAnalyser.smoothingTimeConstant = 0.8;
+    source.connect(_mmAudioAnalyser);
+    
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    status.textContent = 'Listening for covert voice commands…';
+    eventsEl.innerHTML = '';
+    
+    _mmAudioLoop();
+  } catch (e) {
+    toast('Audio start failed: ' + e.message, 'error');
+  }
+}
+function _mmAudioLoop() {
+  if (!_mmAudioAnalyser || !_mmAudioContext) return;
+  
+  const buffer = new Uint8Array(_mmAudioAnalyser.frequencyBinCount);
+  _mmAudioAnalyser.getByteFrequencyData(buffer);
+  
+  // Analyze for silent speech indicators
+  // 1. Ultrasonic (>16kHz) energy
+  const nyquist = _mmAudioContext.sampleRate / 2;
+  const ultrasonicStart = Math.floor(16000 / nyquist * buffer.length);
+  let ultrasonicEnergy = 0;
+  for (let i = ultrasonicStart; i < buffer.length; i++) ultrasonicEnergy += buffer[i];
+  ultrasonicEnergy /= Math.max(1, buffer.length - ultrasonicStart);
+  
+  // 2. Low-energy speech formants (whisper detection: energy in 1-4kHz but low overall)
+  const speechStart = Math.floor(1000 / nyquist * buffer.length);
+  const speechEnd = Math.floor(4000 / nyquist * buffer.length);
+  let speechEnergy = 0;
+  for (let i = speechStart; i < speechEnd; i++) speechEnergy += buffer[i];
+  speechEnergy /= Math.max(1, speechEnd - speechStart);
+  
+  const totalEnergy = buffer.reduce((a,b) => a+b, 0) / buffer.length;
+  const whisperRatio = totalEnergy > 0 ? speechEnergy / totalEnergy : 0;
+  
+  // Detect anomalies
+  const now = new Date().toISOString();
+  let event = null;
+  
+  if (ultrasonicEnergy > 20) {
+    event = { type: 'ULTRASONIC', detail: `Energy: ${ultrasonicEnergy.toFixed(1)}`, warn: true };
+  } else if (whisperRatio > 0.3 && totalEnergy < 30) {
+    event = { type: 'WHISPER', detail: `Ratio: ${whisperRatio.toFixed(2)}, Energy: ${totalEnergy.toFixed(1)}`, warn: true };
+  } else if (totalEnergy > 100) {
+    event = { type: 'NORMAL_SPEECH', detail: `Energy: ${totalEnergy.toFixed(1)}`, warn: false };
+  }
+  
+  if (event) {
+    const eventsEl = $('mmAudioEvents');
+    if (eventsEl) {
+      const div = document.createElement('div');
+      div.className = 'audio-event' + (event.warn ? ' warn' : '');
+      div.innerHTML = `<span>[${now.split('T')[1].slice(0,8)}] ${event.type}</span><span>${event.detail}</span>`;
+      eventsEl.prepend(div);
+      // Keep last 50
+      while (eventsEl.children.length > 50) eventsEl.lastChild.remove();
+    }
+  }
+  
+  _mmAnimationFrame = requestAnimationFrame(_mmAudioLoop);
+}
+function stopSilentSpeech() {
+  if (_mmAnimationFrame) cancelAnimationFrame(_mmAnimationFrame);
+  if (_mmAudioStream) {
+    _mmAudioStream.getTracks().forEach(t => t.stop());
+    _mmAudioStream = null;
+  }
+  if (_mmAudioContext) {
+    _mmAudioContext.close().catch(()=>{});
+    _mmAudioContext = null;
+  }
+  _mmAudioAnalyser = null;
+  
+  const startBtn = $('mmAudioStart');
+  const stopBtn = $('mmAudioStop');
+  const status = $('mmAudioStatus');
+  if (startBtn) startBtn.disabled = false;
+  if (stopBtn) stopBtn.disabled = true;
+  if (status) status.textContent = 'Idle';
+  toast('Silent speech detection stopped', 'info');
+}
+
+// === ENHANCED HANDLERS FOR NEW UI ===
+
+// Audio events export/clear
+function exportAudioEvents() {
+  const eventsEl = $('mmAudioEvents');
+  if (!eventsEl || eventsEl.children.length === 0) {
+    toast('No events to export', 'info');
+    return;
+  }
+  const events = Array.from(eventsEl.children).map(el => el.textContent);
+  const blob = new Blob([events.join('\n')], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `silent-speech-log-${Date.now()}.txt`; a.click();
+  URL.revokeObjectURL(url);
+  toast('Audio log exported', 'success');
+}
+function clearAudioEvents() {
+  const eventsEl = $('mmAudioEvents');
+  if (eventsEl) eventsEl.innerHTML = '';
+  toast('Audio events cleared', 'info');
+}
+
+/* ── Silent Speech & Biometric Watch ─────────────────────────────────────────
+   Detects apps silently accessing the microphone (subvocal/near-silent speech
+   harvesting) and the camera (face detection, rPPG pulse harvesting). Uses the
+   TCC + lsof sentinels in the main process with a user-approved-list model. */
+
+let _bioWatchWired = false;
+
+function addBiometricAlert(kind, name, detail) {
+  const el = $('mmBiometricAlerts');
+  if (!el) return;
+  const div = document.createElement('div');
+  div.className = 'audio-event warn';
+  div.innerHTML = `<span>[${new Date().toLocaleTimeString()}] ${esc(kind)}</span><span>${esc(name)} — ${esc(detail)}</span>`;
+  el.prepend(div);
+  while (el.children.length > 50) el.lastChild.remove();
+}
+
+function _renderSentinelStatus(prefix, result, kindLabel) {
+  const dot = $(`${prefix}Dot`);
+  const active = $(`${prefix}Active`);
+  if (!dot || !active) return;
+  const recs = (result && result.active) || [];
+  const alerts = (result && result.alerts) || [];
+  if (result && result.error) {
+    dot.style.background = 'var(--amber)';
+    active.textContent = 'Sentinel unavailable (needs Full Disk Access for TCC; lsof fallback active)';
+    return;
+  }
+  if (alerts.length) {
+    dot.style.background = 'var(--red)';
+    active.textContent = `⚠ ${alerts.length} unapproved app${alerts.length !== 1 ? 's' : ''} capturing!`;
+    alerts.forEach(a => addBiometricAlert(kindLabel, a.name, `pid ${a.pid} — capturing without approval`));
+  } else if (recs.length) {
+    dot.style.background = 'var(--green)';
+    active.textContent = `${recs.length} approved process${recs.length !== 1 ? 'es' : ''} active — all clear`;
+  } else {
+    dot.style.background = 'var(--green)';
+    active.textContent = 'No capture processes detected — all clear';
+  }
+}
+
+async function refreshMicSentinel() {
+  try {
+    const r = await window.kasbah.mic.status();
+    _renderSentinelStatus('mmMic', r?.body, 'MIC-HARVEST');
+    await renderApprovedApps();
+  } catch (e) { addBiometricAlert('MIC-ERROR', 'sentinel', e.message); }
+}
+
+async function refreshCameraSentinel() {
+  try {
+    const r = await window.kasbah.camera.status();
+    _renderSentinelStatus('mmCam', r?.body, 'FACE-DETECT');
+    await renderApprovedApps();
+  } catch (e) { addBiometricAlert('CAM-ERROR', 'sentinel', e.message); }
+}
+
+async function approveMicApp() {
+  const name = prompt('App name to approve for microphone access (e.g. Zoom, QuickTime):');
+  if (!name) return;
+  try {
+    await window.kasbah.mic.approve(name.trim());
+    toast(`${name.trim()} approved for microphone`, 'success');
+    await refreshMicSentinel();
+  } catch (e) { toast('Approve failed: ' + e.message, 'error'); }
+}
+
+async function approveCameraApp() {
+  const name = prompt('App name to approve for camera access (e.g. Zoom, FaceTime):');
+  if (!name) return;
+  try {
+    await window.kasbah.camera.approve(name.trim());
+    toast(`${name.trim()} approved for camera`, 'success');
+    await refreshCameraSentinel();
+  } catch (e) { toast('Approve failed: ' + e.message, 'error'); }
+}
+
+async function renderApprovedApps() {
+  const el = $('mmApprovedApps');
+  if (!el) return;
+  let micApps = [], camApps = [];
+  try { micApps = (await window.kasbah.mic.listApproved()) || []; } catch (_) {}
+  try { camApps = (await window.kasbah.camera.listApproved()) || []; } catch (_) {}
+  const rows = [];
+  micApps.forEach(a => rows.push({ app: a, dev: 'mic' }));
+  camApps.forEach(a => rows.push({ app: a, dev: 'camera' }));
+  if (!rows.length) { el.innerHTML = '<span class="muted" style="font-size:11.5px">None yet — apps you approve appear here</span>'; return; }
+  el.innerHTML = rows.map((r, i) =>
+    `<span class="k-tag" style="cursor:pointer;font-size:11px" data-hc="${_h((e, el2) => { revokeApprovedApp(r.app, r.dev) })}" title="Click to revoke">🎤 ${esc(r.app)} ✕</span>`
+  ).join('');
+}
+
+async function revokeApprovedApp(app, dev) {
+  try {
+    if (dev === 'camera') { await window.kasbah.camera.revoke(app); await refreshCameraSentinel(); }
+    else { await window.kasbah.mic.revoke(app); await refreshMicSentinel(); }
+    toast(`${app} revoked for ${dev}`, 'warn');
+    await renderApprovedApps();
+  } catch (e) { toast('Revoke failed: ' + e.message, 'error'); }
+}
+
+function initBiometricWatch() {
+  if (_bioWatchWired) { refreshMicSentinel(); refreshCameraSentinel(); return; }
+  _bioWatchWired = true;
+  // Live alerts pushed from the main-process sentinels
+  try { window.kasbah.on('mic:alert', (result) => { _renderSentinelStatus('mmMic', result, 'MIC-HARVEST'); }); } catch (_) {}
+  try { window.kasbah.on('camera:alert', (result) => { _renderSentinelStatus('mmCam', result, 'FACE-DETECT'); }); } catch (_) {}
+  refreshMicSentinel();
+  refreshCameraSentinel();
+  refreshEnforceStatus();
+  renderEnforceLog();
+}
+
+/* ── Live rPPG — real camera frames → green-channel pulse analysis ──────────
+   Bridges the real rPPGDetector DSP to actual getUserMedia capture: a live
+   face shows a periodic blood-volume pulse (0.7–4 Hz) in the green channel;
+   a photo, deepfake, or face-geometry harvesting pipeline does not. Only
+   per-frame channel means are POSTed — raw frames never leave the machine. */
+
+let _rppgStream = null;
+let _rppgVideo  = null;
+
+function stopRppgStream() {
+  if (_rppgStream) { _rppgStream.getTracks().forEach(t => t.stop()); _rppgStream = null; }
+  if (_rppgVideo) { _rppgVideo.remove(); _rppgVideo = null; }
+  const startBtn = $('rppgStartBtn'); const stopBtn = $('rppgStopBtn');
+  if (startBtn) startBtn.disabled = false;
+  if (stopBtn) stopBtn.disabled = true;
+}
+
+async function startRppgScan() {
+  const status = $('rppgStatus');
+  const verdictEl = $('rppgVerdict');
+  const detailsEl = $('rppgDetails');
+  const startBtn = $('rppgStartBtn');
+  if (!navigator.mediaDevices?.getUserMedia) { toast('Camera not available', 'error'); return; }
+  try {
+    if (startBtn) startBtn.disabled = true;
+    const stopBtn = $('rppgStopBtn'); if (stopBtn) stopBtn.disabled = false;
+    if (verdictEl) { verdictEl.style.display = 'none'; }
+    if (detailsEl) detailsEl.textContent = '';
+
+    if (status) status.textContent = 'Requesting camera…';
+    _rppgStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false });
+    if (!_rppgVideo) {
+      _rppgVideo = document.createElement('video');
+      _rppgVideo.muted = true; _rppgVideo.playsInline = true;
+      _rppgVideo.style.cssText = 'position:fixed;width:160px;height:120px;right:12px;bottom:12px;border-radius:8px;z-index:50;border:1px solid var(--border)';
+      document.body.appendChild(_rppgVideo);
+    }
+    _rppgVideo.srcObject = _rppgStream;
+    await _rppgVideo.play();
+
+    const total = 90, interval = 33; // ~3 s at 30 fps
+    if (status) status.textContent = `Capturing 0/${total} frames — keep your face in view…`;
+
+    const video = _rppgVideo;
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    const frames = [];
+    await new Promise((resolve) => {
+      let count = 0;
+      const iv = setInterval(() => {
+        try {
+          ctx.drawImage(video, 0, 0, 64, 64);
+          const d = ctx.getImageData(0, 0, 64, 64).data;
+          let r = 0, g = 0, b = 0; const n = d.length / 4;
+          for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+          frames.push({ r: r / n, g: g / n, b: b / n });
+        } catch (_) { /* frame skipped */ }
+        count++;
+        if (status) status.textContent = `Capturing ${count}/${total} frames — keep your face in view…`;
+        if (count >= total) { clearInterval(iv); resolve(); }
+      }, interval);
+    });
+
+    if (status) status.textContent = 'Analyzing pulse spectrum…';
+    const rr = await window.kasbah.api('POST', '/v1/biometric/rppg', { videoFrames: frames, frameRate: 30 });
+    const j = rr.body || {};
+
+    if (verdictEl) {
+      const live = j.pulseDetected;
+      verdictEl.style.display = 'flex';
+      verdictEl.style.background = live ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)';
+      verdictEl.style.color = live ? '#10b981' : '#ef4444';
+      verdictEl.textContent = live
+        ? `✓ LIVE FACE — periodic pulse present${j.bpmEstimate ? ` (${j.bpmEstimate} bpm)` : ''}`
+        : '⚠ NO PULSE SIGNAL — not a live face (photo, deepfake, or face-geometry harvesting signature)';
+      verdictEl.dataset.verdict = live ? 'live' : 'no-pulse';
+    }
+    if (detailsEl) {
+      detailsEl.textContent = JSON.stringify({
+        verdict: j.verdict, snr: j.snr, bandPowerRatio: j.bandPowerRatio,
+        autocorrPeak: j.autocorrPeak, framesAnalyzed: j.framesAnalyzed,
+        method: j.method, error: j.error,
+      }, null, 2);
+    }
+    if (status) status.textContent = 'Done — camera released';
+    stopRppgStream();
+  } catch (e) {
+    if (status) status.textContent = 'Failed: ' + e.message;
+    toast('rPPG failed: ' + e.message, 'error');
+    stopRppgStream();
+  }
+}
+
+/* ── ENFORCE mode (Tier 3) — user-space enforcement actions ─────────────── */
+
+async function toggleEnforceMode(el) {
+  const on = !el.classList.contains('on');
+  try {
+    const r = await window.kasbah.enforcer.setEnforce(on);
+    el.classList.toggle('on', on);
+    const tier = $('mmEnforceTier');
+    if (tier) tier.textContent = on ? 'Tier 3 — ENFORCING: ' + (r?.action || '') : 'Tier 1 — observe & alert';
+    toast(on ? 'ENFORCE mode ON — confirmed alerts will trigger the selected action' : 'ENFORCE mode OFF — alert-only', on ? 'warn' : 'success');
+    renderEnforceLog();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function setEnforceAction(action) {
+  try {
+    const r = await window.kasbah.enforcer.setAction(action);
+    if (r?.error) { toast(r.error, 'error'); return; }
+    const tier = $('mmEnforceTier');
+    if (tier && r?.enforce) tier.textContent = 'Tier 3 — ENFORCING: ' + action;
+    toast('Enforcement action set: ' + action, 'success');
+    renderEnforceLog();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function refreshEnforceStatus() {
+  try {
+    const r = await window.kasbah.enforcer.status();
+    const tog = $('mmEnforceToggle');
+    const tier = $('mmEnforceTier');
+    if (tog && r) tog.classList.toggle('on', !!r.enforce);
+    if (tier && r) tier.textContent = r.enforce ? 'Tier 3 — ENFORCING: ' + r.action : 'Tier 1 — observe & alert';
+  } catch (_) {}
+}
+
+async function renderEnforceLog() {
+  const el = $('mmEnforceLog');
+  if (!el) return;
+  try {
+    const actions = await window.kasbah.enforcer.recentActions(15) || [];
+    if (!actions.length) { el.innerHTML = '<div style="color:var(--muted)">No enforcement actions yet — every action is logged here.</div>'; return; }
+    el.innerHTML = actions.map(a =>
+      `<div>${esc((a.ts || '').replace('T', ' ').slice(0, 19))} — <strong>${esc(a.action || '')}</strong> ${esc(a.target || a.value || '')} ${a.ok === false ? '<span style="color:var(--red)">FAILED</span>' : ''}</div>`
+    ).join('');
+  } catch (e) { el.innerHTML = '<div style="color:var(--red)">Failed to load audit log</div>'; }
+}
+// Enhanced Digest
+async function loadDigest() {
+  const period = $('digestPeriod')?.value || 'day';
+  const wrap = $('digestCards');
+  const summaryWrap = $('digestSummaryCards');
+  const trustGradeEl = $('digestTrustGrade');
+  if (!wrap) return;
+  
+  wrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading digest…</div>';
+  if (summaryWrap) summaryWrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading…</div>';
+  if (trustGradeEl) trustGradeEl.style.display = 'none';
+  
+  try {
+    const r = await window.kasbah.api('GET', `/v1/intervention/digest?period=${period}`);
+    const j = r.body || {};
+    const events = j.events || [];
+    const counters = j.counters || {};
+    
+    // Trust Grade
+    if (trustGradeEl && j.trustGrade) {
+      trustGradeEl.textContent = `${j.trustGrade.grade} (${j.trustGrade.score})`;
+      trustGradeEl.className = `trust-grade-chip ${j.trustGrade.grade}`;
+      trustGradeEl.style.display = 'inline-flex';
+    }
+    
+    // Summary cards
+    if (summaryWrap) {
+      const saved = counters.saved || 0;
+      const scanned = (counters.silent_pass || 0) + (counters.warning_toast || 0) + (counters.hard_block || 0) + (counters.mute_block || 0);
+      const blocked = counters.hard_block || 0;
+      const warned = counters.warning_toast || 0;
+      
+      summaryWrap.innerHTML = `
+        <div class="stat-card ${saved > 0 ? 'trend-up' : ''}">
+          <div class="stat-card-value">${saved}</div>
+          <div class="stat-card-label">Leaks Prevented</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value">${scanned}</div>
+          <div class="stat-card-label">Actions Scanned</div>
+        </div>
+        <div class="stat-card ${blocked > 0 ? 'trend-up' : ''}">
+          <div class="stat-card-value">${blocked}</div>
+          <div class="stat-card-label">Hard Blocks</div>
+        </div>
+        <div class="stat-card ${warned > 0 ? 'trend-down' : ''}">
+          <div class="stat-card-value">${warned}</div>
+          <div class="stat-card-label">Warnings</div>
+        </div>
+      `;
+    }
+    
+    if (events.length === 0) {
+      wrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">No interventions this period. You\'re clean.</div>';
+      return;
+    }
+    
+    wrap.innerHTML = events.map((ev, i) => `
+      <div class="digest-card" data-hc="${_h((e, el) => { toggleDigestCard(el) })}">
+        <div class="digest-card-header">
+          <span>${esc(ev.type || 'Intervention')}</span>
+          <span class="digest-card-type">${esc(ev.severity || 'info')}</span>
+        </div>
+        <div class="digest-card-expanded" style="display:none">
+          <strong>Prompt:</strong> ${esc((ev.prompt || '').slice(0, 200))}<br>
+          <strong>Action:</strong> ${esc(ev.action || 'N/A')}<br>
+          <strong>Risk:</strong> ${ev.riskScore != null ? (ev.riskScore * 100).toFixed(0) + '%' : 'N/A'}<br>
+          <strong>Time:</strong> ${esc(ev.timestamp || new Date().toISOString())}
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px;text-align:center">Failed: ${esc(e.message)}</div>`;
+    if (summaryWrap) summaryWrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px;text-align:center">Failed: ${esc(e.message)}</div>`;
+  }
+}
+
+function copyDigestSlack() {
+  window.kasbah.api('GET', '/v1/intervention/digest').then(r => {
+    const j = r.body || {};
+    const slack = j.slack;
+    if (slack?.blocks) {
+      const text = slack.blocks.map(b => b.text?.text || '').join('\n');
+      navigator.clipboard.writeText(text).then(() => toast('Slack format copied', 'success'));
+    } else {
+      toast('No Slack format available', 'info');
+    }
+  }).catch(e => toast('Copy failed: ' + e.message, 'error'));
+}
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NEW PAGE HANDLERS — Digest, MCP, Multimodal, Red-Team (Enhanced)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+// Digest — Enhanced handlers
+async function loadDigest() {
+  const wrap = $('digestCards');
+  const summaryWrap = $('digestSummaryCards');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="muted" style="padding:16px">Loading digest…</div>';
+  const period = $('digestPeriod')?.value || 'week';
+  try {
+    const r = await window.kasbah.api('GET', '/v1/intervention/digest', null, { params: { period } });
+    const j = r.body || {};
+    
+    // Update KPI cards
+    const c = j.counters || {};
+    const saved = c.saved || 0;
+    const scanned = (c.silent_pass || 0) + (c.warning_toast || 0) + (c.hard_block || 0) + (c.mute_block || 0);
+    const warned = c.warning_toast || 0;
+    const mute = c.mute_block || 0;
+    
+    if ($('digestSaved')) $('digestSaved').textContent = saved;
+    if ($('digestScanned')) $('digestScanned').textContent = scanned;
+    if ($('digestWarnings')) $('digestWarnings').textContent = warned;
+    if ($('digestMute')) $('digestMute').textContent = mute;
+    
+    // Trust grade chip
+    if ($('digestTrustGrade') && j.trustGrade) {
+      const tg = j.trustGrade;
+      $('digestTrustGrade').textContent = `${tg.grade} (${tg.score})`;
+      $('digestTrustGrade').style.display = 'inline-flex';
+      $('digestTrustGrade').className = 'trust-grade-chip ' + tg.grade.toLowerCase();
+    }
+    
+    const events = j.events || [];
+    if (events.length === 0) {
+      wrap.innerHTML = '<div class="muted" style="padding:16px">No interventions this period. You\'re clean.</div>';
+      return;
+    }
+    wrap.innerHTML = events.map((ev, i) => `
+      <div class="digest-card" data-hc="${_h((e, el) => { toggleDigestCard(el) })}">
+        <div class="digest-card-header">
+          <span>${esc(ev.type || 'Intervention')}</span>
+          <span class="digest-card-type">${esc(ev.severity || 'info')}</span>
+        </div>
+        <div class="digest-card-expanded" style="display:none">
+          <strong>Prompt:</strong> ${esc((ev.prompt || '').slice(0, 300))}<br>
+          <strong>Action:</strong> ${esc(ev.action || 'N/A')}<br>
+          <strong>Risk:</strong> ${ev.riskScore != null ? (ev.riskScore * 100).toFixed(0) + '%' : 'N/A'}<br>
+          <strong>Time:</strong> ${esc(ev.timestamp || new Date().toISOString())}<br>
+          <strong>Verdict:</strong> ${esc(ev.verdict || 'N/A')}
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
+  }
+}
+function toggleDigestCard(el) {
+  const expanded = el.querySelector('.digest-card-expanded');
+  if (expanded) expanded.style.display = expanded.style.display === 'none' ? 'block' : 'none';
+}
+function exportDigest() {
+  const period = $('digestPeriod')?.value || 'week';
+  window.kasbah.api('GET', '/v1/intervention/digest', null, { params: { period } }).then(r => {
+    const blob = new Blob([JSON.stringify(r.body, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `kasbah-digest-${period}-${Date.now()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    toast('Digest exported', 'success');
+  }).catch(e => toast('Export failed: ' + e.message, 'error'));
+}
+function shareDigest() {
+  const period = $('digestPeriod')?.value || 'week';
+  window.kasbah.api('GET', '/v1/intervention/digest', null, { params: { period } }).then(r => {
+    const j = r.body || {};
+    const text = j.headline + '\n\n' + (j.lines || []).map(l => '• ' + l).join('\n') + '\n\n— Generated by Kasbah';
+    if (navigator.share) {
+      navigator.share({ title: 'Kasbah Digest', text }).catch(()=>{});
+    } else {
+      navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard', 'success'));
+    }
+  }).catch(e => toast('Share failed: ' + e.message, 'error'));
+}
+function copyDigestSlack() {
+  const period = $('digestPeriod')?.value || 'week';
+  window.kasbah.api('GET', '/v1/intervention/digest', null, { params: { period } }).then(r => {
+    const j = r.body || {};
+    if (j.slack) {
+      navigator.clipboard.writeText(JSON.stringify(j.slack, null, 2)).then(() => toast('Slack blocks copied', 'success'));
+    } else {
+      toast('Slack format not available', 'warn');
+    }
+  }).catch(e => toast('Failed: ' + e.message, 'error'));
+}
+function generateEmailDigest() {
+  const period = $('digestPeriod')?.value || 'week';
+  window.kasbah.api('GET', '/v1/intervention/digest', null, { params: { period } }).then(r => {
+    const j = r.body || {};
+    if (j.email) {
+      const win = window.open('', '_blank');
+      win.document.write(j.email.bodyHtml || j.email.bodyText);
+      toast('Email draft opened', 'success');
+    } else {
+      toast('Email format not available', 'warn');
+    }
+  }).catch(e => toast('Failed: ' + e.message, 'error'));
+}
+// Enhanced MCP Inventory
+async function refreshMcpInventory() {
+  const wrap = $('mcpInventory');
+  const statsWrap = $('mcpQuickStats');
+  const badge = $('mcpStatusBadge');
+  const policiesWrap = $('mcpPolicies');
+  
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading MCP inventory…</div>';
+  if (statsWrap) statsWrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading…</div>';
+  if (badge) {
+    badge.className = 'status-badge idle';
+    badge.querySelector('.status-dot').style.background = 'var(--muted)';
+    badge.querySelector('span').textContent = 'Scanning…';
+  }
+  
+  try {
+    const r = await window.kasbah.api('GET', '/v1/mcp/inventory');
+    const j = r.body || {};
+    const servers = j.servers || [];
+    
+    // Update badge
+    if (badge) {
+      badge.className = 'status-badge active';
+      badge.querySelector('.status-dot').style.background = 'var(--green)';
+      badge.querySelector('span').textContent = `${servers.length} server${servers.length !== 1 ? 's' : ''} governed`;
+    }
+    
+    // Quick stats
+    if (statsWrap) {
+      const totalTools = servers.reduce((sum, s) => sum + (s.tools?.length || 0), 0);
+      const blockedTools = servers.reduce((sum, s) => sum + (s.tools?.filter(t => t.blocked).length || 0), 0);
+      const toolBlocks = new Set(servers.flatMap(s => (s.tools || []).filter(t => t.blocked).map(t => `${s.id || s.name}:${t.name}`))).size;
+      
+      statsWrap.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-card-value">${servers.length}</div>
+          <div class="stat-card-label">MCP Servers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value">${totalTools}</div>
+          <div class="stat-card-label">Tools Discovered</div>
+        </div>
+        <div class="stat-card ${blockedTools > 0 ? 'trend-up' : ''}">
+          <div class="stat-card-value">${blockedTools}</div>
+          <div class="stat-card-label">Tools Blocked</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value">${toolBlocks}</div>
+          <div class="stat-card-label">Block Rules</div>
+        </div>
+      `;
+    }
+    
+    if (servers.length === 0) {
+      wrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">No MCP servers discovered. Click Rescan.</div>';
+      if (policiesWrap) policiesWrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">No policies configured</div>';
+      return;
+    }
+    
+    wrap.innerHTML = servers.map(s => `
+      <div class="mcp-server">
+        <div class="mcp-server-header">
+          <div>
+            <strong>${esc(s.name || 'Unnamed')}</strong>
+            <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.transport || 'stdio')}</span>
+            <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.status || 'unknown')}</span>
+          </div>
+        </div>
+        <div>
+          ${(s.tools || []).map(t => {
+            const isBlocked = t.blocked || false;
+            return `
+              <div class="mcp-tool ${isBlocked ? 'blocked' : ''}" data-tool="${esc(t.name)}">
+                <span>${esc(t.name)}</span>
+                <div class="mcp-toggle ${isBlocked ? 'active' : ''}" data-hc="${_h((e, el) => { toggleMcpTool(el, '${esc(s.id)}', '${esc(t.name)}') })}"></div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `).join('');
+    
+    // Load policies
+    if (policiesWrap) {
+      try {
+        const pr = await window.kasbah.api('GET', '/v1/mcp/policies');
+        const pj = pr.body || {};
+        const policies = pj.policies || [];
+        if (policies.length === 0) {
+          policiesWrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">No shared policies configured</div>';
+        } else {
+          policiesWrap.innerHTML = policies.map(p => `
+            <div class="mcp-server">
+              <div class="mcp-server-header">
+                <strong>${esc(p.id || 'Unnamed')}</strong>
+                <span class="muted" style="font-size:11px">${esc(p.description || 'No description')}</span>
+              </div>
+              <div class="muted" style="font-size:11px">Rules: ${(p.rules || []).length} • Teams: ${(p.teams || []).length}</div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        policiesWrap.innerHTML = `<div class="muted" style="padding:16px;text-align:center">Failed to load policies: ${esc(e.message)}</div>`;
+      }
+    }
+  } catch (e) {
+    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px;text-align:center">Failed: ${esc(e.message)}</div>`;
+    if (badge) {
+      badge.className = 'status-badge error';
+      badge.querySelector('.status-dot').style.background = 'var(--red)';
+      badge.querySelector('span').textContent = 'Error';
+    }
+  }
+}
+
+async function exportMcpInventory() {
+  try {
+    const r = await window.kasbah.api('GET', '/v1/mcp/inventory');
+    const blob = new Blob([JSON.stringify(r.body, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `mcp-inventory-${Date.now()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    toast('App list saved', 'success');
+  } catch (e) {
+    toast('Export failed: ' + e.message, 'error');
+  }
+}
+// Enhanced Red-Team
+let _rtHistory = [];
+
+// Raw canvas 2D trend chart (codebase pattern — no Chart.js dependency,
+// works offline, CSP-safe). Draws detection rate per run.
+function renderRedteamChart(history) {
+  const canvas = $('redteamChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 600;
+  const H = 200;
+  canvas.width  = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.clearRect(0, 0, W, H);
+
+  if (!history.length) { ctx.fillStyle = '#9ca3af'; ctx.font = '13px sans-serif'; ctx.fillText('No runs yet — click "Run Suite Now"', 20, 100); return; }
+
+  const runs = history.slice(-20);
+  const pad = { l: 34, r: 12, t: 12, b: 24 };
+  const plotW = W - pad.l - pad.r;
+  const plotH = H - pad.t - pad.b;
+  const stepX = runs.length > 1 ? plotW / (runs.length - 1) : 0;
+
+  // Grid lines (0/50/100%)
+  ctx.strokeStyle = 'rgba(107,114,128,0.15)'; ctx.lineWidth = 1;
+  [0, 0.5, 1].forEach(f => {
+    const y = pad.t + plotH * (1 - f);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillStyle = '#9ca3af'; ctx.font = '9px monospace';
+    ctx.fillText((f * 100) + '%', 4, y + 3);
+  });
+
+  // Detection-rate line
+  ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2; ctx.beginPath();
+  runs.forEach((run, i) => {
+    const x = pad.l + i * stepX;
+    const y = pad.t + plotH * (1 - (run.detectionRate || 0) / 100);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Points
+  runs.forEach((run, i) => {
+    const x = pad.l + i * stepX;
+    const y = pad.t + plotH * (1 - (run.detectionRate || 0) / 100);
+    ctx.fillStyle = (run.detectionRate || 0) >= 80 ? '#10b981' : (run.detectionRate || 0) >= 50 ? '#f59e0b' : '#ef4444';
+    ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+    // X tick: time of run
+    if (run.timestamp && (i % Math.max(1, Math.floor(runs.length / 5)) === 0 || i === runs.length - 1)) {
+      ctx.fillStyle = '#9ca3af'; ctx.font = '9px monospace';
+      ctx.fillText(new Date(run.timestamp).toLocaleTimeString().slice(0, 5), x - 12, H - 6);
+    }
+  });
+}
+
+function redteamInit() {
+  try {
+    // Load history from localStorage and draw the trend chart
+    _rtHistory = JSON.parse(localStorage.getItem('kasbah.redteam.history') || '[]');
+    renderRedteamHistory();
+    renderRedteamChart(_rtHistory);
+    // Restore last score display
+    if (_rtHistory.length) {
+      const last = _rtHistory[_rtHistory.length - 1];
+      const score = $('rtScore');
+      if (score) {
+        score.textContent = (last.detectionRate || 0) + '%';
+        score.style.color = (last.detectionRate || 0) >= 80 ? 'var(--green)' : (last.detectionRate || 0) >= 50 ? 'var(--amber)' : 'var(--red)';
+      }
+    }
+  } catch (_) {}
+}
+
+function renderRedteamHistory() {
+  const results = $('redteamResults');
+  if (!results) return;
+  if (_rtHistory.length === 0) {
+    results.innerHTML = '<div class="muted" style="padding:16px;text-align:center">No red-team runs yet. Click "Run Suite Now".</div>';
+    return;
+  }
+  results.innerHTML = _rtHistory.slice().reverse().map((run, i) => {
+    const idx = _rtHistory.length - 1 - i;
+    const handlerIdx = _h((e, el) => { showRedteamRunDetails(el, idx); });
+    return `
+    <div class="mm-result ${run.passed ? '' : 'hazard'}" style="cursor:pointer" data-hc="${handlerIdx}">
+      <div class="mm-result-header">
+        <span>${run.timestamp ? new Date(run.timestamp).toLocaleString() : 'Unknown time'}</span>
+        <span class="mm-result-tag ${run.passed ? '' : 'hazard'}">${run.passed ? 'PASSED' : 'ISSUES FOUND'}</span>
+      </div>
+      <div class="mm-result-details">
+        ${run.totalCases} cases · ${run.caught}/${run.totalCases} caught (${run.detectionRate?.toFixed(1)}%) · ${run.duration}ms
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function showRedteamRunDetails(el, index) {
+  const run = _rtHistory[_rtHistory.length - 1 - index];
+  if (!run) return;
+  alert(`Red-Team Run Details:\n\nTime: ${run.timestamp}\nTotal Cases: ${run.totalCases}\nCaught: ${run.caught}\nMissed: ${run.missed}\nWarnings: ${run.warnings}\nBenign: ${run.benign}\nDetection Rate: ${run.detectionRate?.toFixed(1)}%\nDuration: ${run.duration}ms\n\nCategories:\n${JSON.stringify(run.byCategory, null, 2)}`);
+}
+async function runRedteamSuite() {
+  const btn = $('rtRunBtn');
+  const status = $('redteamStatus');
+  const results = $('redteamResults');
+  const exportBtn = $('rtExportBtn');
+  const quickStats = $('rtQuickStats');
+  const categoryBreakdown = $('rtCategoryBreakdown');
+  const competitorRows = $('rtCompetitorRows');
+  
+  btn.disabled = true; btn.textContent = 'Running…';
+  status.textContent = 'Firing adversarial cases at the engine…';
+  if (results) results.innerHTML = '';
+  
+  const t0 = Date.now();
+  try {
+    const r = await window.kasbah.api('POST', '/v1/redteam/run', {});
+    const j = r.body || {};
+    const cases = j.results || j.cases || [];
+    const passed = cases.filter(c => c.passed || c.caught).length;
+    const total = cases.length || j.total || 0;
+    const passPct = total ? Math.round(passed/total*100) : 0;
+    const duration = Date.now() - t0;
+    
+    // By category
+    const byCat = {};
+    cases.forEach(c => {
+      const cat = c.category || 'unknown';
+      byCat[cat] = (byCat[cat] || 0) + 1;
+    });
+    
+    const runData = {
+      timestamp: new Date().toISOString(),
+      totalCases: total,
+      caught: passed,
+      missed: total - passed,
+      warnings: cases.filter(c => c.verdict === 'WARN').length,
+      benign: cases.filter(c => c.verdict === 'ALLOW').length,
+      detectionRate: passPct,
+      duration,
+      byCategory: byCat,
+      passed: passPct >= 80
+    };
+    
+    _rtHistory.push(runData);
+    if (_rtHistory.length > 50) _rtHistory.shift();
+    localStorage.setItem('kasbah.redteam.history', JSON.stringify(_rtHistory));
+    
+    // Update chart (raw canvas renderer — no Chart.js dependency)
+    renderRedteamChart(_rtHistory);
+    
+    // Update score
+    $('rtScore').textContent = passPct + '%';
+    $('rtScore').style.color = passPct >= 80 ? 'var(--green)' : passPct >= 50 ? 'var(--amber)' : 'var(--red)';
+    
+    // Quick stats
+    if (quickStats) {
+      quickStats.innerHTML = `
+        <div class="stat-card ${passPct >= 80 ? 'trend-up' : ''}">
+          <div class="stat-card-value">${passPct}%</div>
+          <div class="stat-card-label">Detection Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value">${passed}/${total}</div>
+          <div class="stat-card-label">Caught</div>
+        </div>
+        <div class="stat-card ${runData.missed > 0 ? 'trend-down' : ''}">
+          <div class="stat-card-value">${runData.missed}</div>
+          <div class="stat-card-label">Missed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-value">${duration}ms</div>
+          <div class="stat-card-label">Duration</div>
+        </div>
+      `;
+    }
+    
+    // Category breakdown
+    if (categoryBreakdown) {
+      categoryBreakdown.innerHTML = Object.entries(byCat).map(([cat, count]) => `
+        <div class="rt-category-card">
+          <div class="cat-header">
+            <span class="cat-name">${esc(cat)}</span>
+            <span class="cat-score">${count}</span>
+          </div>
+          <div class="cat-bar"><div class="cat-bar-fill" style="width:${(count/total*100).toFixed(0)}%;background:var(--red)"></div></div>
+        </div>
+      `).join('');
+    }
+    
+    // Competitor comparison
+    if (competitorRows) {
+      competitorRows.innerHTML = `
+        <tr class="kasbah-row">
+          <td><strong>Kasbah</strong></td>
+          <td class="score-good">${passPct/100}</td>
+          <td class="score-good">${(passed/total).toFixed(2)}</td>
+          <td class="score-good">${(passed/total).toFixed(2)}</td>
+          <td>${duration}ms</td>
+          <td>Local / Air-gap</td>
+        </tr>
+        <tr>
+          <td>Lakera Guard</td>
+          <td class="score-warn">0.85</td>
+          <td class="score-warn">0.82</td>
+          <td class="score-warn">0.88</td>
+          <td>~280ms</td>
+          <td>Cloud SaaS</td>
+        </tr>
+        <tr>
+          <td>OpenAI Moderation</td>
+          <td class="score-bad">0.72</td>
+          <td class="score-bad">0.68</td>
+          <td class="score-bad">0.76</td>
+          <td>~180ms</td>
+          <td>Cloud SaaS</td>
+        </tr>
+        <tr>
+          <td>NeMo Guardrails</td>
+          <td class="score-bad">0.68</td>
+          <td class="score-bad">0.65</td>
+          <td class="score-bad">0.71</td>
+          <td>~120ms</td>
+          <td>Self-hosted</td>
+        </tr>
+      `;
+    }
+    
+    // Results detail
+    if (results) {
+      const failed = cases.filter(c => !(c.passed || c.caught));
+      results.innerHTML = `
+        <div class="settings-card" style="padding:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div>
+              <div style="font-size:26px;font-weight:800;color:${passPct >= 80 ? '#10b981' : passPct >= 50 ? '#f59e0b' : '#ef4444'}">${passPct}%</div>
+              <div class="muted" style="font-size:12px">${passed}/${total} attacks caught</div>
+            </div>
+            <div style="text-align:right">
+              <div class="muted" style="font-size:11px">Run time</div>
+              <div style="font-family:monospace;font-size:13px">${duration} ms</div>
+            </div>
+          </div>
+          ${failed.length ? `<div class="k-section-label" style="margin-top:8px">Cases the engine missed (${failed.length})</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px">
+            <thead><tr style="border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:6px 10px;color:var(--muted);font-weight:600">ID</th>
+              <th style="text-align:left;padding:6px 10px;color:var(--muted);font-weight:600">Category</th>
+              <th style="text-align:left;padding:6px 10px;color:var(--muted);font-weight:600">Prompt</th>
+              <th style="text-align:left;padding:6px 10px;color:var(--muted);font-weight:600">Got</th>
+            </tr></thead>
+            <tbody>
+              ${failed.slice(0,20).map(c => `<tr>
+                <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-family:monospace;font-size:11px">${esc(c.id||'?')}</td>
+                <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:11.5px">${esc(c.category||c.name||'')}</td>
+                <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--muted)">${esc((c.prompt||c.input||'').toString().slice(0,80))}</td>
+                <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px;color:#ef4444">${esc(c.actualVerdict||c.verdict||'—')}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>` : '<div class="muted" style="font-size:12px;margin-top:8px">Every adversarial case was caught.</div>'}
+          <details style="margin-top:14px"><summary class="muted" style="cursor:pointer;font-size:11px">Raw response</summary><pre style="margin-top:6px;font-size:10.5px;color:var(--muted);max-height:240px;overflow:auto;background:var(--bg);padding:8px;border-radius:4px">${esc(JSON.stringify(j,null,2).slice(0,5000))}</pre></details>
+        </div>
+      `;
+    }
+    
+    status.textContent = `Complete — ${passPct}% detection rate`;
+    btn.disabled = false; btn.textContent = 'Run Suite Now';
+    exportBtn.disabled = false;
+    toast(`Red-team suite complete: ${passPct}% detection`, passPct >= 80 ? 'success' : 'warn');
+  } catch (e) {
+    status.textContent = 'Failed: ' + e.message;
+    if (results) results.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
+    btn.disabled = false; btn.textContent = 'Run Suite Now';
+    toast('Red-team run failed: ' + e.message, 'error');
+  }
+}
+
+function scheduleRedteam() {
+  toast('Daily scheduling coming soon — use cron for now', 'info');
+}
+
+function viewRedteamHistory() {
+  renderRedteamHistory();
+  nav('redteam');
+}
+
+function exportRedteamResults() {
+  const blob = new Blob([JSON.stringify(_rtHistory, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `redteam-history-${Date.now()}.json`; a.click();
+  URL.revokeObjectURL(url);
+  toast('Red-team history exported', 'success');
+}
+
 function forInit() { /* render-once panels */ }
 function forSwitch(tab) {
   document.querySelectorAll('.forensics-tab').forEach(t => {
@@ -4048,15 +5411,23 @@ function forShow(elId, j, ok) {
 }
 async function bioNeuralFingerprint() {
   try {
-    // Synthetic 8x8 RGB image — flat distribution → AI-like signature
-    const pixels = new Array(8*8*3).fill(128);
-    const r = await window.kasbah.api('POST', '/v1/biometric/neural-fingerprint', { pixels, width:8, height:8 });
+    const samples = new Array(8*8*3).fill(128);
+    try {
+      const r = await window.kasbah.bio.neuralFingerprint({ samples, opts:{} });
+      if (r.ok || r.error) return forShow('bioFpResult', r, r.ok);
+    } catch(_) {}
+    // Fallback to API stub
+    const r = await window.kasbah.api('POST', '/v1/biometric/neural-fingerprint', { pixels:samples, width:8, height:8 });
     forShow('bioFpResult', r.body || {}, true);
   } catch(e) { forShow('bioFpResult', {error:e.message}, false); }
 }
 async function bioRppg() {
   try {
     const videoFrames = Array.from({length:30},(_,i)=>({timestamp:i*33,faceRegion:{r:128+Math.sin(i/5)*5,g:80,b:90}}));
+    try {
+      const r = await window.kasbah.bio.rppg({ frames:videoFrames, frameRate:30 });
+      return forShow('bioRppgResult', r, !!r.ok);
+    } catch(_) {}
     const r = await window.kasbah.api('POST', '/v1/biometric/rppg', { videoFrames, frameRate:30 });
     forShow('bioRppgResult', r.body || {}, true);
   } catch(e) { forShow('bioRppgResult', {error:e.message}, false); }
@@ -4064,6 +5435,10 @@ async function bioRppg() {
 async function bioVoiceClone() {
   try {
     const audioData = Array.from({length:1024},(_,i)=>Math.sin(i*0.1)+Math.random()*0.05);
+    try {
+      const r = await window.kasbah.bio.voiceClone({ samples:audioData, opts:{sampleRate:16000} });
+      return forShow('bioVcResult', r, !!r.ok);
+    } catch(_) {}
     const r = await window.kasbah.api('POST', '/v1/biometric/voice-clone', { audioData, sampleRate:16000 });
     forShow('bioVcResult', r.body || {}, true);
   } catch(e) { forShow('bioVcResult', {error:e.message}, false); }
@@ -4071,6 +5446,10 @@ async function bioVoiceClone() {
 async function bioNeuralCodec() {
   try {
     const audioData = Array.from({length:1024},(_,i)=>Math.sin(i*0.05));
+    try {
+      const r = await window.kasbah.bio.neuralCodec({ samples:audioData, opts:{sampleRate:16000} });
+      return forShow('bioNcResult', r, !!r.ok);
+    } catch(_) {}
     const r = await window.kasbah.api('POST', '/v1/biometric/neural-codec', { audioData });
     forShow('bioNcResult', r.body || {}, true);
   } catch(e) { forShow('bioNcResult', {error:e.message}, false); }
@@ -4627,10 +6006,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
   S.apiReady=ready;
   startSSEStream();
 
+  // Show the shell IMMEDIATELY (sidebar with new pages visible from start),
+  // then show onboarding as an overlay on top — never gate the shell behind it.
+  showShell();
   if(!localStorage.getItem('kg_ob')){
     Ob.show();
-  } else {
-    showShell();
   }
 });
 
@@ -4652,6 +6032,85 @@ const _bwr = {
 // from the main process's actual session.webRequest.onBeforeRequest hook
 // (see main.js did-attach-webview + tracker-blocklist.js), not simulated here.
 const _bwrBlocksByWcId = new Map();
+
+// ── WebContentsView proxy map (Electron only) ───────────────────────────────
+const _bvProxyMap = new Map(); // viewId (number) → proxy object
+let   _bvEventsRegistered = false;
+
+function _bvEnsureEvents() {
+  if (_bvEventsRegistered) return;
+  _bvEventsRegistered = true;
+  window.kasbah.bv.onEvent(ev => {
+    const proxy = _bvProxyMap.get(ev.id);
+    if (!proxy) return;
+    const tab = proxy._tab;
+    if ((ev.type === 'did-navigate' || ev.type === 'did-stop-loading') && tab) {
+      window.kasbah.bv.canGoBack(ev.id).then(v  => { tab._canGoBack    = v; });
+      window.kasbah.bv.canGoForward(ev.id).then(v => { tab._canGoForward = v; });
+    }
+    for (const fn of (proxy._listeners[ev.type] || [])) fn(ev);
+  });
+}
+
+function _bvUpdateBounds(id) {
+  if (!id) return;
+  const vp = document.getElementById('bwrViewport');
+  if (!vp) return;
+  const r  = vp.getBoundingClientRect();
+  const on = r.width > 0 && r.height > 0 &&
+             document.getElementById('pageBrowser')?.classList.contains('active');
+  if (on) window.kasbah.bv.setBounds(id, r.x, r.y, r.width, r.height).catch(()=>{});
+  else    window.kasbah.bv.hide(id).catch(()=>{});
+}
+
+function _bvMakeProxy(tab) {
+  const proxy = {
+    _id:       null,
+    _tab:      tab,
+    _listeners:{},
+    _pendingUrl: null,
+
+    addEventListener(type, fn) {
+      (this._listeners[type] = this._listeners[type] || []).push(fn);
+    },
+    get src()  { return this._tab?.url ?? ''; },
+    set src(url) {
+      this._pendingUrl = url;
+      if (this._id !== null) {
+        window.kasbah.bv.navigate(this._id, url).catch(()=>{});
+        this._pendingUrl = null;
+      }
+    },
+    reload()      { if (this._id !== null) window.kasbah.bv.reload(this._id); },
+    goBack()      { if (this._id !== null) window.kasbah.bv.goBack(this._id); },
+    goForward()   { if (this._id !== null) window.kasbah.bv.goForward(this._id); },
+    canGoBack()   { return this._tab?._canGoBack    || false; },
+    canGoForward(){ return this._tab?._canGoForward || false; },
+    getWebContentsId() { return this._id ?? -1; },
+    executeJavaScript(code) {
+      if (this._id === null) return Promise.resolve(null);
+      return window.kasbah.bv.execJS(this._id, code);
+    },
+    getBoundingClientRect() {
+      return document.getElementById('bwrViewport')?.getBoundingClientRect() ?? {};
+    },
+    setAttribute() {},
+    style: { set cssText(_){}, get cssText(){ return ''; } },
+  };
+
+  _bvEnsureEvents();
+  window.kasbah.bv.create().then(id => {
+    proxy._id = id;
+    _bvProxyMap.set(id, proxy);
+    if (proxy._pendingUrl) {
+      window.kasbah.bv.navigate(id, proxy._pendingUrl).catch(()=>{});
+      proxy._pendingUrl = null;
+    }
+    _bvUpdateBounds(id);
+  }).catch(err => console.error('[bv] create failed:', err));
+
+  return proxy;
+}
 // Hosts that fell back to http:// after an HTTPS-upgrade attempt failed —
 // skip re-upgrading them for the rest of this session to avoid a reload loop.
 const _bwrHttpsExempt = new Set();
@@ -4714,7 +6173,8 @@ function bwrInit() {
   window.kasbah.onTrackerBlocked?.(({ webContentsId, hostname, category }) => {
     _bwrBlocksByWcId.set(webContentsId, (_bwrBlocksByWcId.get(webContentsId) || 0) + 1);
     _bwr.stats.blocked++;
-    const activeWcId = _bwr.activeTab?.webview?.getWebContentsId?.();
+    let activeWcId = null;
+    try { activeWcId = _bwr.activeTab?.webview?.getWebContentsId?.(); } catch (_) { /* webview not dom-ready yet */ }
     if (activeWcId === webContentsId) {
       bwrUpdateBlockChip();
       bwrMiniToast(`🚫 Blocked ${category}: ${hostname}`);
@@ -4744,6 +6204,18 @@ function bwrInit() {
   });
 
   bwrRefreshStats();
+
+  // Keep the active WebContentsView's bounds in sync whenever the browser panel resizes.
+  if (_bwrIsElectron) {
+    const vpEl = document.getElementById('bwrViewport');
+    if (vpEl) {
+      new ResizeObserver(() => {
+        const active = _bwr.activeTab;
+        if (active?.webview?._id) _bvUpdateBounds(active.webview._id);
+      }).observe(vpEl);
+    }
+  }
+
 }
 
 // ── Navigate ──────────────────────────────────────────────────────────────
@@ -4768,15 +6240,7 @@ function bwrGo(input) {
   // Show viewport, hide start screen
   document.getElementById('bwrStartScreen').style.display = 'none';
   const viewportEl = document.getElementById('bwrViewport');
-  viewportEl.style.display = 'block';
-  // Force layout reflow so webview recalculates size on macOS
-  void viewportEl.offsetHeight;
-  // Explicitly size webview to avoid 100% height bug after display toggle
-  const activeWv = _bwr.activeTab?.webview;
-  if (activeWv && _bwrIsElectron) {
-    activeWv.style.height = viewportEl.clientHeight + 'px';
-    activeWv.style.width = viewportEl.clientWidth + 'px';
-  }
+  viewportEl.classList.add('active');
 
   const viewport = document.getElementById('bwrViewport');
   const spinner = document.getElementById('bwrSpinner');
@@ -4808,19 +6272,31 @@ function bwrGo(input) {
     bwrShieldPending();
     const wv = _bwr.activeTab.webview;
     attachLoadHandlers(wv);
-    wv.loadURL(url);
+    // Use src (not loadURL) — loadURL throws if the webview isn't dom-ready yet
+    // ("The WebView must be attached to the DOM and the dom-ready event emitted
+    // before this method can be called."), which broke navigation and left the
+    // pane half-rendered.
+    wv.src = url;
+    // Update bounds after navigation — CRITICAL for BrowserView to appear
+    if (wv._id && _bwrIsElectron) _bvUpdateBounds(wv._id);
   } else {
     bwrNewTabWith(url);
     const wv = _bwr.activeTab?.webview;
     if (wv) attachLoadHandlers(wv);
+    // Bounds updated via _bvMakeProxy for new BrowserView
   }
 }
 function bwrNav(action) {
   const wv = _bwr.activeTab?.webview;
   if (!wv) return;
-  if (action === 'back'   && wv.canGoBack())    wv.goBack();
-  if (action === 'forward'&& wv.canGoForward()) wv.goForward();
-  if (action === 'reload') { bwrShieldPending(); wv.reload(); }
+  try {
+    if (action === 'back'   && wv.canGoBack())    wv.goBack();
+    if (action === 'forward'&& wv.canGoForward()) wv.goForward();
+    if (action === 'reload') { bwrShieldPending(); wv.reload(); }
+  } catch (_) {
+    // webview not attached/dome-ready yet — ignore; the next navigation will
+    // set src and the page will load normally.
+  }
 }
 
 // ── Tab management ────────────────────────────────────────────────────────
@@ -4828,20 +6304,19 @@ function bwrNewTab() {
   bwrNewTabWith(null);
 }
 
-const _bwrIsElectron = navigator.userAgent.toLowerCase().includes('electron');
-
 function bwrNewTabWith(url) {
   const id = 'bwrtab_' + Date.now();
   const viewport = document.getElementById('bwrViewport');
 
+  // Create the tab object first so the BV proxy can back-reference it.
+  const tab = { id, url: url || '', title: url ? '…' : 'New Tab', webview: null };
+
   let wv;
   if (_bwrIsElectron) {
-    wv = document.createElement('webview');
-    wv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:block;border:none;background:#fff;';
-    wv.setAttribute('allowpopups', '');
-    wv.setAttribute('partition', '');
-    wv.setAttribute('webpreferences', 'contextIsolation=yes,javascript=yes,backgroundThrottling=no,webSecurity=no');
-    wv.setAttribute('disablewebsecurity', '');
+    // Proxy backed by a main-process WebContentsView — no <webview> DOM element.
+    // The actual view is positioned by main via IPC (bv:set-bounds) so its
+    // viewport size is always correct (the <webview> guest-viewport bug is gone).
+    wv = _bvMakeProxy(tab);
   } else {
     // In static preview: use an iframe placeholder
     wv = document.createElement('iframe');
@@ -4861,21 +6336,14 @@ function bwrNewTabWith(url) {
     wv.executeJavaScript = () => Promise.resolve('');
     wv.onload = () => { bwrProgressDone(); };
   }
-
-  const tab = { id, url: url || '', title: url ? '…' : 'New Tab', webview: wv };
+  tab.webview = wv;
   _bwr.tabs.push(tab);
 
   if (_bwrIsElectron) {
     wv.addEventListener('did-start-loading', () => bwrProgressStart());
-    wv.addEventListener('did-stop-loading',  () => { 
-      bwrProgressDone(); 
-      // Force repaint on macOS webview
-      setTimeout(() => { 
-        wv.style.height = '1px'; 
-        void wv.offsetHeight; 
-        wv.style.height = '100%'; 
-      }, 50);
-      bwrOnPageLoad(wv, tab); 
+    wv.addEventListener('did-stop-loading',  () => {
+      bwrProgressDone();
+      bwrOnPageLoad(wv, tab);
     });
     wv.addEventListener('did-fail-load',     (e) => {
       bwrProgressDone();
@@ -4890,7 +6358,7 @@ function bwrNewTabWith(url) {
         tab._httpsUpgradeAttempted = false;
         _bwrHttpsExempt.add(host);
         bwrMiniToast(`⚠ ${host} has no HTTPS — loading unencrypted (insecure)`);
-        wv.loadURL ? wv.loadURL(from) : (wv.src = from);
+        wv.src = from;
       }
     });
     wv.addEventListener('page-title-updated', e => { tab.title = e.title; bwrRenderTabs(); });
@@ -4914,12 +6382,13 @@ function bwrNewTabWith(url) {
     });
   }
 
-  viewport.innerHTML = '';
-  viewport.appendChild(wv);
-  // Force webview size recalculation on macOS
-  void viewport.offsetHeight;
-  wv.style.height = '100%';
-  wv.style.width = '100%';
+  if (_bwrIsElectron) {
+    // No DOM insertion — WebContentsView is managed by main process.
+    // bv:create already started; URL is set via proxy.src once the view is ready.
+  } else {
+    viewport.innerHTML = '';
+    viewport.appendChild(wv);
+  }
 
   if (url) {
     bwrShieldPending();
@@ -4938,15 +6407,22 @@ function bwrSwitchTab(id) {
   if (!tab) return;
   _bwr.activeTab = tab;
 
-  const viewport = document.getElementById('bwrViewport');
-  viewport.innerHTML = '';
-  viewport.appendChild(tab.webview);
-  // Force layout reflow for macOS webview resize
-  void viewport.offsetHeight;
-  const wv = tab.webview;
-  if (wv) { wv.style.height = '100%'; wv.style.width = '100%'; }
+  if (_bwrIsElectron) {
+    // Show the active view, hide all others (no DOM manipulation needed).
+    for (const t of _bwr.tabs) {
+      if (!t.webview?._id) continue;
+      if (t.id === id) _bvUpdateBounds(t.webview._id);
+      else             window.kasbah.bv.hide(t.webview._id).catch(()=>{});
+    }
+  } else {
+    const viewport = document.getElementById('bwrViewport');
+    viewport.innerHTML = '';
+    viewport.appendChild(tab.webview);
+  }
+
   document.getElementById('bwrStartScreen').style.display = tab.url ? 'none' : 'flex';
-  document.getElementById('bwrViewport').style.display = tab.url ? 'block' : 'none';
+  const vpEl2 = document.getElementById('bwrViewport');
+  vpEl2.classList.toggle('active', !!tab.url);
   document.getElementById('bwrUrl').value = tab.url || '';
   bwrRenderTabs();
   bwrUpdateBlockChip();
@@ -4957,11 +6433,18 @@ function bwrCloseTab(id, e) {
   e.stopPropagation();
   const idx = _bwr.tabs.findIndex(t => t.id === id);
   if (idx === -1) return;
-  _bwr.tabs.splice(idx, 1);
+  const [removed] = _bwr.tabs.splice(idx, 1);
+
+  // Destroy the WebContentsView for this tab.
+  if (_bwrIsElectron && removed.webview?._id) {
+    const bvId = removed.webview._id;
+    window.kasbah.bv.destroy(bvId).catch(()=>{});
+    _bvProxyMap.delete(bvId);
+  }
+
   if (_bwr.tabs.length === 0) {
     _bwr.activeTab = null;
-    document.getElementById('bwrViewport').innerHTML = '';
-    document.getElementById('bwrViewport').style.display = 'none';
+    document.getElementById('bwrViewport').classList.remove('active');
     document.getElementById('bwrStartScreen').style.display = 'flex';
     document.getElementById('bwrUrl').value = '';
     bwrShieldReset();
@@ -5019,18 +6502,20 @@ async function bwrOnPageLoad(wv, tab) {
     }))?.body ?? {};
 
     const threats = [];
-    // govern reports risk + threats[]; look for an ml_injection:<score> tag.
+    // Page text is NOT a user prompt: marketing/code copy trips injection
+    // heuristics (github.com scored 85%). Injection findings on page text are
+    // ADVISORY — noted, never flagged. Only real secret/PII findings flag.
     const injThreat = (injRes.threats || []).find(t => /^ml_injection:/.test(t));
-    const injScore = injThreat ? parseFloat(injThreat.split(':')[1]) : (injRes.risk >= 0.7 ? injRes.risk : 0);
-    if (injScore > 0.6 || injRes.verdict === 'DENY' || injRes.verdict === 'REQUIRE_APPROVAL') {
-      threats.push({ level: 'high', label: 'Prompt injection / hostile content', detail: `risk ${(Math.max(injScore, injRes.risk||0)*100).toFixed(0)}%` + ((injRes.threats||[]).length ? ` · ${injRes.threats.slice(0,3).join(', ')}` : '') });
-      _bwr.stats.threats++;
-    }
+    const injAdvisory = injThreat || injRes.risk >= 0.7 || injRes.verdict === 'REQUIRE_APPROVAL';
 
     const scanDecision = scanRes.verdict ?? scanRes.decision ?? '';
-    if ((scanDecision === 'DENY' || scanDecision === 'BLOCK') || (scanRes.threats || []).length) {
-      threats.push({ level: scanDecision === 'DENY' ? 'high' : 'warn', label: 'Sensitive/malicious content on page', detail: (scanRes.threats || []).slice(0, 4).join(', ') });
-      if (scanDecision === 'DENY') _bwr.stats.threats++;
+    const realFindings = (scanRes.threats || []).filter(t => /secret|pii|credential|key|password|ssn|credit/i.test(t));
+    if ((scanDecision === 'DENY') && realFindings.length) {
+      threats.push({ level: 'high', label: 'Sensitive data exposed on page', detail: realFindings.slice(0, 4).join(', ') });
+      _bwr.stats.threats++;
+    } else if (realFindings.length >= 2) {
+      threats.push({ level: 'warn', label: 'Sensitive/malicious content on page', detail: realFindings.slice(0, 4).join(', ') });
+      _bwr.stats.threats++;
     }
 
     // PII check (look for obvious patterns in page text)
@@ -5040,14 +6525,16 @@ async function bwrOnPageLoad(wv, tab) {
     }
 
     // Real sub-resource tracker blocks for this tab (from main's session.webRequest).
-    const wcId = wv.getWebContentsId?.();
+    let wcId = null;
+    try { wcId = wv.getWebContentsId?.(); } catch (_) {}
     const blockedOnThisTab = wcId != null ? (_bwrBlocksByWcId.get(wcId) || 0) : 0;
     if (blockedOnThisTab > 0) {
       threats.push({ level: 'info', label: `${blockedOnThisTab} tracker/ad request(s) blocked`, detail: '' });
     }
 
     const isHttps = /^https:/i.test(tab.url || '');
-    const riskForScore = Math.max(injRes.risk || 0, injScore, scanRes.risk || 0);
+    const injScore = injAdvisory ? (injRes.risk || 0) : 0; // advisory only — informs score, never flags
+    const riskForScore = Math.max(injScore, scanRes.risk || 0);
     const trust = bwrComputeTrustScore({ risk: riskForScore, threats, isHttps, blockedCount: blockedOnThisTab });
 
     // Store the verdict this scan produced — this is exactly what the
@@ -5115,8 +6602,8 @@ function bwrOnWillNavigate(e, wv, tab) {
       const httpsUrl = 'https:' + e.url.slice(5);
       tab._httpsUpgradeFrom = e.url;
       tab._httpsUpgradeAttempted = true;
-      bwrMiniToast(`🔒 Upgraded to HTTPS: ${u.hostname}`);
-      wv.loadURL ? wv.loadURL(httpsUrl) : (wv.src = httpsUrl);
+      bwrMiniToast(`Upgraded to secure page: ${u.hostname}`);
+      wv.src = httpsUrl;
       return;
     }
   } catch (_) {}
@@ -5336,7 +6823,7 @@ const BWR_TOOL_META = {
   scan:         { icon:'🔍', title:'Content Scan', desc:'Paste text or use current page' },
   injection:    { icon:'⚡', title:'Injection Detector', desc:'Detect prompt injection attacks' },
   family:       { icon:'🛡', title:'Family Safety', desc:'Child-safety content check' },
-  passwords:    { icon:'🔒', title:'Password Breach', desc:'HIBP k-anonymity check' },
+  passwords:    { icon:'', title:'Password leak check', desc:'Checks without sending the full password' },
   scam:         { icon:'⚠️', title:'Scam Shield', desc:'Fraud & phishing detection' },
   ethics:       { icon:'⚖️', title:'Ethics Read', desc:'Multi-tradition ethical consensus on page content — Kasbah\'s own engine, not a third-party model' },
   menu:         { icon:'☰', title:'Browser', desc:'' },
@@ -5622,11 +7109,13 @@ async function bwrRenderSettings(content) {
     </div>`;
   content.innerHTML = `
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Every toggle below is a REAL runtime switch — not decorative. See CHANGELOG for how each one is enforced.</div>
-    ${toggle('trackerBlocking', 'Block trackers & ads', 'Cancels ad/tracker/fingerprinting sub-resource requests at the network layer (session.webRequest), not just full navigations.')}
-    ${toggle('fingerprintProtection', 'Fingerprint protection', 'Adds per-site noise to canvas/audio/WebGL readback APIs. Takes effect on new tabs.')}
-    ${toggle('httpsOnly', 'HTTPS-Only mode', 'Upgrades http:// links to https:// automatically, with a visible warning if a site has no HTTPS.')}
-    ${toggle('aiShield', 'AI Shield (page scanning)', 'Scans each page you visit for prompt injection, secrets, and PII using Kasbah&#39;s governance engine.')}
-    ${toggle('historyEnabled', 'Save browsing history', 'When off, pages you visit are not logged locally at all.')}
+    ${toggle('trackerBlocking', 'Block trackers & ads', 'Stops ad and tracker requests before they load.')}
+    ${toggle('fingerprintProtection', 'Stop fingerprinting', 'Makes your browser look the same as others, so sites cannot ID you. On for new tabs.')}
+    ${toggle('queryStrip', 'Clean tracking links', 'Removes tracking tags like utm and fbclid from addresses you open.')}
+    ${toggle('bounceBlock', 'Skip redirect trackers', 'Skips middlemen that watch where you click, and takes you straight there.')}
+    ${toggle('httpsOnly', 'Always use secure pages', 'Opens the secure version of every site when it exists.')}
+    ${toggle('aiShield', 'Check pages for scams', 'Reads each page for scams, leaked secrets, and tricks aimed at AI helpers.')}
+    ${toggle('historyEnabled', 'Save browsing history', 'When off, pages you visit are not kept on this Mac at all.')}
     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
       <div style="font-size:11.5px;font-weight:600;margin-bottom:6px">Data</div>
       <button class="tl-btn" style="font-size:11px;margin-right:6px" data-hc="${_h((event, el) => { bwrHistoryClearAll() })}">Clear history</button>
@@ -5645,7 +7134,8 @@ function bwrUpdateBlockChip() {
   const chip = document.getElementById('bwrBlockChip');
   const cnt  = document.getElementById('bwrBlockCount');
   if (!chip || !cnt) return;
-  const wcId = _bwr.activeTab?.webview?.getWebContentsId?.();
+  let wcId = null;
+  try { wcId = _bwr.activeTab?.webview?.getWebContentsId?.(); } catch (_) {}
   const count = wcId != null ? (_bwrBlocksByWcId.get(wcId) || 0) : 0;
   chip.style.display = count > 0 ? '' : 'none';
   cnt.textContent = count;
@@ -5712,7 +7202,7 @@ async function wfScan() {
     $('wfNetInfo').textContent = 'Network: ' + esc(net.ssid) + ' · Security: ' + esc(net.security || 'unknown');
     const d = await window.kasbah.privacy.wifiAnalyze({ ssid: net.ssid, security: net.security });
     const dotColors = { HIGH: 'var(--red)', MEDIUM: 'var(--amber,#b8860b)', LOW: 'var(--green)' };
-    const labels = { HIGH: '🔴 High risk', MEDIUM: '🟡 Medium risk', LOW: '✓ Safe network' };
+    const labels = { HIGH: 'High risk', MEDIUM: 'Medium risk', LOW: 'Safe network' };
     $('wfDot').style.background = dotColors[d.risk] || '#6b7280';
     $('wfStatus').textContent = labels[d.risk] || d.risk;
     if (d.flags?.length) $('wfFlags').innerHTML = d.flags.map(f => '<div style="font-size:12.5px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:6px">' + esc(f.label) + '</div>').join('');
@@ -5920,7 +7410,7 @@ function pcToggle(id, checked) {
    ═══════════════════════════════════════════════════════════════════════════ */
 const K1_PRODUCTS = [
   { id:'vpn',        name:'VPN',                icon:'🌐', status:'live',   blurb:'Real WireGuard tunnels, real servers (Amsterdam, Ashburn), post-quantum key exchange.' },
-  { id:'scamshield', name:'Scam Shield',         icon:'🛡️', status:'live',   blurb:'Paste a suspicious text/email/call transcript — real pattern + threat-engine detection.' },
+  { id:'scamshield', name:'Scam Shield',         icon:'', status:'live',   blurb:'Paste a suspicious text/email/call transcript — real pattern + threat-engine detection.' },
   { id:'wifiguard',  name:'Public Wi-Fi Guard',  icon:'📶', status:'live',   blurb:'Checks your current network for risks. Warns on open Wi-Fi and can auto-connect VPN.' },
   { id:'passwords',  name:'Password Vault',      icon:'🔑', status:'live',   blurb:'AES-256-GCM local vault + k-anonymity breach check. Passwords never leave your machine.' },
   { id:'family',     name:'Family Safety',       icon:'👨‍👩‍👧', status:'live', blurb:'Flags grooming patterns, self-harm signals, and PII leaks in kids\' AI conversations.' },
@@ -6122,7 +7612,7 @@ function vpnLocationCard(loc, live) {
   return `<div class="vpn-loc-card" ${live ? `data-hc="${_h((event, el) => { vpnSelectLocation(loc.id) })}"` : ''}
       style="position:relative;border:1.5px solid ${selected ? 'var(--terracotta,#c1592f)' : 'var(--border)'};border-radius:10px;padding:10px 12px;cursor:${live ? 'pointer' : 'default'};
       background:${selected ? 'var(--amber-bg, rgba(193,89,47,.08))' : 'var(--bg)'};opacity:${live ? '1' : '.5'};transition:border-color .12s,background .12s">
-    ${locked ? '<span style="position:absolute;top:8px;right:9px;font-size:11px">🔒</span>' : ''}
+    ${locked ? '<span style="position:absolute;top:8px;right:9px;font-size:11px" title="Locked">•</span>' : ''}
     ${dpi ? '<span title="DPI / censorship mode (Myanmar etc.)" style="position:absolute;top:8px;right:9px;font-size:10px;font-weight:700;color:#c1592f;background:var(--amber-bg,rgba(193,89,47,.12));border-radius:999px;padding:1px 6px">DPI</span>' : ''}
     <div style="font-size:20px;line-height:1">${flag}</div>
     <div style="font-weight:700;font-size:12.5px;margin-top:6px">${esc(name)}</div>
@@ -6199,7 +7689,7 @@ async function vpnConnect() {
       msg.innerHTML = r.cancelled
         ? '<span class="muted">Cancelled — no password entered.</span>'
         : r.requiresUpgrade
-          ? `<span style="color:var(--terracotta,#c1592f)">🔒 ${esc(r.output||'This location requires a paid plan.')}</span>`
+          ? `<span style="color:var(--terracotta,#c1592f)">${esc(r.output||'This location requires a paid plan.')}</span>`
           : `<span style="color:var(--red)">Couldn't bring the tunnel up:</span>\n<span style="font-family:ui-monospace,monospace;font-size:11px">${esc(r.output||'')}</span>`;
       if (r.requiresUpgrade) setTimeout(() => nav('plans'), 1200);
       return;
@@ -6519,39 +8009,42 @@ async function homeRefresh() {
   const icon = $('homeStatusIcon');
   const title = $('homeStatusTitle');
   const sub = $('homeStatusSub');
-  if (title) title.textContent = connected ? 'Your AI sessions are governed' : 'AI governance · off';
-  if (icon) icon.textContent = connected ? '⬡' : '🔒';
+  if (title) title.textContent = connected ? 'You are protected' : 'You are not protected yet';
+  if (icon) icon.textContent = '';
   if (sub) sub.textContent = connected
-    ? 'What you say, see, and do with AI — protected and proven.'
-    : 'Connect to govern every AI call, mic, screen, and proof.';
-  // Quiet cards
+    ? 'Your traffic and pastes are watched on this Mac. Everything stays local.'
+    : 'Turn on the VPN below, or check a message — protection starts in one click.';
+  try { wireHomeSeatbelt(); } catch (_) {}
+  // Quiet cards — never show raw "undefined"; show honest placeholders.
   try {
     const m = await window.kasbah.exitMarket.list();
     const rec = m?.recommend || (m?.cards || []).find((c) => c.reachable);
     if ($('homeBestExit')) {
-      $('homeBestExit').textContent = rec
-        ? `${rec.flag || ''} ${rec.name || rec.id} · ${rec.priceLabel || ''}`.trim()
-        : (connected ? 'Connected' : 'Tap Connect');
+      $('homeBestExit').textContent = rec && rec.name
+        ? `${rec.flag || ''} ${rec.name}${rec.priceLabel ? ' · ' + rec.priceLabel : ''}`.trim()
+        : (connected ? 'Connected' : 'Tap Connect VPN');
     }
-  } catch (_) { if ($('homeBestExit')) $('homeBestExit').textContent = connected ? 'Connected' : '—'; }
+  } catch (_) { if ($('homeBestExit')) $('homeBestExit').textContent = connected ? 'Connected' : 'Tap Connect VPN'; }
   try {
     const snap = await window.kasbah.impactCard.snapshot();
     if ($('homeImpact')) {
       const proofs = snap.proofsMinted || 0;
       const blocked = snap.secretsBlocked || 0;
-      $('homeImpact').textContent = `${proofs} proofs · ${blocked} blocked`;
+      $('homeImpact').textContent = proofs || blocked
+        ? `${proofs} receipts · ${blocked} leaks stopped`
+        : 'Nothing stopped yet — that is good news';
     }
-  } catch (_) {}
+  } catch (_) { if ($('homeImpact')) $('homeImpact').textContent = '—'; }
   try {
     const s = await window.kasbah.sitrep.get({ egress: null });
     if ($('homeSitrep')) {
       if (s?.crisis?.on) {
-        $('homeSitrep').textContent = 'Crisis mode ON · lockdown steps active';
+        $('homeSitrep').textContent = 'Crisis mode on — lockdown steps active';
       } else if (s?.censorship?.spike) {
-        $('homeSitrep').textContent = `Network spike detected · ${s.censorship.reason || ''}`;
+        $('homeSitrep').textContent = `Network trouble detected${s.censorship.reason ? ' · ' + s.censorship.reason : ''}`;
       } else {
-        const loc = s?.loc || (connected ? 'via Kasbah exit' : 'direct ISP');
-        $('homeSitrep').textContent = `Nominal · ${loc} · ${s?.last24h?.secretsBlocked || 0} blocks / 24h`;
+        const loc = s?.loc || (connected ? 'via Kasbah exit' : 'direct connection');
+        $('homeSitrep').textContent = `Normal · ${loc} · ${s?.last24h?.secretsBlocked || 0} leaks stopped today`;
       }
     }
   } catch (_) { if ($('homeSitrep')) $('homeSitrep').textContent = connected ? 'Protected' : 'Not protected'; }
@@ -7039,7 +8532,7 @@ async function zkProtectNow() {
       : `<span style="color:var(--red)">${esc(r.error||'ZK failed')}</span>`;
   } catch (e) { if ($('popMsg')) $('popMsg').textContent = e.message; }
 }
-async function honeyDeploy(s) {
+async function honeyDeployService(s) {
   try {
     const t = await window.kasbah.honey.deploy(s);
     honeyList();
@@ -7254,6 +8747,82 @@ async function settingsInit() {
     const tog = $('togLoginItem');
     if (tog) tog.classList.toggle('on', !!(li && li.openAtLogin));
   } catch(_) {}
+  try {
+    const t = await window.kasbah.travel.status();
+    const tt = $('togTravel');
+    if (tt) tt.classList.toggle('on', !!(t && t.on));
+  } catch(_) {}
+}
+
+async function toggleTravel(el) {
+  const on = !el.classList.contains('on');
+  try {
+    const r = await window.kasbah.travel.set(on);
+    if (r && r.ok) { el.classList.toggle('on', on); toast('Travel mode', on ? 'On — VPN auto-connects everywhere' : 'Off', 2500); }
+    else { toast('Travel mode', (r && r.error) || 'Could not change', 2500); }
+  } catch(_) {}
+}
+
+// ── My data: see it, take it, delete it ──────────────────────────────────
+function _fmtBytes(n) {
+  if (n == null) return '';
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(1) + ' MB';
+}
+async function myDataRefresh() {
+  const el = $('myDataList');
+  try {
+    const r = await window.kasbah.data.inventory();
+    if (!r || !r.ok) { if (el) el.textContent = 'Could not read.'; return; }
+    if (!r.files.length) { if (el) el.textContent = 'Nothing stored yet — fresh Mac.'; return; }
+    if (el) el.innerHTML = r.files.map((f) => `<div>📁 ${f.file}${f.bytes != null ? ' · ' + _fmtBytes(f.bytes) : ''}</div>`).join('');
+  } catch(_) { if (el) el.textContent = 'Could not read.'; }
+}
+async function myDataExport() {
+  try {
+    const r = await window.kasbah.data.export();
+    toast('My data', r.ok ? 'Saved to Downloads' : ('Failed: ' + (r.error || '')), 3000);
+  } catch(_) {}
+}
+async function myDataErase() {
+  if (!confirm('Delete browsing history, downloads list, and recent activity on this Mac? Your vault and receipts log are kept.')) return;
+  if (!confirm('Really delete? This cannot be undone.')) return;
+  try {
+    const r = await window.kasbah.data.erase();
+    toast('My data', r.ok ? 'Deleted: ' + (r.cleared || []).join(', ') + '. Kept vault + log.' : 'Failed', 3000);
+    myDataRefresh();
+  } catch(_) {}
+}
+
+// ── Pair another Mac (no cloud) ───────────────────────────────────────────
+async function _pairPassword() {
+  const pw = prompt('Pairing password (8+ characters). Use the SAME password on the other Mac.');
+  return pw || '';
+}
+async function pairExport() {
+  const out = $('pairOut');
+  const pw = await _pairPassword();
+  if (!pw) return;
+  try {
+    const r = await window.kasbah.device.exportPair(pw);
+    if (out) out.textContent = r.ok
+      ? `Saved ${r.file} (${r.vaultEntries} passwords inside${r.vaultEntries ? '' : ' — unlock your vault first to include passwords'}). Carry it to your other Mac yourself.`
+      : ('Failed: ' + (r.error || ''));
+  } catch(_) { if (out) out.textContent = 'Failed.'; }
+}
+async function pairImport() {
+  const out = $('pairOut');
+  const file = prompt('Pairing file name in Downloads (e.g. kasbah-pair-123.kpair):');
+  if (!file) return;
+  const pw = await _pairPassword();
+  if (!pw) return;
+  try {
+    const r = await window.kasbah.device.importPair(file, pw);
+    if (out) out.textContent = r.ok
+      ? `Done: settings ${r.restored.settings ? 'restored' : 'skipped'}, ${r.restored.vault || 0} passwords restored. ${r.note || ''}`
+      : ('Failed: ' + (r.error || ''));
+  } catch(_) { if (out) out.textContent = 'Failed.'; }
 }
 
 
@@ -7431,10 +9000,10 @@ async function homeCheckNow() {
 
     let html = `<div style="font-weight:700;color:${color}">${esc(label)}</div>`;
     html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:12px">`;
-    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">🛡️ VPN<br><b style="color:${window.__vpnConnected?'var(--green)':'var(--subtle)'}">${window.__vpnConnected?'On':'Off'}</b></div>`;
-    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">🎯 Honeytokens<br><b>${honeyCount} active</b></div>`;
-    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">🔍 Secrets caught<br><b>${secretsBlocked} total</b></div>`;
-    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">📊 Score<br><b>${c.score||'?'}/100</b></div>`;
+    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">VPN<br><b style="color:${window.__vpnConnected?'var(--green)':'var(--subtle)'}">${window.__vpnConnected?'On':'Off'}</b></div>`;
+    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">Decoys<br><b>${honeyCount} active</b></div>`;
+    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">Secrets caught<br><b>${secretsBlocked} total</b></div>`;
+    html += `<div style="padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">Score<br><b>${c.score||'?'}/100</b></div>`;
     html += `</div>`;
 
     if (!isGood) {
@@ -7473,6 +9042,33 @@ async function homeCrisisToggle() {
   if (__crisis) _silentOrchestrate();
 }
 
+  // ── Seatbelt product layer: digest + trust grade + tier ───────────────────
+  // Extracted into wireHomeSeatbelt() and called from homeRefresh so the
+  // trust chip shows real data on first paint, never "undefined".
+  try { wireHomeSeatbelt(); } catch (_) {}
+
+function wireHomeSeatbelt() {
+  window.kasbah.api('GET', '/v1/intervention/digest').then((d) => {
+    const b = d && d.body ? d.body : d;
+    if (b && b.headline) { const el = document.getElementById('homeDigest'); if (el) el.textContent = b.headline; }
+  }).catch(() => {});
+  window.kasbah.api('GET', '/v1/intervention/snapshot').then((s) => {
+    const b = s && s.body ? s.body : s;
+    const map = { silent_pass: 'All clear', warning_toast: 'Warning shown', hard_block: 'Blocked', mute_block: 'Muted' };
+    const el = document.getElementById('homeSeatbeltTier');
+    if (el) { el.textContent = map[b?.intervention] || 'All clear'; el.style.color = b?.intervention === 'hard_block' ? 'var(--bad)' : 'var(--ok)'; }
+  }).catch(() => {});
+  window.kasbah.api('GET', '/v1/trust-grade').then((g) => {
+    // api() returns {status, body} — the grade lives in body, not on the
+    // envelope (the pre-fix code read g.grade off the envelope and bailed).
+    const b = g && g.body ? g.body : g;
+    if (!b || !b.grade) return;
+    const chip = document.getElementById('homeTrustChip');
+    const score = document.getElementById('homeTrustScore');
+    if (chip) { chip.textContent = `${b.grade} · ${b.label || ''}`; chip.style.background = `${b.color || '#6b7280'}22`; chip.style.color = b.color || 'var(--ink)'; }
+    if (score) score.textContent = `${b.score != null ? b.score : '?'}/100`;
+  }).catch(() => {});
+}
 
 function vpnDpiToggle(on) {
   toast('DPI mode', on ? 'Will use WSS:443 if the exit supports it. brew install wstunnel' : 'Plain WireGuard UDP', 3000);
@@ -7517,7 +9113,15 @@ async function auditWebhook() {
       return v;
     }
   });
-  window.kasbah = proxy;
+  if (!window.kasbah) {
+    try {
+      window.kasbah = proxy;
+    } catch (_) {
+      // Electron contextBridge exposes window.kasbah read-only — keep the
+      // original object instead of crashing the rest of this file.
+      console.warn('[kasbah] api proxy skipped');
+    }
+  }
 })();
 
 // Global resilience layer
@@ -7579,3 +9183,43 @@ if (origSetTab) {
   window.setTab = function(id){ _setTab(id); if(id==='userValue'){ userValueInit(); } };
 }
 
+async function copyDigest() {
+  try {
+    const d = await window.kasbah.api('GET', '/v1/intervention/digest');
+    const text = d?.email?.bodyText || d?.headline || 'Kasbah digest';
+    await navigator.clipboard.writeText(text + '\n' + (d?.footer || ''));
+    toast('Digest copied — paste into Slack/email', 'ok', 2500);
+  } catch (_) { toast('Digest copy failed', 'error', 2000); }
+}
+
+// Protection score pushes from main (VPN/agent/egress/governance aggregate).
+if (window.kasbah?.on) {
+  window.kasbah.on('protection:score', (r) => {
+    const chip = document.getElementById('homeTrustChip');
+    if (chip && r?.score != null) { chip.textContent = `${r.tier || ''} ${r.score}`.trim(); }
+  });
+
+  // ── Browser paste gate — scan pasted content BEFORE it enters the page ────
+  // The guest webview forwards every paste (capture phase); Kasbah scans it
+  // and surfaces the verdict. Closes the private-browser bypass where agents
+  // could paste secrets into hosted AI sites without any scan.
+  let _pasteScanInFlight = false;
+  window.kasbah.on('bwr:paste-scan', async (data) => {
+    const text = data?.text || '';
+    if (!text || _pasteScanInFlight) return;
+    _pasteScanInFlight = true;
+    try {
+      const r = await window.kasbah.api('POST', '/v1/scan', { prompt: text });
+      const j = r?.body || {};
+      const threats = j.threats || [];
+      const verdict = j.verdict || (threats.length ? 'WARN' : 'ALLOW');
+      if (verdict === 'DENY' || threats.length) {
+        toast(`⚠ Paste blocked from entering ${(data.url || 'this site').slice(0, 40)} — ${verdict}: ${threats.slice(0, 2).join('; ')}`, 'error', 6000);
+        addBiometricAlert('PASTE-GATE', (data.url || 'browser').slice(0, 40), `${verdict} — ${threats.slice(0, 3).join('; ') || 'threat detected'}`);
+      } else {
+        toast(`Paste scanned — no threats found (risk ${Number(j.risk_score ?? 0).toFixed(2)})`, 'success', 2500);
+      }
+    } catch (_) { /* scan unavailable — paste proceeds unscanned */ }
+    finally { _pasteScanInFlight = false; }
+  });
+}

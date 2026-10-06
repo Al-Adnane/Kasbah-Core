@@ -8,11 +8,54 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Test that preload runs
+try {
+  ipcRenderer.send('preload-test', 'preload loaded');
+  console.log('[Kasbah] preload loaded');
+} catch (e) {
+  ipcRenderer.send('preload-error', e.message);
+}
+
+// Forward renderer console logs to main process for debugging
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+console.log = (...args) => {
+  originalConsoleLog.apply(console, args);
+  try {
+    ipcRenderer.send('renderer-log', { level: 'log', args: args.map(String) });
+  } catch (e) {}
+};
+
+console.error = (...args) => {
+  originalConsoleError.apply(console, args);
+  try {
+    ipcRenderer.send('renderer-log', { level: 'error', args: args.map(String) });
+  } catch (e) {}
+};
+
+console.warn = (...args) => {
+  originalConsoleWarn.apply(console, args);
+  try {
+    ipcRenderer.send('renderer-log', { level: 'warn', args: args.map(String) });
+  } catch (e) {}
+};
+
 contextBridge.exposeInMainWorld('kasbah', {
   // ── State ──────────────────────────────────────────────────────────────────
   getState:           ()           => ipcRenderer.invoke('get-state'),
   toggleProtection:   ()           => ipcRenderer.invoke('toggle-protection'),
   scanClipboard:      ()           => ipcRenderer.invoke('scan-clipboard'),
+
+  // ── Event push from main (protection:score etc.) ───────────────────────────
+  on: (channel, fn) => {
+    const allowed = ['protection:score', 'egress-threat', 'bwr:download-progress', 'bwr:download-done', 'bwr:download-start', 'sitrep', 'mic:alert', 'camera:alert', 'bwr:paste-scan'];
+    if (!allowed.includes(channel)) return () => {};
+    const handler = (_e, data) => { try { fn(data); } catch (_) {} };
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
 
   // ── API Proxy ──────────────────────────────────────────────────────────────
   api:     (method, endpoint, body) => ipcRenderer.invoke('api', method, endpoint, body),
@@ -316,6 +359,9 @@ contextBridge.exposeInMainWorld('kasbah', {
     scan:   (text)  => ipcRenderer.invoke('bio:scan', text),
     status: ()      => ipcRenderer.invoke('bio:status'),
     rppg:   (body)  => ipcRenderer.invoke('bio:rppg', body || {}),
+    neuralFingerprint: (body) => ipcRenderer.invoke('bio:neural-fingerprint', body || {}),
+    voiceClone: (body) => ipcRenderer.invoke('bio:voice-clone', body || {}),
+    neuralCodec: (body) => ipcRenderer.invoke('bio:neural-codec', body || {}),
   },
   cost: {
     status:    ()     => ipcRenderer.invoke('cost:status'),
@@ -468,12 +514,13 @@ contextBridge.exposeInMainWorld('kasbah', {
     degradationOverride: ()           => ipcRenderer.invoke('gov:degradation-override'),
   },
 
-  // ── N6: Session continuity chain ──────────────────────────────────────────
+  // ── N6: Session continuity chain + Fire Button (merged — was duplicated) ───
   session: {
     begin:             (body)          => ipcRenderer.invoke('session:begin',              body || {}),
     end:               (sessionId)     => ipcRenderer.invoke('session:end',                { sessionId }),
     verifyContinuity:  (from, to)      => ipcRenderer.invoke('session:verify-continuity',  { fromIdx: from, toIdx: to }),
     head:              ()              => ipcRenderer.invoke('session:head'),
+    burn:              ()              => ipcRenderer.invoke('session:burn'),
   },
 
   // ── N8: Prompt attestation ────────────────────────────────────────────────
@@ -517,13 +564,16 @@ contextBridge.exposeInMainWorld('kasbah', {
     selfTest: () => ipcRenderer.invoke('dkg:transport-self-test'),
   },
   voice: {
-    selfTest:        ()     => ipcRenderer.invoke('voice:self-test'),
-    commitUtterance: (body) => ipcRenderer.invoke('voice:commit-utterance', body || {}),
-    proveKeyword:    (body) => ipcRenderer.invoke('voice:prove-keyword', body || {}),
-    verifyKeyword:   (body) => ipcRenderer.invoke('voice:verify-keyword', body || {}),
-    buildRegistry:   (body) => ipcRenderer.invoke('voice:build-registry', body || {}),
-    authProve:       (body) => ipcRenderer.invoke('voice:auth-prove', body || {}),
-    authVerify:      (body) => ipcRenderer.invoke('voice:auth-verify', body || {}),
+    selfTest:               () => ipcRenderer.invoke('voice:self-test'),
+    simulateSilentSpeech:  (body) => ipcRenderer.invoke('voice:simulate-silent-speech', body || []),
+    simulateVoiceprint:    (seed) => ipcRenderer.invoke('voice:simulate-voiceprint', seed || ''),
+    buildRegistry:         (body) => ipcRenderer.invoke('voice:build-registry', body || []),
+    authProve:             (body) => ipcRenderer.invoke('voice:auth-prove', body || {}),
+    authVerify:            (body) => ipcRenderer.invoke('voice:auth-verify', body || {}),
+    commitUtterance:       (body) => ipcRenderer.invoke('voice:commit-utterance', body || []),
+    rerandomizeUtterance:  (body) => ipcRenderer.invoke('voice:rerandomize-utterance', body || {}),
+    orSigmaProveKeyword:   (body) => ipcRenderer.invoke('voice:or-sigma-prove-keyword', body || {}),
+    orSigmaVerifyKeyword:  (body) => ipcRenderer.invoke('voice:or-sigma-verify-keyword', body || {}),
   },
   nomos: {
     status:   ()     => ipcRenderer.invoke('nomos:status'),
@@ -535,6 +585,24 @@ contextBridge.exposeInMainWorld('kasbah', {
     approve:      (appName) => ipcRenderer.invoke('mic:approve', appName),
     revoke:       (appName) => ipcRenderer.invoke('mic:revoke', appName),
     listApproved: ()        => ipcRenderer.invoke('mic:list-approved'),
+    quarantine:   (app, reason) => ipcRenderer.invoke('mic:quarantine', { app, reason }),
+    unquarantine: (app, note)   => ipcRenderer.invoke('mic:unquarantine', { app, note }),
+    quarantined:  ()        => ipcRenderer.invoke('mic:quarantined'),
+  },
+  camera: {
+    status:       ()        => ipcRenderer.invoke('camera:status'),
+    approve:      (appName) => ipcRenderer.invoke('camera:approve', appName),
+    revoke:       (appName) => ipcRenderer.invoke('camera:revoke', appName),
+    listApproved: ()        => ipcRenderer.invoke('camera:list-approved'),
+    quarantine:   (app, reason) => ipcRenderer.invoke('camera:quarantine', { app, reason }),
+    unquarantine: (app, note)   => ipcRenderer.invoke('camera:unquarantine', { app, note }),
+    quarantined:  ()        => ipcRenderer.invoke('camera:quarantined'),
+  },
+  enforcer: {
+    status:       ()        => ipcRenderer.invoke('enforcer:status'),
+    setEnforce:   (on)      => ipcRenderer.invoke('enforcer:set-enforce', on),
+    setAction:    (action)  => ipcRenderer.invoke('enforcer:set-action', action),
+    recentActions:(n)       => ipcRenderer.invoke('enforcer:recent-actions', n),
   },
   tlog: {
     recent:  (n)     => ipcRenderer.invoke('tlog:recent', n),
@@ -548,20 +616,71 @@ contextBridge.exposeInMainWorld('kasbah', {
     verify:  (cert) => ipcRenderer.invoke('trace:verify', cert),
     pubkey:  ()     => ipcRenderer.invoke('trace:pubkey'),
   },
+  travel: {
+    status: ()   => ipcRenderer.invoke('travel:status'),
+    set:    (on) => ipcRenderer.invoke('travel:set', !!on),
+  },
+  data: {
+    inventory: () => ipcRenderer.invoke('data:inventory'),
+    export:    () => ipcRenderer.invoke('data:export'),
+    erase:     () => ipcRenderer.invoke('data:erase'),
+  },
+  device: {
+    exportPair: (password)       => ipcRenderer.invoke('device:export-pair', { password }),
+    importPair: (file, password) => ipcRenderer.invoke('device:import-pair', { file, password }),
+  },
   // ── Agent activity real-time stream ────────────────────────────────────────
   agentActivity: {
     start:  ()   => ipcRenderer.invoke('agent:activity:start'),
     stop:   ()   => ipcRenderer.invoke('agent:activity:stop'),
     onEvent: (fn) => { ipcRenderer.on('agent:activity', (_e, events) => fn(events)); },
   },
-  // ── Voice privacy (OR-Sigma silent speech) ─────────────────────────────────
-  voice: {
-    proveKeyword:  (keyword, salt) => ipcRenderer.invoke('voice:prove-keyword', keyword, salt),
-    verifyKeyword: (proof, salt)   => ipcRenderer.invoke('voice:verify-keyword', proof, salt),
-  },
   // ── Competitor USP bridges ──────────────────────────────────────────────────
-  session: {
-    // DDG Fire Button: wipe all in-process AI session state instantly
-    burn: () => ipcRenderer.invoke('session:burn'),
+  browser: {
+    resizeWebview: (webContentsId, width, height) =>
+      ipcRenderer.invoke('browser:resize-webview', { webContentsId, width, height }),
+  },
+  bv: {
+    create:        ()              => ipcRenderer.invoke('bv:create'),
+    destroy:       (id)            => ipcRenderer.invoke('bv:destroy', id),
+    navigate:      (id, url)       => ipcRenderer.invoke('bv:navigate', { id, url }),
+    setBounds:     (id, x, y, w, h) => ipcRenderer.invoke('bv:set-bounds', { id, x, y, w, h }),
+    goBack:        (id)            => ipcRenderer.invoke('bv:go-back', id),
+    goForward:     (id)            => ipcRenderer.invoke('bv:go-forward', id),
+    reload:        (id)            => ipcRenderer.invoke('bv:reload', id),
+    canGoBack:     (id)            => ipcRenderer.invoke('bv:can-go-back', id),
+    canGoForward:  (id)            => ipcRenderer.invoke('bv:can-go-forward', id),
+    execJS:        (id, code)      => ipcRenderer.invoke('bv:exec-js', { id, code }),
+    hide:          (id)            => ipcRenderer.invoke('bv:hide', id),
+    onEvent:       (fn)            => ipcRenderer.on('bv:event', (_e, ev) => fn(ev)),
+  },
+  // ── New capability bridges (local-first IPC) ──────────────────────────
+  mcise: {
+    fixedCore:   ()          => ipcRenderer.invoke('mcise:fixed-core:list'),
+    auditVerify: ()          => ipcRenderer.invoke('mcise:audit:verify'),
+    ladder:      (agentId)   => ipcRenderer.invoke('mcise:ladder:status', agentId),
+  },
+  siem: {
+    status:  ()     => ipcRenderer.invoke('siem:status'),
+    forward: (body)  => ipcRenderer.invoke('siem:forward', body || {}),
+  },
+  lineage: {
+    stats:      ()     => ipcRenderer.invoke('lineage:stats'),
+    chain:      (body) => ipcRenderer.invoke('lineage:chain', body || {}),
+    provenance: (body) => ipcRenderer.invoke('lineage:provenance', body || {}),
+  },
+  maqasid: {
+    evaluate: (text) => ipcRenderer.invoke('maqasid:evaluate', { text }),
+  },
+  sentinel: {
+    status: ()     => ipcRenderer.invoke('sentinel:status'),
+    scan:   (body) => ipcRenderer.invoke('sentinel:scan', body || {}),
+  },
+  ssi: {
+    status: ()     => ipcRenderer.invoke('ssi:status'),
+    screen: (body) => ipcRenderer.invoke('ssi:screen', body || {}),
+    admit:  (body) => ipcRenderer.invoke('ssi:admit', body || {}),
+    engineAdmit: (body) => ipcRenderer.invoke('ssi:engine-admit', body || {}),
+    engineSelftest: () => ipcRenderer.invoke('ssi:engine-selftest'),
   },
 });

@@ -76,6 +76,9 @@
         "filter": [
           "zeroday_cli.py",
           "zeroday_engine.py",
+          "ssi_universal_core.py",
+          "sovereign_engine_max.py",
+          "ssi_cli.py",
           "crypto_audit.py",
           "governance_proxy.py",
           "binary_engine.py",
@@ -109,6 +112,26 @@
       {
         "from": "../nomos-engine",
         "to": "packages/nomos-engine",
+        "filter": ["**/*", "!node_modules/**"]
+      },
+      {
+        "from": "../../src",
+        "to": "packages/kasbah-src",
+        "filter": ["**/*.js", "!**/*.test.js"]
+      },
+      {
+        "from": "../mcise-core",
+        "to": "packages/mcise-core",
+        "filter": ["**/*", "!node_modules/**"]
+      },
+      {
+        "from": "../agent-governance",
+        "to": "packages/agent-governance",
+        "filter": ["**/*", "!node_modules/**"]
+      },
+      {
+        "from": "../agent-runtime",
+        "to": "packages/agent-runtime",
         "filter": ["**/*", "!node_modules/**"]
       },
       {
@@ -177,7 +200,7 @@
   },
   "dependencies": {
     "@noble/post-quantum": "^0.6.1",
-    "cors": "^2.8.8",
+    "cors": "^2.8.5",
     "express": "^4.18.2"
   },
   "devDependencies": {

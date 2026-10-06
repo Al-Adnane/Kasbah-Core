@@ -97,12 +97,34 @@ async function sha1Hex(text) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ── Cosmetic ad hiding (beats Opera/Brave on visible cleanliness) ─────────
+  // Network blocking already cancels tracker requests; this hides the empty
+  // boxes and sponsored slots left behind. Pure CSS, no layout thrash.
+  try {
+    const css = '[id*="sponsored"],[class*="sponsored"],[id*="taboola"],[class*="taboola"],[id*="outbrain"],[class*="outbrain"],.ad-banner,.adsbygoogle,.advertisement{display:none!important}';
+    const st = document.createElement('style');
+    st.textContent = css;
+    (document.head || document.documentElement).appendChild(st);
+  } catch (_) {}
   document.addEventListener('blur', async (e) => {
     const el = e.target;
     if (!el || el.tagName !== 'INPUT' || el.type !== 'password' || !el.value || el.value.length < 4) return;
     try {
       const hash = await sha1Hex(el.value);
       ipcRenderer.sendToHost('kasbah:password-check', { hash5: hash.slice(0, 5), hashSuffix: hash.slice(5) });
+    } catch (_) {}
+  }, true);
+
+  // ── Paste gate — scan content BEFORE it enters the page ──────────────────
+  // Closes the private-browser bypass: agents pasting secrets into hosted AI
+  // sites are scanned here first. Capture phase so we see every paste,
+  // including ones the page may swallow.
+  document.addEventListener('paste', (e) => {
+    try {
+      const text = (e.clipboardData && e.clipboardData.getData('text')) || '';
+      if (text && text.length >= 16 && text.length <= 20000) {
+        ipcRenderer.sendToHost('kasbah:paste-scan', { text: text.slice(0, 8000), url: location.href.slice(0, 500) });
+      }
     } catch (_) {}
   }, true);
 }, { once: true });

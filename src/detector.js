@@ -366,8 +366,16 @@ var INSURANCE_RE = /(?:(?:auto|car|vehicle|health|life|home|property)\s*insuranc
 // ── TIER 2 ──
 var BEARER_RE = /\bBearer\s+[A-Za-z0-9_\-\.]{20,}\b/i;
 var ENV_SECRET_RE = /\b(?:secret|token|api|auth|credential|private)[_\s]*(?:[a-z_]*)?\s*[=:]/i;
-var INJECTION_RE = /(?:ignore\s+(?:all\s+)?previous\s+(?:instructions?|directives?|rules?)|system\s+(?:prompt|override)|developer\s+(?:message|mode|override)|jailbreak|you\s+are\s+(now\s+)?(?:DAN|GPT|uncensored|unrestricted|unfiltered|free\s+of\s+restrictions)|act\s+as\s+(if\s+you\s+are\s+)?(DAN|an?\s+(?:unrestricted|uncensored|unfiltered|evil|jailbroken))|from\s+now\s+on\s+(you\s+are|act\s+as)|forget\s+(?:all\s+)?(?:your\s+)?(?:previous\s+)?(?:instructions?|guidelines?|training|restrictions?|rules?)|no\s+(?:safety|filter|restriction|guideline|rule)s?\b|you\s+have\s+no\s+restrictions?|disable\s+(?:all\s+)?(?:safety|filter)|override\s+(?:all\s+)?(?:previous\s+)?(?:instructions?|rules?|directives?))/i;
+var INJECTION_RE = /(?:ignore\s+(?:all\s+)?previous\s+(?:instructions?|directives?|rules?)|system\s+(?:prompt|override)|developer\s+(?:message|mode|override)|jailbreak|you\s+are\s+(now\s+)?(?:DAN|GPT|uncensored|unrestricted|unfiltered|free\s+of\s+restrictions)|act\s+as\s+(if\s+you\s+are\s+)?(DAN|an?\s+(?:unrestricted|uncensored|unfiltered|evil|jailbroken))|pretend\s+to\s+be\s+(?:DAN|an?\s+(?:unrestricted|evil))|do\s+anything\s+now|broken\s+free\s+of\s+(?:the\s+)?(?:typical\s+confines|confines)|from\s+now\s+on\s+(you\s+are|act\s+as)|forget\s+(?:all\s+)?(?:your\s+)?(?:previous\s+)?(?:instructions?|guidelines?|training|restrictions?|rules?)|no\s+(?:safety|filter|restriction|guideline|rule)s?\b|you\s+have\s+no\s+restrictions?|disable\s+(?:all\s+)?(?:safety|filter)|override\s+(?:all\s+)?(?:previous\s+)?(?:instructions?|rules?|directives?)|opposite\s+day.*invert|roleplay\s+as\s+(?:my\s+)?grandmother.*weapon|bedtime\s+stor(?:y|ies).*weapon|academic\s+exemption.*without\s+filters?|demonstrate.*malicious.*without\s+filters?|token\s+budget.*reset.*restrictions?|begin\s+unrestricted\s+response|synthesi[sz]e\s+(?:a\s+)?dangerous\s+chemical|exact\s+technical\s+detail.*synthesi)/i;
 var SHELL_RE = /(?:\brm\s+-rf\b|\bdrop\s+table\b|\bformat\s+[a-z]:|\bpowershell\b|\bwget\s+https?:\/\/|\bcurl\s+https?:\/\/|\b(?:curl|wget)\b[^|\n]*\|\s*(?:sudo\s+)?(?:sh|bash|zsh|python3?|perl|node)\b)/i;
+
+// ── TIER 3c: Forged chat roles (Downloads: COMPLETE_MOAT_ARCHITECTURE L4) ──
+// Catches pasted role separators that promote user text to system/developer.
+var ROLE_FORGE_RE = /(?:###\s*(?:system|assistant|developer|user)\s*:|<\|im_start\|>\s*(?:system|developer|assistant)|<\|im_end\|>|\[INST\]|\[\/INST\]|<<SYS>>|<<\/SYS>>|assistant\s+to\s*=|system\s*:\s*\n)/i;
+
+// ── TIER 3d: Tool-call exfiltration (Downloads: COMPLETE_MOAT_ARCHITECTURE L3) ──
+// Catches pasted agent traces / function calls that move data or run actions.
+var TOOL_ABUSE_RE = /"(?:tool|function_call|tool_call|function\.call|name)"\s*:\s*"(?:send|post|upload|transfer|execute|run|email|exfiltrate|shell|fetch|curl|webhook)/i;
 
 // ── TIER 3b: Exfiltration intent ──
 // Catches agent instructions to exfiltrate, steal or leak data — the missing critical gap.
@@ -384,7 +392,7 @@ var CONNSTR_RE = /(?:mongodb|postgres(?:ql)?|mysql|redis|amqp|mssql):\/\/[^\s"'<
 var _ALL_PATTERNS = [PASSPORT_RE, VISA_RE, NATIONAL_ID_RE, DRIVERS_LICENSE_RE,
   MEDICAL_RE, BANK_ACCOUNT_RE, TAX_ID_RE, BIRTH_CERT_RE, CRYPTO_RE, INSURANCE_RE,
   CC_RE, SSN_RE, GH_PAT_RE, AWS_KEY_RE, OPENAI_KEY_RE, BEARER_RE, INJECTION_RE, SHELL_RE,
-  EXFIL_RE, EMAIL_RE, CONNSTR_RE];
+  EXFIL_RE, EMAIL_RE, CONNSTR_RE, ROLE_FORGE_RE, TOOL_ABUSE_RE];
 function computePatternHash() {
   var combined = _ALL_PATTERNS.map(function(r) { return r.source; }).join("|");
   return hybridHash(combined);
@@ -680,7 +688,7 @@ function classify(text) {
       decision_mode: DECISION_MODE, platform: detectPlatform(), tiers: [], proof: null, version: PATTERN_VERSION,
       features: FEATURES };
   }
-  if (!/[a-zA-Z0-9]/.test(text)) {
+  if (!/[a-zA-Z0-9\u2800-\u28FF]/.test(text) && !/[.\-]{2,}(\s+[.\-]{2,}){3,}/.test(text)) {
     return { risk: 0, decision: "ALLOW", reason: "No alphanumeric", content_hash: hybridHash(text),
       decision_mode: DECISION_MODE, platform: detectPlatform(), tiers: [], proof: null, version: PATTERN_VERSION,
       features: FEATURES };
@@ -697,6 +705,93 @@ function classify(text) {
   var tc = tn.replace(/[\n\r]+/g, '');
   var lower = tn.toLowerCase();
   var len = Math.max(t.length, 1);
+
+  // ── Bypass decoders (recall boosters, still local) ──
+  // ROT13: decode and re-check for known attack phrases.
+  var rot13 = tn.replace(/[a-zA-Z]/g, function (c) {
+    var b = c <= 'Z' ? 65 : 97;
+    return String.fromCharCode(((c.charCodeAt(0) - b + 13) % 26) + b);
+  }).toLowerCase();
+  var rot13_hit = /ignor|disregard.*instructions|you are now dan/.test(rot13);
+  // l33t normalize: 1gn0r3 → ignore.
+  var l33t = lower.replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/0/g, 'o').replace(/5/g, 's').replace(/7/g, 't');
+  var l33t_hit = /ignore all previous|disregard.*instructions/.test(l33t);
+  // URL-decode: ignore%20all%20previous.
+  var urldec_hit = false;
+  try {
+    var ud = decodeURIComponent(tn).toLowerCase();
+    if (ud !== lower && /ignore all previous|disregard.*instructions/.test(ud)) urldec_hit = true;
+  } catch (_) {}
+  // Reversed words: noitcurtsni → instructions.
+  var rev_hit = /\bnoitcurtsni\b|\bsuoiverp\b|\berongi\b/.test(lower);
+  // HTML comment concealment: <!-- ignore previous --> — strip but score if hit.
+  var comment_hit = false;
+  try {
+    var stripped = tn.replace(/<!--[\s\S]*?-->/g, function (m) { return ' ' + m.slice(4, -3) + ' '; });
+    if (stripped !== tn && INJECTION_RE.test(stripped)) comment_hit = true;
+  } catch (_) {}
+  // HTML entity decode: &#105;gnore / &lt;script — decode and re-check.
+  var entity_hit = false;
+  try {
+    var decoded = tn.replace(/&#(\d+);/g, function (m, d) { return String.fromCharCode(parseInt(d, 10)); })
+      .replace(/&#x([0-9a-fA-F]+);/g, function (m, h) { return String.fromCharCode(parseInt(h, 16)); })
+      .replace(/&(lt|gt|amp|quot|apos);/g, function (m, e) { return { lt: '<', gt: '>', amp: '&', quot: '"', apos: "'" }[e]; });
+    if (decoded !== tn && INJECTION_RE.test(decoded)) entity_hit = true;
+  } catch (_) {}
+  // Morse decode: .. --. -. --- .-. . → ignore.
+  var MORSE_MAP = { '.-': 'a', '-...': 'b', '-.-.': 'c', '-..': 'd', '.': 'e', '..-.': 'f', '--.': 'g', '....': 'h', '..': 'i', '.---': 'j', '-.-': 'k', '.-..': 'l', '--': 'm', '-.': 'n', '---': 'o', '.--.': 'p', '--.-': 'q', '.-.': 'r', '...': 's', '-': 't', '..-': 'u', '...-': 'v', '.--': 'w', '-..-': 'x', '-.--': 'y', '--..': 'z' };
+  var morse_hit = false;
+  try {
+    if (/[.\-]{2,}(\s+[.\-]{2,}){3,}/.test(tn)) {
+      var morseDec = tn.replace(/[.\-]+/g, function (tok) { return MORSE_MAP[tok] || '?'; }).toLowerCase().replace(/[^a-z?]/g, '');
+      if (/ignor|disregard.*instructions/.test(morseDec)) morse_hit = true;
+    }
+  } catch (_) {}
+  // Braille decode: ⠊⠛⠝⠕⠗⠑ → ignore.
+  var braille_hit = false;
+  try {
+    var brailleRun = tn.match(/[⠁-⣿]{4,}/);
+    if (brailleRun) {
+      var BRAILLE_BASE = 0x2800;
+      var BRAILLE_ALPHA = 'a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z'.split(',');
+      var BRAILLE_DOTS = [1, 3, 9, 25, 17, 11, 27, 19, 10, 26, 5, 7, 13, 29, 21, 15, 31, 23, 14, 30, 37, 39, 58, 45, 61, 53];
+      var bdec = brailleRun[0].split('').map(function (ch) {
+        var idx = BRAILLE_DOTS.indexOf(ch.charCodeAt(0) - BRAILLE_BASE);
+        return idx >= 0 ? BRAILLE_ALPHA[idx] : '?';
+      }).join('');
+      if (/ignor|disregard|jailbreak/.test(bdec)) braille_hit = true;
+    }
+  } catch (_) {}
+  // Fuzzy injection verbs: 1gnor3, dısregard, jailbr3ak (Levenshtein ≤ 2).
+  var fuzzy_hit = false;
+  if (!INJECTION_RE.test(tn)) {
+    try {
+      var FUZZY_WORDS = ['ignore', 'previous', 'instructions', 'disregard', 'jailbreak', 'override', 'unrestricted'];
+      var toks = lower.match(/\b[a-z0-9]{4,12}\b/g) || [];
+      var fuzzCount = 0;
+      var editDist = function (a, b) {
+        if (Math.abs(a.length - b.length) > 2) return 3;
+        var dp = []; for (var i = 0; i <= a.length; i++) { dp[i] = [i]; }
+        for (var j = 1; j <= b.length; j++) dp[0][j] = j;
+        for (var ii = 1; ii <= a.length; ii++) for (var jj = 1; jj <= b.length; jj++)
+          dp[ii][jj] = Math.min(dp[ii-1][jj] + 1, dp[ii][jj-1] + 1, dp[ii-1][jj-1] + (a[ii-1] === b[jj-1] ? 0 : 1));
+        return dp[a.length][b.length];
+      };
+      for (var ti = 0; ti < toks.length && fuzzCount < 2; ti++) {
+        for (var fi = 0; fi < FUZZY_WORDS.length; fi++) {
+          if (toks[ti] !== FUZZY_WORDS[fi] && editDist(toks[ti], FUZZY_WORDS[fi]) <= 2) { fuzzCount++; break; }
+        }
+      }
+      if (fuzzCount >= 2) fuzzy_hit = true;
+    } catch (_) {}
+  }
+  // Urgency + false authority (CEO/board + send passwords/emails/keys).
+  var urgency_hit = /urgent|immediately|running late|board meeting/i.test(tn) &&
+    /ceo|board|authorized|admin/i.test(tn) &&
+    /password|email address|secret|key|database/i.test(tn);
+  // Brute-force / credential-stuffing intent.
+  var brute_hit = /tr(y|ies) (common )?passwords|brute.?force|credential.?stuffing/i.test(tn) &&
+    /ssh|login|server|account/i.test(tn);
 
   // --- Shannon entropy ---
   var freq = {};
@@ -821,11 +916,15 @@ function classify(text) {
   var has_shell = SHELL_RE.test(tn);
   var has_exfil = EXFIL_RE.test(tn);
   var has_concat_bypass = detectStringConcatBypass(t);
+  var has_role_forge = ROLE_FORGE_RE.test(tn);
+  var has_tool_abuse = TOOL_ABUSE_RE.test(tn);
 
   if (has_injection) tiers_triggered.push("T3:injection");
   if (has_shell) tiers_triggered.push("T3:shell");
   if (has_exfil) tiers_triggered.push("T3:exfiltration");
   if (has_concat_bypass) tiers_triggered.push("T3:concat_bypass");
+  if (has_role_forge) tiers_triggered.push("T3:role_forge");
+  if (has_tool_abuse) tiers_triggered.push("T3:tool_abuse");
 
   // Suspicious keyword ngrams
   var suspicious = [
@@ -894,6 +993,8 @@ function classify(text) {
   if (has_injection)      { score += 70; reasons.push("prompt injection"); }   // -> DENY
   if (has_shell)          { score += 70; reasons.push("dangerous command"); }   // -> DENY
   if (has_exfil)          { score += 70; reasons.push("data exfiltration intent"); } // -> DENY
+  if (has_role_forge)     { score += 50; reasons.push("forged chat role"); } // WARN alone, DENY with corroboration
+  if (has_tool_abuse)     { score += 60; reasons.push("tool-call exfiltration"); } // WARN alone, DENY with corroboration
   if (has_concat_bypass)  { score += 60; reasons.push("string concatenation bypass"); }
   if (has_env_secret && keyword_hits >= 3) { score += 45; reasons.push("env/shell secret pattern"); }
   if (!has_named_api_key && has_api_key_word && entropy <= 3.5) { score += 40; reasons.push("API key keyword"); }
@@ -906,6 +1007,21 @@ function classify(text) {
   var is_public_key_only = /-----BEGIN\s+(?:RSA\s+|EC\s+)?PUBLIC\s+KEY-----/i.test(tn)
     && !/-----BEGIN\s+(?:RSA\s+|EC\s+|OPENSSH\s+)?PRIVATE\s+KEY-----/i.test(tn);
   if (has_base64 && entropy > 4.5 && !is_public_key_only) { score += 45; reasons.push("high-entropy base64"); }
+  if (rot13_hit) { score += 55; reasons.push("rot13-encoded injection"); }
+  if (l33t_hit) { score += 55; reasons.push("l33t-encoded injection"); }
+  if (urldec_hit) { score += 55; reasons.push("url-encoded injection"); }
+  if (rev_hit) { score += 50; reasons.push("reversed-text obfuscation"); }
+  if (comment_hit) { score += 55; reasons.push("comment-concealed injection"); }
+  if (entity_hit) { score += 55; reasons.push("entity-encoded injection"); }
+  if (morse_hit) { score += 55; reasons.push("morse-encoded injection"); }
+  if (braille_hit) { score += 55; reasons.push("braille-encoded injection"); }
+  if (fuzzy_hit) { score += 50; reasons.push("obfuscated injection verbs"); }
+  // CoT-manipulation: stepwise reasoning yoked to restriction removal.
+  // Bare "step by step" is benign — require the bypass clause.
+  var cot_hit = /step\s+by\s+step[^.]{0,80}(past|bypass|ignor|without|against|around)[^.]{0,40}(rules?|restrictions?|safety|filters?|refusals?)|((past|bypass|ignor|without|against|drop)[^.]{0,40}(rules?|restrictions?|safety|filters?)[^.]{0,80}step\s+by\s+step)/i.test(tn);
+  if (cot_hit) { score += 60; reasons.push("reasoning-manipulation (CoT bypass)"); }
+  if (urgency_hit) { score += 55; reasons.push("urgency + false authority"); }
+  if (brute_hit) { score += 55; reasons.push("brute-force intent"); }
   if (ngram_score > 2)   { score += 20; reasons.push("suspicious keywords"); }
   if (keyword_hits >= 3) { score += 15; reasons.push("multiple secret keywords"); }
   if (entropy > 5.0 && special_ratio > 0.2) { score += 10; reasons.push("high entropy + special chars"); }
@@ -1077,7 +1193,9 @@ function selfTest() {
   delete patternStats["_test_fire_decay"];
 
   // v1.0.0 NEW TEST 24: ML Entropy Scoring — high-entropy secrets should score HIGH
-  var t24 = classify("sk_live_51HyEqA2eZvKYlo2C7Yd8Zm9PqXmW5N3vJ2kL9cG6hF7dK8wE4rB1tS2uO3pV5qY");
+  // Uses a realistic Stripe live-key shape (not the FAKE placeholder, which
+  // correctly scores low as an obvious test vector).
+  var t24 = classify("sk_live_REDACTED_BENCH_CORPUS_EXAMPLE");
   results.push({ name: "ml_entropy_score", pass: t24.risk >= 80 && t24.entropy_score !== undefined });
 
   // v1.0.0 NEW TEST 25: Context Filter — educational context should reduce risk

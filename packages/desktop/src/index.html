@@ -263,16 +263,60 @@ html.theme-dark #main{
 #pageBrowser.active{display:flex;height:100%;min-height:0;max-height:100%}
 #main.browser-full{overflow:hidden}
 #main.browser-full .page:not(#pageBrowser){display:none}
-/* Webview must fill the pane — flex height on <webview> is unreliable in Electron */
-#bwrWebviewWrap{min-height:0;flex:1 1 auto;height:100%}
-#bwrViewport{min-height:0;flex:1 1 auto;position:relative;height:100%}
-#bwrViewport webview{
-  position:absolute;inset:0;width:100%;height:100%;min-height:100%;min-width:100%;
-  display:block;border:none;background:#fff;
-}
-#bwrStartScreen{min-height:0}
+#bwrWebviewWrap{display:flex;flex-direction:column;flex:1 1 0;min-height:0;overflow:hidden}
+#bwrViewport{display:none;flex:1 1 0;min-height:0;overflow:hidden}
+#bwrViewport.active{display:flex;flex-direction:column}
+#bwrViewport webview{display:block;flex:1 1 0;min-height:0;width:100%;border:none;background:#fff}
+#bwrStartScreen{flex:1 1 0;min-height:0;overflow-y:auto}
 
-/* ── Kasbah Browser chrome ─────────────────────────────────────────────── */
+/* Multimodal drop zone */
+.mm-dropzone.drag-over{border-color:var(--red);background:var(--red-soft)}
+.mm-dropzone:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+#mmResults .mm-result{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
+#mmResults .mm-result.hazard{border-color:var(--red);background:var(--red-soft)}
+#mmResults .mm-result-header{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px}
+#mmResults .mm-result-tag{font-size:10px;padding:1px 6px;border-radius:4px;background:var(--bg2);color:var(--muted)}
+#mmResults .mm-result-tag.hazard{background:var(--red);color:#fff}
+#mmResults .mm-result-details{font-size:11px;color:var(--muted);font-family:ui-monospace,monospace}
+
+/* Silent speech audio events */
+#mmAudioEvents .audio-event{padding:4px 8px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between}
+#mmAudioEvents .audio-event:last-child{border-bottom:none}
+#mmAudioEvents .audio-event.warn{color:var(--red)}
+
+/* Red-team chart */
+#redteamChart{background:var(--card);border-radius:8px}
+
+/* Digest cards */
+#digestCards .digest-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:border .15s,box-shadow .15s}
+#digestCards .digest-card:hover{border-color:var(--red);box-shadow:0 2px 8px rgba(191,56,17,.1)}
+#digestCards .digest-card-header{display:flex;justify-content:space-between;font-weight:600;font-size:13px}
+#digestCards .digest-card-type{font-size:10px;padding:1px 6px;border-radius:4px;background:var(--bg2);color:var(--muted)}
+#digestCards .digest-card-expanded{margin-top:8px;font-size:11px;color:var(--muted);font-family:ui-monospace,monospace;white-space:pre-wrap}
+
+/* MCP inventory */
+#mcpInventory .mcp-server{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
+#mcpInventory .mcp-server-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+#mcpInventory .mcp-tool{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--bg);border-radius:6px;margin:4px 0;font-size:12px}
+#mcpInventory .mcp-tool.blocked{border-left:3px solid var(--red)}
+#mcpInventory .mcp-toggle{width:36px;height:20px;border-radius:10px;background:var(--border);position:relative;cursor:pointer;transition:background .15s}
+#mcpInventory .mcp-toggle.active{background:var(--red)}
+#mcpInventory .mcp-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+#mcpInventory .mcp-toggle.active::after{left:18px}
+
+/* Trust grade chip */
+.trust-grade-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.trust-grade-chip.A{background:#dcfce7;color:#166534}
+.trust-grade-chip.B{background:#dcfce7;color:#166534}
+.trust-grade-chip.C{background:#fef9c3;color:#854d0e}
+.trust-grade-chip.D{background:#fed7aa;color:#9a3412}
+.trust-grade-chip.F{background:#fee2e2;color:#991b1b}
+
+/* Summary stat cards */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;transition:border .15s,box-shadow .15s}
+.stat-card:hover{border-color:var(--brand);box-shadow:0 2px 8px rgba(191,56,17,.1)}
+.stat-card-value{font-size:28px;font-weight:800;color:var(--ink);line-height:1}
+.stat-card-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
 #bwrChrome{
   display:flex;align-items:center;gap:10px;
   padding:10px 14px 8px;
@@ -1138,7 +1182,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
 .plan-persona{font-size:11px;color:var(--subtle);margin-bottom:18px;font-style:italic;min-height:30px}
 .plan-features{flex:1;margin-bottom:18px;display:flex;flex-direction:column;gap:7px}
 .plan-feature{font-size:12.5px;color:var(--ink2);line-height:1.5;display:flex;align-items:flex-start;gap:8px}
-.plan-feature::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0;font-size:13px}
+.plan-feature::before{content:"✓ ";color:var(--green);font-weight:700;flex-shrink:0;font-size:13px}
 .plan-cta{background:var(--ink);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,transform .1s}
 .plan-cta:hover{background:#000;transform:translateY(-1px)}
 .plan-cta.primary{background:var(--red);box-shadow:0 2px 8px rgba(191,56,17,.25)}
@@ -1392,7 +1436,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
     <div class="ob-step active" data-step="0">
       <div class="ob-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill="currentColor" d="M12 2L3 6v6c0 5 3.5 9.7 9 11 5.5-1.3 9-6 9-11V6l-9-4z"/></svg></div>
       <div class="ob-heading">Protect this Mac in 30 seconds</div>
-      <div class="ob-body">Step 1 of 3 — Your traffic will exit in <strong>Singapore</strong> (best from Myanmar). macOS will ask for your password once.</div>
+      <div class="ob-body">Step 1 of 4 — Your traffic will exit in <strong>Singapore</strong> (best from Myanmar). macOS will ask for your password once.</div>
       <button class="ob-btn" id="obBtn0">Next →</button>
     </div>
     <div class="ob-step" data-step="1">
@@ -1403,10 +1447,18 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
       <button class="ob-btn" id="obBtn1b" style="margin-top:8px;background:var(--green)">Install AI Gate</button>
     </div>
     <div class="ob-step" data-step="2">
+      <div class="ob-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill="currentColor" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-7 9a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0H5zm7 11a1 1 0 0 0 1-1v-2a1 1 0 0 0-2 0v2a1 1 0 0 0 1 1z"/></svg></div>
+      <div class="ob-heading">Your voice, every Mac, anywhere</div>
+      <div class="ob-body">Kasbah watches the microphone and camera for harvesting apps, guards pasted secrets, and can follow you: pair another Mac with a file (no cloud), and flip on Travel mode for unsafe Wi-Fi.</div>
+      <div id="obGuardsOut" class="muted" style="font-size:12px;margin:8px 0;min-height:18px"></div>
+      <button class="ob-btn" id="obBtn2">Check my guards →</button>
+      <button class="ob-btn" id="obBtn2b" style="margin-top:8px;background:var(--green)">Turn on Travel mode</button>
+    </div>
+    <div class="ob-step" data-step="3">
       <div class="ob-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
       <div class="ob-heading">Harden this Mac</div>
       <div class="ob-body">One click: clipboard watch, honeytokens, require VPN for agents. You can change this later in Settings.</div>
-      <button class="ob-btn" id="obBtn2">Harden &amp; finish</button>
+      <button class="ob-btn" id="obBtn3">Harden &amp; finish</button>
     </div>
   </div>
 </div>
@@ -1432,80 +1484,71 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
       </div>
     </div>
 
-    <!-- ── CORE — four things a person actually opens ── -->
+    <!-- Find a tool -->
+    <div style="padding:0 12px 8px">
+      <input id="toolSearch" class="form-input" placeholder="Find a tool…" style="height:30px;font-size:12.5px"
+        data-hci="${_h((event, el) => { toolSearch(el.value) })}" />
+      <div id="toolSearchOut" style="display:none;margin-top:6px"></div>
+    </div>
+
+    <!-- ── CORE — six things a person actually opens ── -->
     <div class="nav-group">
       <div class="nav-item active" id="navHome" data-page="home">
         <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path fill="currentColor" d="M8 1.5L2 4v4c0 3.3 2.5 6.4 6 7.1C11.5 14.4 14 11.3 14 8V4L8 1.5z" opacity=".85"/></svg></span>
         Home
       </div>
-      <div class="nav-item" id="navVpn" data-page="vpn">
-        <span class="nav-ico">🛡️</span>
-        <span class="nav-label">VPN</span>
+      <div class="nav-item" id="navScan" data-page="scan">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+        <span class="nav-label">Check a message</span>
       </div>
       <div class="nav-item" id="navBrowser" data-page="browser">
         <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M1.5 6h13" stroke="currentColor" stroke-width="1" opacity=".5"/></svg></span>
-        Browser
+        Private browser
+      </div>
+      <div class="nav-item" id="navVpn" data-page="vpn">
+        <span class="nav-ico"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path fill="currentColor" d="M8 1.5L2 4v4c0 3.3 2.5 6.4 6 7.1C11.5 14.4 14 11.3 14 8V4L8 1.5z" opacity=".85"/></svg></span>
+        <span class="nav-label">VPN</span>
       </div>
       <div class="nav-item" id="navPasswords" data-page="passwords">
         <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M5 7V5.5a3 3 0 0 1 6 0V7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg></span>
-        Vault
+        Passwords
       </div>
     </div>
 
-    <!-- ── MORE — short list; power tools stay in Settings ── -->
+    <!-- ── MORE — 4 extra tools. Everything else lives under All tools. ── -->
     <div class="nav-group" id="navMoreGroup" style="margin-top:6px">
       <div class="nav-label" id="navMoreToggle" data-hc="${_h((event, el) => { toggleMore() })}" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
-        <span>More</span>
+        <span>More tools</span>
         <span id="navMoreChev" style="font-size:9px;color:var(--subtle);transition:transform .15s">▸</span>
       </div>
       <div id="navMoreList" style="display:none">
-      <div class="nav-item" id="navScan" data-page="scan">
-        <span class="nav-icon">🔍</span>
-        Check text
-      </div>
-      <div class="nav-item" id="navWifiguard" data-page="wifiguard">
-        <span class="nav-icon">📶</span>
-        Wi‑Fi
-      </div>
-      <div class="nav-item" id="navIdentity" data-page="identity">
-        <span class="nav-icon">🪪</span>
-        Breach check
-      </div>
-      <div class="nav-item" id="navBackup" data-page="backup">
-        <span class="nav-icon">💾</span>
-        Backup
-      </div>
-      <div class="nav-item" id="navLlmproxy" data-page="llmproxy">
-        <span class="nav-icon">🔌</span>
-        AI Gate
-      </div>
-      <div class="nav-item" id="navHoney" data-page="honey">
-        <span class="nav-icon">🍯</span>
-        Honeytokens
-      </div>
-      <div class="nav-item" id="navAgentguard" data-page="agentguard">
-        <span class="nav-icon">🤖</span>
-        Agent Guard
-      </div>
       <div class="nav-item" id="navProof" data-page="proof">
-        <span class="nav-icon">📜</span>
-        Proofs
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 2h8v12l-2-1.5L8 14l-2-1.5L4 14V2z" stroke="currentColor" stroke-width="1.1" fill="none"/></svg></span>
+        My receipts
       </div>
-      <div class="nav-item" id="navLeaktest" data-page="leaktest">
-        <span class="nav-icon">📡</span>
-        Leak Test
+      <div class="nav-item" id="navDigest" data-page="digest">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2.5 13.5v-5M8 13.5V4M13.5 13.5V8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+        Weekly summary
       </div>
-      <div class="nav-item" id="navPlans" data-page="plans">
-        <span class="nav-icon">★</span>
-        Pro
+      <div class="nav-item" id="navMcp" data-page="mcp">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5 2v4M11 2v4M4 6h8v3a4 4 0 0 1-8 0V6zM8 13v2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg></span>
+        App connections
+      </div>
+      <div class="nav-item" id="navMultimodal" data-page="multimodal">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="2" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M6.5 6l4 2-4 2V6z" fill="currentColor"/></svg></span>
+        Mic & camera
+      </div>
+      <div class="nav-item" id="navRedteam" data-page="redteam">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2 4v4c0 3.3 2.5 6.4 6 7.1C11.5 14.4 14 11.3 14 8V4L8 1.5z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5.5 8L7 9.5L10.5 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Safety test
       </div>
       <div class="nav-item" id="navUservalue" data-page="uservalue">
-        <span class="nav-icon">🛡️</span>
-        Your Safety
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path fill="currentColor" d="M8 1.5L2 4v4c0 3.3 2.5 6.4 6 7.1C11.5 14.4 14 11.3 14 8V4L8 1.5z" opacity=".85"/></svg></span>
+        What I stopped
       </div>
-      <div class="nav-item" id="navSettings" data-page="settings">
-        <span class="nav-icon">⚙️</span>
-        Settings
+      <div class="nav-item" id="navAllTools" data-page="alltools">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4.5" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M5.5 4.5V3h5v1.5M2 8h12" stroke="currentColor" stroke-width="1.1" fill="none"/></svg></span>
+        All tools
       </div>
       </div><!-- /navMoreList -->
     </div>
@@ -1539,52 +1582,81 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
 
     <!-- ── HOME — privacy dashboard ── -->
         <div class="page active" id="pageHome">
-      <div class="dash-shell" style="max-width:480px;margin:0 auto;padding-top:40px">
-        <div style="text-align:center;margin-bottom:28px">
-          <div id="homeStatusIcon" style="font-size:48px;line-height:1;margin-bottom:12px">⬡</div>
-          <h1 id="homeStatusTitle" style="font-size:28px;font-weight:700;letter-spacing:-.4px;margin:0 0 8px">Your AI sessions are governed</h1>
-          <p id="homeStatusSub" class="muted" style="font-size:14px;margin:0">What you say, see, and do with AI — protected and proven.</p>
+      <div class="dash-shell" style="max-width:520px;margin:0 auto;padding-top:64px;text-align:center">
+        <!-- Calm home: one status, one action. Everything else under Details. -->
+        <div id="homeStatusIcon" style="font-size:56px;line-height:1;margin-bottom:16px"></div>
+        <h1 id="homeStatusTitle" style="font-size:30px;font-weight:700;letter-spacing:-.5px;margin:0 0 10px">You are protected</h1>
+        <p id="homeStatusSub" class="muted" style="font-size:14px;margin:0 0 28px;line-height:1.6">Kasbah watches what you paste, what apps send, and what AI agents do — and stops leaks before they happen. Everything stays on this Mac.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto">
+          <button class="k-btn k-btn--primary" id="homePrimaryBtn" data-hc="${_h((event, el) => { homePrimary() })}" style="font-size:15px;padding:13px 16px">Turn on VPN</button>
+          <button class="k-btn" data-hc="${_h((event, el) => { homeCheckNow() })}" id="homeCheckBtn">Check if I am safe</button>
         </div>
-
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <button class="k-btn k-btn--primary" id="homePrimaryBtn" data-hc="${_h((event, el) => { homePrimary() })}" style="font-size:16px;padding:14px 18px">Connect VPN</button>
-          <button class="k-btn" data-hc="${_h((event, el) => { homeCheckNow() })}" id="homeCheckBtn">Check if I'm safe</button>
+        <div id="homeSimpleOut" style="margin-top:18px;font-size:13px;line-height:1.5"></div>
+        <div style="margin-top:14px">
+          <button class="tl-btn" data-hc="${_h((event, el) => { nav('scan') })}" style="font-size:13px">Check a message →</button>
         </div>
-
-        <div id="homeSimpleOut" style="margin-top:22px;font-size:13.5px;line-height:1.55"></div>
-
-        <div style="margin-top:28px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button class="tl-btn" data-hc="${_h((event, el) => { nav('browser') })}">Private browser</button>
-          <button class="tl-btn" data-hc="${_h((event, el) => { nav('passwords') })}">Vault</button>
-          <button class="tl-btn" data-hc="${_h((event, el) => { nav('scan') })}">Check a message</button>
-        </div>
-
-        <!-- Crisis mode — subtle toggle row, not a page -->
-        <div style="margin-top:20px;display:flex;align-items:center;justify-content:center;gap:10px">
-          <span style="font-size:12px;color:var(--subtle)">Crisis mode</span>
-          <button id="homeCrisisToggle" data-hc="${_h((event, el) => { homeCrisisToggle() })}"
-            style="width:40px;height:22px;border-radius:11px;border:none;background:var(--border);cursor:pointer;position:relative;transition:background .2s;padding:0"
-            title="Lock vault, require VPN, start clipboard watch">
-            <span id="homeCrisisThumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span>
-          </button>
-          <span id="homeCrisisLabel" style="font-size:12px;color:var(--subtle)">off</span>
-        </div>
-
-        <!-- Quiet outcome cards — sitrep / exit market / impact without nav bloat -->
-        <div id="homeQuietCards" style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="settings-card" style="margin:0;padding:12px 14px;cursor:pointer" data-hc="${_h((event, el) => { nav('exitmarket') })}" title="Open Exit Market">
-            <div style="font-size:11px;color:var(--subtle)">Best exit</div>
-            <div id="homeBestExit" style="font-size:14px;font-weight:600;margin-top:2px">—</div>
+        <details id="homeDetails" style="margin-top:34px;text-align:left">
+          <summary style="cursor:pointer;font-size:12.5px;color:var(--subtle);text-align:center;list-style:none">Details ▸</summary>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+            <button class="tl-btn" data-hc="${_h((event, el) => { nav('browser') })}">Private browser</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { nav('passwords') })}">Passwords</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { nav('agentguard') })}">AI agents</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { nav('proof') })}">My receipts</button>
           </div>
-          <div class="settings-card" style="margin:0;padding:12px 14px;cursor:pointer" data-hc="${_h((event, el) => { nav('impact') })}" title="Open Impact">
-            <div style="font-size:11px;color:var(--subtle)">Protected</div>
-            <div id="homeImpact" style="font-size:14px;font-weight:600;margin-top:2px">—</div>
+          <!-- Crisis mode -->
+          <div style="margin-top:16px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;color:var(--subtle)">Crisis mode</span>
+            <button id="homeCrisisToggle" data-hc="${_h((event, el) => { homeCrisisToggle() })}"
+              style="width:40px;height:22px;border-radius:11px;border:none;background:var(--border);cursor:pointer;position:relative;transition:background .2s;padding:0"
+              title="Lock vault, require VPN, start clipboard watch">
+              <span id="homeCrisisThumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span>
+            </button>
+            <span id="homeCrisisLabel" style="font-size:12px;color:var(--subtle)">off</span>
           </div>
-          <div class="settings-card" style="margin:0;padding:12px 14px;cursor:pointer;grid-column:1/-1" data-hc="${_h((event, el) => { nav('sitrep') })}" title="Open Situation">
-            <div style="font-size:11px;color:var(--subtle)">Situation</div>
-            <div id="homeSitrep" style="font-size:13px;font-weight:500;margin-top:2px;color:var(--muted)">—</div>
+          <!-- Live protection panel -->
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+            <div class="settings-card" style="margin:0;padding:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div style="font-weight:600;font-size:13px">Protection</div>
+                <div id="homeTrustChip" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(34,197,94,.15);color:var(--ok)">—</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px">
+                  <div style="font-size:10px;color:var(--subtle);text-transform:uppercase;letter-spacing:.6px">Safety mode</div>
+                  <div id="homeSafety modeTier" style="font-size:14px;font-weight:600;margin-top:2px;color:var(--ok)">All clear — nothing to do</div>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px">
+                  <div style="font-size:10px;color:var(--subtle);text-transform:uppercase;letter-spacing:.6px">Trust score</div>
+                  <div id="homeTrustScore" style="font-size:14px;font-weight:600;margin-top:2px">—</div>
+                </div>
+              </div>
+              <div id="homeDigest" style="margin-top:10px;font-size:12.5px;line-height:1.5;color:var(--muted)">—</div>
+              <button class="tl-btn" data-hc="${_h((event, el) => { copyDigest() })}" style="margin-top:10px;font-size:11px;padding:5px 10px">Copy digest</button>
+            </div>
+            <div class="settings-card" style="margin:0;padding:14px">
+              <div style="font-size:11px;color:var(--subtle);margin-bottom:8px">Quick proof</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="tl-btn" data-hc="${_h((event, el) => { window.kasbah.api('POST','/v1/sign',{verdict:'ALLOW',risk:0.05,subject:'manual'}).then(r=>{ if(r&&r.verifyUrl) window.kasbah.ui.toast('Receipt signed — verify at /verify','ok',3000); }).catch(()=>{}) })}" style="font-size:11px;padding:5px 10px">Sign a receipt</button>
+                <button class="tl-btn" data-hc="${_h((event, el) => { nav('proof') })}" style="font-size:11px;padding:5px 10px">All proofs</button>
+              </div>
+            </div>
           </div>
-        </div>
+          <!-- Quiet outcome cards -->
+          <div id="homeQuietCards" style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="settings-card" style="margin:0;padding:12px 14px;cursor:pointer" data-hc="${_h((event, el) => { nav('exitmarket') })}" title="Open Exit Market">
+              <div style="font-size:11px;color:var(--subtle)">Best exit</div>
+              <div id="homeBestExit" style="font-size:14px;font-weight:600;margin-top:2px">—</div>
+            </div>
+            <div class="settings-card" style="margin:0;padding:12px 14px;cursor:pointer" data-hc="${_h((event, el) => { nav('impact') })}" title="Open Impact">
+              <div style="font-size:11px;color:var(--subtle)">Protected</div>
+              <div id="homeImpact" style="font-size:14px;font-weight:600;margin-top:2px">—</div>
+            </div>
+            <div class="settings-card" style="margin:0;padding:12px 14px;cursor:pointer" data-hc="${_h((event, el) => { nav('sitrep') })}" title="Open Situation">
+              <div style="font-size:11px;color:var(--subtle)">Situation</div>
+              <div id="homeSitrep" style="font-size:13px;font-weight:500;margin-top:2px;color:var(--muted)">—</div>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -1669,15 +1741,15 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v11M4 5l-2.5 5a2.5 2.5 0 005 0L4 5zM12 5l-2.5 5a2.5 2.5 0 005 0L12 5zM3 5h2M11 5h2M5.5 13h5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
           </div>
           <div style="flex:1"></div>
-          <div class="bwr-dock-btn" title="Close panel" data-hc="${_h((event, el) => { bwrCloseToolPanel() })}" style="opacity:.35;font-size:12px">✕</div>
+          <div class="bwr-dock-btn" title="Close panel" data-hc="${_h((event, el) => { bwrCloseToolPanel() })}" style="opacity:.35;font-size:12px">✕ </div>
         </div>
 
         <!-- Side panel -->
         <div id="bwrPanel" style="position:absolute;top:0;right:0;bottom:0;width:320px;background:var(--surface);border-left:1px solid var(--border);z-index:10;transform:translateX(100%);transition:transform .22s var(--ease);display:flex;flex-direction:column;overflow:hidden">
           <div style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0">
-            <span id="bwrPanelIcon" style="font-size:16px">🛡</span>
+            <span id="bwrPanelIcon" style="font-size:16px"></span>
             <span id="bwrPanelTitle" style="font-size:13px;font-weight:700;flex:1">Kasbah Shield</span>
-            <button class="tl-btn" data-hc="${_h((event, el) => { bwrCloseToolPanel() })}" style="opacity:.5;font-size:11px;padding:2px 6px">✕</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { bwrCloseToolPanel() })}" style="opacity:.5;font-size:11px;padding:2px 6px">✕ </button>
           </div>
           <div id="bwrToolContent" style="flex:1;overflow-y:auto;padding:14px">
             <div id="bwrPanelContent" style="font-size:13px;color:var(--text-muted)">Navigate to a page, then click the shield to scan it.</div>
@@ -1707,14 +1779,14 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
             </div>
             <!-- Shield stats -->
             <div style="display:flex;gap:12px;font-size:12px;color:var(--text-muted)">
-              <div>🛡 <span id="bwrStatScanned">0</span> pages scanned</div>
-              <div>🚫 <span id="bwrStatBlocked">0</span> trackers blocked</div>
+              <div><span id="bwrStatScanned">0</span> pages scanned</div>
+              <div><span id="bwrStatBlocked">0</span> trackers blocked</div>
               <div>⚠ <span id="bwrStatThreats">0</span> threats caught</div>
             </div>
           </div>
 
           <!-- Webview (created dynamically) -->
-          <div id="bwrViewport" style="flex:1;display:none;overflow:visible;position:relative">
+          <div id="bwrViewport">
             <div id="bwrSpinner" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)"><div style="padding:12px 18px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);font-weight:600">Loading…</div></div>
           </div>
         </div>
@@ -1724,13 +1796,32 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
       <div id="bwrToastArea" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:20;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none"></div>
     </div>
 
+    <div class="page" id="pageAlltools">
+      <div class="page-wrap" style="max-width:900px">
+        <div class="page-hd">
+          <div class="page-title">All tools</div>
+          <div class="page-desc">Everything Kasbah can do, in one place. Type to find a tool.</div>
+        </div>
+        <input id="toolsSearch" class="form-input" data-hci="${_h((event, el) => { renderAllTools(el.value) })}" placeholder="Find a tool — try 'voice', 'backup', 'receipt'…" style="height:36px;font-size:13.5px;margin-bottom:14px" />
+        <div id="toolsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
+      </div>
+    </div>
+
     <div class="page" id="pageScan">
       <div class="home-shell">
 
         <div class="home-header">
           <div class="home-title">What would you like to check?</div>
-          <div class="home-subtitle">Paste any text — a message, email, or prompt. Kasbah runs local privacy checks (secrets, scams, family safety) on this Mac. No account, no cloud.</div>
+          <div class="home-subtitle">One box for everything. Paste a message, drop a photo, or pick an app — Kasbah checks it on this Mac. No account, no cloud.</div>
         </div>
+
+        <!-- ═══ CHECK ANYTHING — one box, 3 kinds ═══ -->
+        <div style="display:flex;gap:6px;margin-bottom:10px" id="checkTabs">
+          <button class="tl-btn" id="checkTabMsg" data-hc="${_h((event, el) => { checkTab('msg') })}" style="font-weight:700">Message</button>
+          <button class="tl-btn" id="checkTabPhoto" data-hc="${_h((event, el) => { checkTab('photo') })}">Photo &amp; voice</button>
+          <button class="tl-btn" id="checkTabApp" data-hc="${_h((event, el) => { checkTab('app') })}">An app</button>
+        </div>
+        <div id="checkTabHint" class="muted" style="font-size:12.5px;margin-bottom:10px">Paste any text below and press Check now.</div>
 
         <!-- ═══ SCAN INPUT ═══ -->
         <div class="scan-surface" id="scanSurface">
@@ -1752,7 +1843,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
             <div class="scan-spacer"></div>
             <span class="scan-hint"><kbd>⌘</kbd><kbd>↵</kbd></span>
             <button class="scan-btn" id="scanBtn">
-              <span id="scanBtnLabel">Scan now</span>
+              <span id="scanBtnLabel">Check now</span>
             </button>
           </div>
         </div>
@@ -1805,8 +1896,8 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
     <div class="page" id="pageMultiverse">
       <div class="page-wrap" style="max-width:960px">
         <div class="page-hd">
-          <div class="page-title">Multiverse</div>
-          <div class="page-desc">One input · the full Kasbah engine · fused via Category Theory, Sheaf Gluing, Tensor Product, Hamiltonian Flow, and Quantum Superposition.</div>
+          <div class="page-title">Deep check</div>
+          <div class="page-desc">One input · all Kasbah checks at once · combined into one clear answer.</div>
         </div>
         <div class="settings-card" style="padding:18px;margin-bottom:16px">
           <textarea id="mvInput" placeholder="Paste any text, message, conversation, or AI output — every universe analyzes it in parallel and the orchestrator fuses the signals into one verdict." style="width:100%;min-height:120px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--ink);font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;outline:none" spellcheck="false"></textarea>
@@ -1814,7 +1905,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
             <button class="tl-btn" data-hc="${_h((event, el) => { document.getElementById('mvInput').value='' })}">Clear</button>
             <span style="font-size:12px;color:var(--muted)" id="mvLatency"></span>
             <div class="k-flex-1"></div>
-            <button class="k-btn k-btn--primary" id="mvRunBtn" data-hc="${_h((event, el) => { mvRun() })}">Query all universes</button>
+            <button class="k-btn k-btn--primary" id="mvRunBtn" data-hc="${_h((event, el) => { mvRun() })}">Run check</button>
           </div>
         </div>
         <div id="mvResult"></div>
@@ -1829,7 +1920,7 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
     <div class="page" id="pageKos">
       <div class="page-wrap" style="max-width:960px">
         <div class="page-hd">
-          <div class="page-title">Kasbah OS</div>
+          <div class="page-title">System basics</div>
           <div class="page-desc">The operating system for AI agents. Every action passes through detect → govern → audit → monitor. Live counters update every 5 seconds.</div>
         </div>
 
@@ -1893,19 +1984,19 @@ kbd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;paddi
     <div class="page" id="pageEthics">
       <div class="page-wrap" style="max-width:1000px">
         <div class="page-hd">
-          <div class="page-title">Ethics Parliament</div>
-          <div class="page-desc">Submit a decision to four ethical traditions in parallel — Kantian deontology, Utilitarian consequentialism, Aristotelian virtue ethics, and Islamic Maqasid al-Shari'a. See where they agree, where they dissent, and the consensus verdict.</div>
+          <div class="page-title">Discussion group</div>
+          <div class="page-desc">Ask four different points of view the same question — including a fairness and care perspective — and see where they agree.</div>
         </div>
 
         <div class="settings-card" style="padding:18px;margin-bottom:16px">
           <!-- Case-study presets — load any of the five documented scenarios -->
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px">
             <span style="font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:4px">Case studies:</span>
-            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(0) })}">Workplace monitoring</button>
-            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(1) })}">Dual-use research</button>
-            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(2) })}">Personalised persuasion</button>
-            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(3) })}">Medical triage</button>
-            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(4) })}">Autonomous destruction</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(0) })}">Example: watching staff</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(1) })}">Example: dual-use research</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(2) })}">Example: targeted ads</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(3) })}">Example: medical triage</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { ethLoadCase(4) })}">Example: self-running weapons</button>
           </div>
           <textarea id="ethInput" placeholder="Describe a proposed decision, action, or AI output. The parliament evaluates it against four ethical frameworks and returns a consensus.
 
@@ -1919,7 +2010,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
             </div>
             <div class="k-flex-1"></div>
             <span style="font-size:12px;color:var(--muted)" id="ethLatency"></span>
-            <button class="k-btn k-btn--primary" id="ethRunBtn" data-hc="${_h((event, el) => { ethRun() })}">Convene parliament</button>
+            <button class="k-btn k-btn--primary" id="ethRunBtn" data-hc="${_h((event, el) => { ethRun() })}">Check values</button>
           </div>
         </div>
 
@@ -1935,7 +2026,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
     <div class="page" id="pageBench">
       <div class="page-wrap" style="max-width:1100px">
         <div class="page-hd">
-          <div class="page-title">Benchmark</div>
+          <div class="page-title">How well we catch bad messages</div>
           <div class="page-desc">Run the reproducible detection benchmark in-process. 77 labeled cases across 11 threat classes — see <code>bench/corpus/v1.json</code>. Numbers shown are precision / recall / F1 against the ground-truth labels. The four baselines (allow-all, deny-all, blocklist, regex-heuristic) set the floor for "non-trivial detection."</div>
         </div>
 
@@ -1955,40 +2046,18 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
       </div>
     </div>
 
-    <!-- ── RED-TEAM RUNNER — /v1/redteam/suite + /v1/redteam/run ── -->
-    <div class="page" id="pageRedteam">
-      <div class="page-wrap" style="max-width:1100px">
-        <div class="page-hd">
-          <div class="page-title">Red Team</div>
-          <div class="page-desc">Run Kasbah's adversarial test suite against the engine. Every entry is a labeled attack we believe should be blocked; the runner shows which ones the engine actually catches.</div>
-        </div>
-        <div class="settings-card" style="padding:18px;margin-bottom:16px">
-          <div class="k-flex-between">
-            <div>
-              <div class="sc-title">Test suite</div>
-              <div id="rtSuiteInfo" class="muted" style="font-size:12px;margin-top:2px">Loading suite…</div>
-            </div>
-            <button class="k-btn k-btn--primary" id="rtRunBtn" data-hc="${_h((event, el) => { redteamRun() })}">Run full suite</button>
-          </div>
-          <div id="rtProgress" style="margin-top:10px;font-size:12px;color:var(--muted);min-height:16px"></div>
-        </div>
-        <div id="rtResults"></div>
-      </div>
-    </div>
-
-    <!-- ── FORENSICS — Biometric · ZK Proofs · Security primitives · Honeytokens ── -->
     <div class="page" id="pageForensics">
       <div class="page-wrap" style="max-width:1100px">
         <div class="page-hd">
           <div class="page-title">Forensics</div>
-          <div class="page-desc">Multimodal-deepfake detection, zero-knowledge proof generation/verification, security primitives, and honeytokens — every advanced detector reachable from one page.</div>
+          <div class="page-desc">Deepfake detection, safety receipts, and decoy traps — every advanced detector reachable from one page.</div>
         </div>
         <div class="settings-card" style="padding:0;margin-bottom:16px;overflow:hidden">
           <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg)">
             <div class="forensics-tab on" data-tab="biometric" data-hc="${_h((event, el) => { forSwitch('biometric') })}" style="padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink)">Biometric</div>
             <div class="forensics-tab" data-tab="zk" data-hc="${_h((event, el) => { forSwitch('zk') })}" style="padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)">ZK Proofs</div>
             <div class="forensics-tab" data-tab="security" data-hc="${_h((event, el) => { forSwitch('security') })}" style="padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)">Security</div>
-            <div class="forensics-tab" data-tab="honey" data-hc="${_h((event, el) => { forSwitch('honey') })}" style="padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)">Honeytokens</div>
+            <div class="forensics-tab" data-tab="honey" data-hc="${_h((event, el) => { forSwitch('honey') })}" style="padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)">Decoys</div>
           </div>
 
           <!-- BIOMETRIC TAB -->
@@ -1997,25 +2066,25 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px;margin-bottom:4px">Neural Fingerprint</div>
-                <div class="muted" style="font-size:11px;margin-bottom:8px">Image-pixel synthetic-content classifier. POST /v1/biometric/neural-fingerprint</div>
+                <div class="muted" style="font-size:11px;margin-bottom:8px">Checks a face image for AI-generated pixels.</div>
                 <button class="tl-btn" data-hc="${_h((event, el) => { bioNeuralFingerprint() })}">Run on synthetic image</button>
                 <div id="bioFpResult" style="margin-top:8px;font-size:11.5px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px;margin-bottom:4px">rPPG (Remote Photoplethysmography)</div>
-                <div class="muted" style="font-size:11px;margin-bottom:8px">Detects absence of facial pulse signal in video — flags deepfake faces. POST /v1/biometric/rppg</div>
+                <div class="muted" style="font-size:11px;margin-bottom:8px">Detects absence of a real pulse in video — flags fake faces.</div>
                 <button class="tl-btn" data-hc="${_h((event, el) => { bioRppg() })}">Run on synthetic video</button>
                 <div id="bioRppgResult" style="margin-top:8px;font-size:11.5px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px;margin-bottom:4px">Voice Clone</div>
-                <div class="muted" style="font-size:11px;margin-bottom:8px">Spectral artefact analysis on audio. POST /v1/biometric/voice-clone</div>
+                <div class="muted" style="font-size:11px;margin-bottom:8px">Checks audio for cloned-voice artifacts.</div>
                 <button class="tl-btn" data-hc="${_h((event, el) => { bioVoiceClone() })}">Run on synthetic audio</button>
                 <div id="bioVcResult" style="margin-top:8px;font-size:11.5px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px;margin-bottom:4px">Neural Codec</div>
-                <div class="muted" style="font-size:11px;margin-bottom:8px">Detects neural-codec compression artefacts in audio. POST /v1/biometric/neural-codec</div>
+                <div class="muted" style="font-size:11px;margin-bottom:8px">Checks audio for AI-compression artifacts.</div>
                 <button class="tl-btn" data-hc="${_h((event, el) => { bioNeuralCodec() })}">Run on synthetic audio</button>
                 <div id="bioNcResult" style="margin-top:8px;font-size:11.5px"></div>
               </div>
@@ -2028,7 +2097,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
 
             <!-- ZK-COMPLIANCE RECEIPT — the moat -->
             <div style="padding:16px;background:linear-gradient(135deg,rgba(15,122,80,.06),rgba(15,122,80,.02));border:1px solid rgba(15,122,80,.25);border-radius:10px;margin-bottom:14px">
-              <div style="font-weight:700;color:var(--ink);font-size:14px">🛡️ ZK-Compliance Receipt <span style="font-size:10px;font-weight:600;color:var(--green);background:rgba(15,122,80,.12);padding:2px 7px;border-radius:20px;vertical-align:middle">the moat</span></div>
+              <div style="font-weight:700;color:var(--ink);font-size:14px">️ ZK-Compliance Receipt <span style="font-size:10px;font-weight:600;color:var(--green);background:rgba(15,122,80,.12);padding:2px 7px;border-radius:20px;vertical-align:middle">the moat</span></div>
               <div class="muted" style="font-size:11.5px;margin:5px 0 10px;line-height:1.5">Prove a verdict was the <b>correct threshold decision</b> for a hidden risk score — on an input the auditor <b>never sees</b>. Real ristretto255 zero-knowledge proof + engine signature. The prompt below stays on this machine; only the receipt travels.</div>
               <textarea class="form-input" id="zkcPrompt" placeholder="sensitive / regulated prompt (never leaves this machine)" style="width:100%;min-height:52px;margin-bottom:6px">transfer $50,000 to account 9982; SSN 123-45-6789</textarea>
               <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
@@ -2043,27 +2112,27 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">1) Generate detection proof</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/zk/proof/generate</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Prove a fact without revealing the details.</div>
                 <input class="form-input" id="zkPubInputs" placeholder='public inputs (JSON, e.g. {"verdict":"DENY"})' style="margin-bottom:6px">
                 <button class="tl-btn" data-hc="${_h((event, el) => { zkGenerate() })}">Generate</button>
                 <div id="zkGenResult" style="margin-top:8px;font-size:11px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">2) Verify a proof</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/zk/proof/verify</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Verify such a proof.</div>
                 <button class="tl-btn" data-hc="${_h((event, el) => { zkVerifyLast() })}">Verify last generated</button>
                 <div id="zkVerResult" style="margin-top:8px;font-size:11px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">3) Pedersen-style commitment</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/zk/commitment</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Commit to a value now, reveal later.</div>
                 <input class="form-input" id="zkCommitVal" placeholder="value to commit (any string)" style="margin-bottom:6px">
                 <button class="tl-btn" data-hc="${_h((event, el) => { zkCommit() })}">Commit</button>
                 <div id="zkCommitResult" style="margin-top:8px;font-size:11px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">4) Range proof (Bulletproofs-style)</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/zk/range-proof</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Prove a value is within range without showing it.</div>
                 <input class="form-input" id="zkRangeVal" placeholder="numeric value" value="42" style="margin-bottom:6px">
                 <button class="tl-btn" data-hc="${_h((event, el) => { zkRange() })}">Generate range proof</button>
                 <div id="zkRangeResult" style="margin-top:8px;font-size:11px"></div>
@@ -2077,7 +2146,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">Consent — grant</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/security/consent/grant</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Record consent for an action.</div>
                 <input class="form-input" id="secConsentSubject" placeholder="data subject ID" value="user-123" style="margin-bottom:6px">
                 <input class="form-input" id="secConsentPurpose" placeholder="purpose (e.g. analytics)" value="analytics" style="margin-bottom:6px">
                 <button class="tl-btn" data-hc="${_h((event, el) => { secConsentGrant() })}">Grant consent</button>
@@ -2086,14 +2155,14 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">Cross-modal verification</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/security/cross-modal/verify — does the text agree with the image/audio?</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Does the text agree with the image or audio?</div>
                 <textarea class="form-input" id="secCmText" rows="2" placeholder="text claim" style="margin-bottom:6px">A cat is sitting on a desk</textarea>
                 <button class="tl-btn" data-hc="${_h((event, el) => { secCrossModal() })}">Verify consistency</button>
                 <div id="secCmResult" style="margin-top:8px;font-size:11px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
-                <div style="font-weight:600;color:var(--ink);font-size:13px">Shamir secret sharing (3-of-5)</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/security/shamir/split — split a secret into 5 shares, recover from any 3.</div>
+                <div style="font-weight:600;color:var(--ink);font-size:13px">Split a secret into 3-of-5 pieces</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Split a secret into 5 pieces, any 3 bring it back.</div>
                 <input class="form-input" id="secShamirSecret" placeholder="secret string" value="my-private-key" style="margin-bottom:6px">
                 <button class="tl-btn" data-hc="${_h((event, el) => { secShamirSplit() })}">Split</button>
                 <button class="tl-btn" data-hc="${_h((event, el) => { secShamirCombine() })}">Combine first 3</button>
@@ -2101,7 +2170,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">Adaptive threshold</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/security/threshold/adjust — feedback loop for false-positive tuning.</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Feedback loop for tuning false alarms.</div>
                 <input class="form-input" id="secThrScore" placeholder="observed score 0..1" value="0.65" style="margin-bottom:6px">
                 <button class="tl-btn" data-hc="${_h((event, el) => { secThreshold() })}">Submit observation</button>
                 <div id="secThrResult" style="margin-top:8px;font-size:11px"></div>
@@ -2115,14 +2184,14 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">Deploy honeytoken</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/honeytokens/deploy — emits a fake credential. If it ever appears in traffic, the deployment fired.</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Plants a fake password. If it ever shows up somewhere, that is a leak.</div>
                 <input class="form-input" id="htService" placeholder="service label" value="aws" style="margin-bottom:6px">
                 <button class="tl-btn" data-hc="${_h((event, el) => { htDeploy() })}">Deploy</button>
                 <div id="htDeployResult" style="margin-top:8px;font-size:11px"></div>
               </div>
               <div style="padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
                 <div style="font-weight:600;color:var(--ink);font-size:13px">Check text for honeytoken</div>
-                <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/honeytokens/check — scan any prompt/output for tripwire matches.</div>
+                <div class="muted" style="font-size:11px;margin:4px 0 8px">Scan text for planted decoy matches.</div>
                 <textarea class="form-input" id="htCheckText" rows="2" placeholder="paste text to scan" style="margin-bottom:6px"></textarea>
                 <button class="tl-btn" data-hc="${_h((event, el) => { htCheck() })}">Scan</button>
                 <div id="htCheckResult" style="margin-top:8px;font-size:11px"></div>
@@ -2133,18 +2202,18 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
       </div>
     </div>
 
-    <!-- ── GOVERNANCE LAB — GCMDP · Maqasid · Kernel gate · Policy ── -->
+    <!-- ── SAFETY RULES — checks · values · limits ── -->
     <div class="page" id="pageGovlab">
       <div class="page-wrap" style="max-width:1100px">
         <div class="page-hd">
-          <div class="page-title">Governance Lab</div>
-          <div class="page-desc">Direct access to the agent governance primitives: G-CMDP action evaluation, Maqasid Islamic-jurisprudence framework, kernel-level eBPF gating, and live policy editing.</div>
+          <div class="page-title">Safety rules</div>
+          <div class="page-desc">Plain rules for AI helpers: check an action, check values, and set on-device limits. No jargon.</div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="settings-card" style="padding:18px">
-            <div class="sc-title">G-CMDP: evaluate an agent action</div>
-            <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/agent/gcmdp — Governance-Constrained MDP. Returns whether the action is permitted under current constraints.</div>
+            <div class="sc-title">Check an AI action</div>
+            <div class="muted" style="font-size:11px;margin:4px 0 8px">Check an AI action against the rules. Returns whether it is allowed. permitted under current constraints.</div>
             <input class="form-input" id="gcAction" placeholder="action verb (DELETE, WRITE, READ, EXEC)" value="DELETE" style="margin-bottom:6px">
             <input class="form-input" id="gcState" placeholder='state JSON (e.g. {"target":"/prod"})' value='{"target":"/prod/users"}' style="margin-bottom:6px;font-family:monospace">
             <button class="tl-btn" data-hc="${_h((event, el) => { gcGcmdp() })}">Evaluate</button>
@@ -2152,16 +2221,16 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
           </div>
 
           <div class="settings-card" style="padding:18px">
-            <div class="sc-title">Maqasid framework</div>
-            <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/agent/maqasid — Islamic jurisprudence evaluation: protection of religion · life · intellect · lineage · property.</div>
+            <div class="sc-title">Values check</div>
+            <div class="muted" style="font-size:11px;margin:4px 0 8px">Values check: protection of life, property, mind, dignity, belief. · life · intellect · lineage · property.</div>
             <textarea class="form-input" id="mqContent" rows="2" placeholder="content to evaluate" style="margin-bottom:6px"></textarea>
             <button class="tl-btn" data-hc="${_h((event, el) => { gcMaqasid() })}">Evaluate</button>
             <div id="mqResult" style="margin-top:8px;font-size:11.5px"></div>
           </div>
 
           <div class="settings-card" style="padding:18px">
-            <div class="sc-title">Kernel gate (eBPF)</div>
-            <div class="muted" style="font-size:11px;margin:4px 0 8px">POST /v1/kernel/gate — Linux-kernel-level operation gating, fail-closed default.</div>
+            <div class="sc-title">Extra system lock (advanced)</div>
+            <div class="muted" style="font-size:11px;margin:4px 0 8px">System-level gate with fail-closed default (Linux only).</div>
             <input class="form-input" id="knOp" placeholder="operation (e.g. file_open, exec, socket_connect)" value="exec" style="margin-bottom:6px">
             <input class="form-input" id="knCtx" placeholder='context JSON' value='{"path":"/bin/sh","uid":0}' style="margin-bottom:6px;font-family:monospace">
             <button class="tl-btn" data-hc="${_h((event, el) => { kernelGate() })}">Gate</button>
@@ -2170,7 +2239,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
 
           <div class="settings-card" style="padding:18px">
             <div class="sc-title">Live policy</div>
-            <div class="muted" style="font-size:11px;margin:4px 0 8px">GET/PUT /v1/policy — current governance policy. Edit and reload.</div>
+            <div class="muted" style="font-size:11px;margin:4px 0 8px">Current rules. Edit and reload.</div>
             <textarea class="form-input" id="polEditor" rows="6" style="margin-bottom:6px;font-family:monospace;font-size:11px"></textarea>
             <button class="tl-btn" data-hc="${_h((event, el) => { polLoad() })}">Load current</button>
             <button class="tl-btn" data-hc="${_h((event, el) => { polSave() })}">Save &amp; reload</button>
@@ -2193,7 +2262,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
         </div>
         <div id="activityList">
           <div class="activity-empty">
-            <div class="activity-empty-icon">🛡</div>
+            <div class="activity-empty-icon"></div>
             <div class="activity-empty-text">No activity yet — Kasbah is watching</div>
           </div>
         </div>
@@ -2365,7 +2434,7 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
       <div class="page-wrap">
         <div class="page-hd">
           <div class="page-title">Activity</div>
-          <div class="page-desc">Every AI session Kasbah sees — clipboard, gateway calls, MCP tools. Automatic.</div>
+          <div class="page-desc">Every AI session Kasbah sees — clipboard, app requests, connected apps. Automatic.</div>
         </div>
 
         <!-- Trajectory Analyzer — multi-step agentic attack detection -->
@@ -2409,7 +2478,7 @@ Example:
           </div>
           <div id="agentsList" style="min-height:80px">
             <div class="k-pad-empty">
-              <div class="k-emoji-lg">👁</div>
+              <div class="k-emoji-lg"></div>
               No AI activity yet. Sessions appear here automatically when you copy text or send a call through the Gateway.
             </div>
           </div>
@@ -2492,7 +2561,7 @@ Example:
       <div class="page-wrap k-stack-4">
 
         <div class="page-hd">
-          <div class="page-title">Overwatch</div>
+          <div class="page-title">Watch list</div>
           <div class="page-desc">Every AI surface on this machine — watched in one place.</div>
         </div>
 
@@ -2509,24 +2578,24 @@ Example:
             <div><span style="color:#E8E8E8">client = </span><span style="color:#10B981">protect</span><span style="color:#E8E8E8">(openai.OpenAI())</span></div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">OpenAI ✓</div>
-            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Anthropic ✓</div>
-            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Gemini ✓</div>
-            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Groq ✓</div>
-            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Ollama ✓</div>
-            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Mistral ✓</div>
+            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">OpenAI ✓ </div>
+            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Anthropic ✓ </div>
+            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Gemini ✓ </div>
+            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Groq ✓ </div>
+            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Ollama ✓ </div>
+            <div style="font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:5px">Mistral ✓ </div>
             <div style="font-size:11px;font-weight:600;color:var(--muted);background:var(--bg2);padding:3px 8px;border-radius:5px">+7 more</div>
           </div>
         </div>
 
-        <!-- ╭ 1. Hero — Total Overwatch ╮ -->
+        <!-- ╭ 1. Hero — Total Watch list ╮ -->
         <div class="k-card k-card--dark">
           <div class="k-action-bar">
             <div class="k-action-bar__text">
-              <div class="k-action-bar__title">Total Overwatch</div>
+              <div class="k-action-bar__title">Total Watch list</div>
               <div class="k-action-bar__desc">Install Kasbah into every detected host, route every API call, govern every CLI. One click.</div>
             </div>
-            <button class="k-btn k-btn--primary" data-hc="${_h((event, el) => { activateTotalOverwatch() })}">⚡ Activate</button>
+            <button class="k-btn k-btn--primary" data-hc="${_h((event, el) => { activateTotalWatch list() })}">⚡ Activate</button>
           </div>
           <div id="overwatchLayers" class="k-stat-grid" style="margin-top:18px"></div>
         </div>
@@ -2597,7 +2666,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
                 </div>
                 <div class="ck-panel" data-ck="claude-desktop" style="display:none"><div class="ck-step">1. Open <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></div><div class="ck-step">2. Paste (merge into <code>mcpServers</code>):</div><div class="ck-code-wrap"><pre class="ck-code" id="ckCodeClaudeDesktop"></pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopy('ckCodeClaudeDesktop') })}">Copy</button></div></div>
                 <div class="ck-panel" data-ck="claude-code" style="display:none"><div class="ck-step">Run:</div><div class="ck-code-wrap"><pre class="ck-code" id="ckCodeClaudeCode"></pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopy('ckCodeClaudeCode') })}">Copy</button></div></div>
-                <div class="ck-panel" data-ck="cursor" style="display:none"><div class="ck-step">Settings → MCP → Add server:</div><div class="ck-code-wrap"><pre class="ck-code" id="ckCodeCursor"></pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopy('ckCodeCursor') })}">Copy</button></div></div>
+                <div class="ck-panel" data-ck="cursor" style="display:none"><div class="ck-step">Settings → App connections → Add:</div><div class="ck-code-wrap"><pre class="ck-code" id="ckCodeCursor"></pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopy('ckCodeCursor') })}">Copy</button></div></div>
                 <div class="ck-panel" data-ck="python" style="display:none"><div class="ck-step">Install:</div><div class="ck-code-wrap"><pre class="ck-code">pip install kasbah-python</pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopyText('pip install kasbah-python') })}">Copy</button></div><div class="ck-step">Use:</div><div class="ck-code-wrap"><pre class="ck-code" id="ckCodePython"></pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopy('ckCodePython') })}">Copy</button></div></div>
                 <div class="ck-panel" data-ck="node" style="display:none"><div class="ck-step">Install:</div><div class="ck-code-wrap"><pre class="ck-code">npm install @kasbah/sdk</pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopyText('npm install @kasbah/sdk') })}">Copy</button></div><div class="ck-step">Use:</div><div class="ck-code-wrap"><pre class="ck-code" id="ckCodeNode"></pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopy('ckCodeNode') })}">Copy</button></div></div>
                 <div class="ck-panel" data-ck="curl" style="display:none"><div class="ck-step">Test from anywhere:</div><div class="ck-code-wrap"><pre class="ck-code" id="ckCodeCurl"></pre><button class="ck-copy" data-hc="${_h((event, el) => { ckCopy('ckCodeCurl') })}">Copy</button></div></div>
@@ -2726,17 +2795,17 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
     </div></div>
 
     <div class="page" id="pageProof"><div class="page-wrap" style="max-width:720px">
-      <div class="page-hd"><div class="page-title">Protection Proof</div>
+      <div class="page-hd"><div class="page-title">My safety receipts</div>
       <div class="page-desc">Signed, offline-verifiable proof the VPN was up. Anyone with your public key can verify — no Kasbah cloud.</div></div>
       <div class="settings-card">
         <button class="k-btn k-btn--primary k-btn--small" data-hc="${_h((event, el) => { popMint() })}">Mint proof now</button>
         <button class="tl-btn" data-hc="${_h((event, el) => { popExport() })}">Export all</button>
         <button class="tl-btn" data-hc="${_h((event, el) => { popVerifyAll() })}">Verify all</button>
-        <button class="tl-btn" data-hc="${_h((event, el) => { popMerkle() })}">Merkle batch</button>
+        <button class="tl-btn" data-hc="${_h((event, el) => { popMerkle() })}">Group receipts together</button>
         <button class="tl-btn" data-hc="${_h((event, el) => { zkProtectNow() })}">ZK: risk below threshold</button>
         <button class="tl-btn" data-hc="${_h((event, el) => { commitCreate() })}">Commit proof (hide IP)</button>
         <button class="tl-btn" data-hc="${_h((event, el) => { commitList() })}">Commit list</button>
-        <button class="tl-btn" data-hc="${_h((event, el) => { merkleBatch() })}">Merkle batch export</button>
+        <button class="tl-btn" data-hc="${_h((event, el) => { merkleBatch() })}">Group receipts together export</button>
         <div id="popMsg" style="margin-top:10px;font-size:12.5px" class="muted"></div>
       </div>
       <div class="settings-card" style="margin-top:12px">
@@ -2747,8 +2816,8 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
 
     <!-- Agent Guard -->
     <div class="page" id="pageAgentguard"><div class="page-wrap" style="max-width:720px">
-      <div class="page-hd"><div class="page-title">Agent Guard</div>
-      <div class="page-desc">Local firewall for AI agents on this Mac. If VPN drops, tool use is blocked (when required). Optional HTTP gate on 127.0.0.1:8795 for MCP hosts.</div></div>
+      <div class="page-hd"><div class="page-title">AI helpers</div>
+      <div class="page-desc">Local firewall for AI agents on this Mac. If VPN drops, tool use is blocked (when required). Optional safety switch on 127.0.0.1:8795 for connected apps.</div></div>
       <div class="settings-card">
         <label style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
           <input type="checkbox" id="agRequireVpn" data-hcc="${_h((event, el) => { agSavePolicy() })}"> <span style="font-size:13px">Require VPN (block agents when tunnel is down)</span>
@@ -2859,7 +2928,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
     <!-- Recovery / Shamir + MMR -->
     <div class="page" id="pageRecovery"><div class="page-wrap" style="max-width:720px">
       <div class="page-hd"><div class="page-title">Recovery</div>
-      <div class="page-desc">Shamir 3-of-5 vault key split + Merkle manifests for backups. Real GF(256) crypto on this Mac.</div></div>
+      <div class="page-desc">Split-key 3-of-5 backup: one key becomes 5 pieces, any 3 bring it back. Lists of files included.</div></div>
       <div class="settings-card">
         <div class="sc-title">Split a secret (3 of 5)</div>
         <input class="form-input" id="shSecret" placeholder="Secret / recovery phrase to split" style="margin-bottom:8px">
@@ -2873,8 +2942,8 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
         <div id="shOut" style="margin-top:8px;font-size:12.5px"></div>
       </div>
       <div class="settings-card" style="margin-top:12px">
-        <div class="sc-title">Backup Merkle manifest</div>
-        <div class="muted" style="font-size:12px;margin-bottom:8px">Pick files → signed-style Merkle root you can verify later.</div>
+        <div class="sc-title">Backup checklist</div>
+        <div class="muted" style="font-size:12px;margin-bottom:8px">Pick files → one checklist number you can verify later.</div>
         <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { mmrBuild() })}">Build manifest…</button>
         <div id="mmrMsg" style="margin-top:8px;font-size:12px"></div>
       </div>
@@ -2900,15 +2969,15 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
 
 
     <div class="page" id="pageHoney"><div class="page-wrap" style="max-width:720px">
-      <div class="page-hd"><div class="page-title">Honeytokens</div>
+      <div class="page-hd"><div class="page-title">Decoy traps</div>
       <div class="page-desc">Plant fake credentials. If they appear in clipboard or pasted text, that's a leak.</div></div>
       <div class="settings-card">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { honeyDeploy('aws') })}">Deploy AWS</button>
-          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeploy('github') })}">GitHub</button>
-          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeploy('slack') })}">Slack</button>
-          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeploy('openai') })}">OpenAI</button>
-          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeploy('stripe') })}">Stripe</button>
+          <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { honeyDeployService('aws') })}">Deploy AWS</button>
+          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeployService('github') })}">GitHub</button>
+          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeployService('slack') })}">Slack</button>
+          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeployService('openai') })}">OpenAI</button>
+          <button class="tl-btn" data-hc="${_h((event, el) => { honeyDeployService('stripe') })}">Stripe</button>
           <button class="tl-btn" data-hc="${_h((event, el) => { honeyList() })}">Refresh</button>
         </div>
         <div id="honeyList" class="muted" style="font-size:12px">—</div>
@@ -2935,14 +3004,14 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
       <div class="settings-card" style="margin-top:12px">
         <div class="sc-title">Detection accuracy (measured)</div>
         <div class="muted" style="font-size:12px;margin-bottom:8px">The actual precision/recall from the most recent benchmark run against our own test corpus — not a marketing number.</div>
-        <button class="tl-btn" data-hc="${_h((event, el) => { loadBenchmarkStats() })}">Load latest scorecard</button>
+        <button class="tl-btn" data-hc="${_h((event, el) => { loadHow well we catch bad messagesStats() })}">Load latest scorecard</button>
         <div id="benchStatsOut" style="margin-top:10px;font-size:12.5px">—</div>
       </div>
     </div></div>
 
     <div class="page" id="pageAuditfs"><div class="page-wrap" style="max-width:720px">
       <div class="page-hd"><div class="page-title">Secure Log</div>
-      <div class="page-desc">Forward-secure HMAC chain. Old entries cannot be rewritten without detection.</div></div>
+      <div class="page-desc">Tamper-proof log. Old entries cannot be rewritten without detection.</div></div>
       <div class="settings-card">
         <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { auditAppend() })}">Append sample event</button>
         <button class="tl-btn" data-hc="${_h((event, el) => { auditVerify() })}">Verify chain</button>
@@ -3107,7 +3176,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
           <div class="settings-row">
             <div class="settings-row-left">
               <div class="settings-row-name">Show Labs</div>
-              <div class="settings-row-desc">10 experimental, unvalidated research tools (Multiverse, Ethics, Red Team, VPN…). Off by default — most people never need these.</div>
+              <div class="settings-row-desc">10 experimental, unvalidated research tools (Deep check, Ethics, Red Team, VPN…). Off by default — most people never need these.</div>
             </div>
             <div class="toggle" id="togLabsVisible" data-hc="${_h((event, el) => { toggleLabsVisibility() })}"></div>
           </div>
@@ -3119,7 +3188,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
           <!-- One-click hardening -->
           <div class="settings-row" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;gap:12px">
             <div class="settings-row-left">
-              <div class="settings-row-name" style="font-size:14px">🛡️ Harden Mac</div>
+              <div class="settings-row-name" style="font-size:14px">️ Harden Mac</div>
               <div class="settings-row-desc">Enables everything at once: clipboard watch, fingerprint protection, DNS over HTTPS, honeytokens, and kill switch.</div>
             </div>
             <button class="k-btn k-btn--primary" style="white-space:nowrap;flex-shrink:0" data-hc="${_h((event, el) => { hardenMac() })}" id="hardenMacBtn">Harden</button>
@@ -3148,11 +3217,43 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
           </div>
           <div class="settings-row">
             <div class="settings-row-left">
+              <div class="settings-row-name">Travel mode ️</div>
+              <div class="settings-row-desc">For any network in the world: VPN connects itself, kill switch stays on.</div>
+            </div>
+            <div class="toggle" id="togTravel" data-hc="${_h((event, el) => { toggleTravel(el) })}"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
               <div class="settings-row-name">Sound effects</div>
               <div class="settings-row-desc">Subtle tones when threats are blocked</div>
             </div>
             <div class="toggle on" id="togSound" data-hc="${_h((event, el) => { el.classList.toggle('on'); localStorage.setItem('kg_mute', el.classList.contains('on') ? '0' : '1') })}"></div>
           </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-label">My data</div>
+          <div class="settings-row-left" style="margin-bottom:8px">
+            <div class="settings-row-desc">Everything Kasbah keeps lives on this Mac. See it, take a copy, or delete it — your vault and receipts log are never touched by delete.</div>
+          </div>
+          <div id="myDataList" class="muted" style="font-size:12px;margin-bottom:8px">Loading…</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="tl-btn" data-hc="${_h((event, el) => { myDataRefresh() })}">See my data</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { myDataExport() })}">Take a copy</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { myDataErase() })}">Delete it</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-label">Every Mac</div>
+          <div class="settings-row-left" style="margin-bottom:8px">
+            <div class="settings-row-desc">Carry your protection to another Mac yourself — a password-locked file, no cloud. Microphone and camera approvals stay per-Mac by design.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button class="tl-btn" data-hc="${_h((event, el) => { pairExport() })}">Make pairing file</button>
+            <button class="tl-btn" data-hc="${_h((event, el) => { pairImport() })}">Use pairing file</button>
+          </div>
+          <div id="pairOut" class="muted" style="font-size:12px"></div>
         </div>
 
         <div class="settings-section">
@@ -3163,7 +3264,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
         <div class="settings-section">
           <div class="settings-section-label">Advanced</div>
           <button class="settings-advanced-btn" data-hc="${_h((event, el) => { nav('advanced') })}">
-            Algorithm Explorer — 66 detection algorithms →
+            How the pieces fit — 66 detection algorithms →
           </button>
           <button class="settings-advanced-btn" data-hc="${_h((event, el) => { nav('system') })}">
             System &amp; API status →
@@ -3187,7 +3288,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
     </div>
 
     <!-- Hidden pages (kept for JS compat — reachable via Settings > Advanced) -->
-    <div class="page" id="pagePassports"><div class="page-wrap"><div class="page-hd"><div class="page-title">Agent Passports</div><div class="page-desc">Cryptographic identities for every AI agent.</div></div><div class="pp-grid" id="ppGrid"></div><div class="issue-form"><label class="form-label">Issue new passport</label><input class="form-input" id="ppAgent" placeholder="Agent ID"><input class="form-input" id="ppCaps" placeholder="Capabilities (comma-separated)"><button class="k-btn k-btn--primary" id="ppIssueBtn">Issue passport</button></div></div></div>
+    <div class="page" id="pagePassports"><div class="page-wrap"><div class="page-hd"><div class="page-title">Helper ID cards</div><div class="page-desc">ID cards for AI helpers. Shows who is allowed to do what.</div></div><div class="pp-grid" id="ppGrid"></div><div class="issue-form"><label class="form-label">Issue new passport</label><input class="form-input" id="ppAgent" placeholder="Agent ID"><input class="form-input" id="ppCaps" placeholder="Capabilities (comma-separated)"><button class="k-btn k-btn--primary" id="ppIssueBtn">Issue passport</button></div></div></div>
     <div class="page" id="pageAnalytics"><div class="page-wrap"><div class="page-hd"><div class="page-title">Analytics</div><div class="page-desc">Every request Kasbah has governed — allowed, warned, or denied — over time.</div></div><div class="settings-card" style="margin-bottom:14px"><div style="display:flex;gap:8px"><button class="tl-btn" data-hc="${_h((event, el) => { loadAnalytics(24) })}">24h</button><button class="tl-btn" data-hc="${_h((event, el) => { loadAnalytics(72) })}">3d</button><button class="tl-btn" data-hc="${_h((event, el) => { loadAnalytics(168) })}">7d</button><span id="analyticsTotal" style="font-size:12px;color:var(--subtle);margin-left:8px"></span></div></div><div class="settings-card"><div class="sc-title">Requests over time</div><canvas id="analyticsChart" height="130" style="width:100%;margin-top:8px"></canvas></div><div class="stats-bar" style="margin-top:14px" id="analyticsStats"><div class="stat-tile"><div class="stat-num" id="anTotal">—</div><div class="stat-lbl">Total</div></div><div class="stat-tile good"><div class="stat-num" id="anAllow">—</div><div class="stat-lbl">Allowed</div></div><div class="stat-tile"><div class="stat-num" id="anWarn">—</div><div class="stat-lbl">Warned</div></div><div class="stat-tile highlight"><div class="stat-num" id="anDeny">—</div><div class="stat-lbl">Denied</div></div></div></div></div>
     <div class="page" id="pageWebhooks"><div class="page-wrap"><div class="page-hd"><div class="page-title">Webhooks</div><div class="page-desc">POST to any HTTPS endpoint when Kasbah acts.</div></div><div class="issue-form" style="margin-bottom:18px"><label class="form-label">Endpoint URL</label><input class="form-input" id="whUrl" placeholder="https://your-app.com/kasbah-events"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="whEvDeny" checked> govern.deny</label><label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="whEvWarn"> govern.warn</label><label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="whEvRevoke"> passport.revoke</label></div><input class="form-input" id="whPassport" placeholder="Scope to passport ID (optional)"><button class="k-btn k-btn--primary" id="whRegisterBtn" data-hc="${_h((event, el) => { registerWebhook() })}">Register</button></div><div id="whList"></div></div></div>
     <div class="page" id="pageCompliance"><div class="page-wrap">
@@ -3211,7 +3312,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
       <div id="clFrameworks"><div style="padding:30px;text-align:center;color:var(--muted);font-size:13px"><span class="spin" style="border-color:var(--border);border-top-color:var(--muted)"></span> Building checklist…</div></div>
     </div></div>
     <div class="page" id="pageThreat"><div class="page-wrap"><div class="page-hd"><div class="page-title">Live Threat Stream</div><div class="page-desc">Every blocked or flagged action, as it happens.</div></div><div class="settings-card" style="padding:0;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)"><span id="tsConnDot" style="width:8px;height:8px;border-radius:50%;background:#6b7280;display:inline-block"></span><span id="tsConnLabel" style="font-size:12px;color:var(--muted)">Disconnected</span><div class="k-flex-1"></div><span id="tsEventCount" style="font-size:12px;color:var(--muted);font-family:monospace">0 events</span><button class="tl-btn" data-hc="${_h((event, el) => { tsClear() })}">Clear</button><button class="tl-btn" id="tsPauseBtn" data-hc="${_h((event, el) => { tsPause() })}">Pause</button></div><div id="tsPulse" style="display:flex;gap:3px;align-items:flex-end;height:28px;padding:4px 16px;border-bottom:1px solid var(--border)"><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div><div class="ts-bar" style="height:5px;width:4px;border-radius:2px;background:var(--muted);transition:height .2s,background .2s"></div></div><div id="tsStream" style="height:420px;overflow-y:auto;font-family:monospace;font-size:12px;padding:0"></div></div></div></div>
-    <div class="page" id="pageAdvanced"><div class="page-wrap"><div class="page-hd"><div class="page-title">Algorithm Explorer</div><div class="page-desc">66 novel algorithms across 11 categories.</div></div><div class="settings-card" style="padding:0;overflow:hidden"><div id="advTabs" style="display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--bg)"></div><div id="advBody" style="padding:16px;min-height:260px">Loading…</div></div></div></div>
+    <div class="page" id="pageAdvanced"><div class="page-wrap"><div class="page-hd"><div class="page-title">How the pieces fit</div><div class="page-desc">What the detector finds</div></div><div class="settings-card" style="padding:0;overflow:hidden"><div id="advTabs" style="display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--bg)"></div><div id="advBody" style="padding:16px;min-height:260px">Loading…</div></div></div></div>
     <div class="page" id="pageAccount"><div class="page-wrap"><div class="page-hd"><div class="page-title">Account</div><div class="page-desc">Your plan, API key, and workspaces.</div></div><div class="settings-card"><div style="font-weight:600;margin-bottom:12px">Your account</div><div id="accountWho" class="muted" style="margin-bottom:10px">Not signed in.</div><div id="accountWorkspaces" style="margin-bottom:16px"></div><div style="font-weight:600;margin-bottom:10px;padding-top:16px;border-top:1px solid var(--border)">Create account</div><input class="form-input" id="acctEmail" placeholder="you@company.com"><input class="form-input" id="acctName" placeholder="Your name"><button class="k-btn k-btn--primary" data-hc="${_h((event, el) => { acctSignup() })}">Create Account + API Key</button><div id="acctSignupResult" style="margin-top:12px"></div></div><div class="settings-card" style="margin-top:12px"><div style="font-weight:600;margin-bottom:12px">Plans</div><div id="acctPlans" class="muted">Loading…</div></div><div class="settings-card" style="margin-top:12px"><div style="font-weight:600;margin-bottom:12px">API Key</div><code id="acctActiveKey" style="display:block;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'SF Mono',monospace;font-size:12px;word-break:break-all">—</code></div></div></div>
     <div class="page" id="pageSystem"><div class="page-wrap"><div class="page-hd"><div class="page-title">System</div><div class="page-desc">Engine health — algorithms loaded, memory, uptime, subsystems.</div></div><div class="settings-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span id="sysDot" style="width:9px;height:9px;border-radius:50%;background:#6b7280"></span><strong id="sysHeader" style="color:var(--ink)">Loading…</strong><div class="k-flex-1"></div><button class="tl-btn" data-hc="${_h((event, el) => { sysRefresh() })}">Refresh</button><button class="tl-btn" data-hc="${_h((event, el) => { window.kasbah.openUrl('http://127.0.0.1:8788/docs') })}">Swagger</button><button class="tl-btn" data-hc="${_h((event, el) => { window.kasbah.openUrl('http://127.0.0.1:8788/status') })}">Status</button></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"><div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Algorithms</div><div class="k-h2" id="sysActive">—</div></div><div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Products</div><div class="k-h2" id="sysProducts">—</div></div><div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Memory</div><div class="k-h2" id="sysMem">—</div></div><div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div class="muted" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Uptime</div><div class="k-h2" id="sysUptime">—</div></div></div><div style="font-weight:600;margin-bottom:8px">Subsystems</div><div id="sysSubsystems" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"></div><div style="font-weight:600;margin:16px 0 8px">Top routes</div><div id="sysRoutes" class="muted">—</div></div></div></div>
     <div class="page" id="pageKasbahone"><div class="page-wrap">
@@ -3260,7 +3361,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
 
     <!-- ── Password Vault ── -->
     <div class="page" id="pagePasswords"><div class="page-wrap">
-      <div class="page-hd"><div class="page-title">Password Vault</div><div class="page-desc">AES-256-GCM encrypted local vault. Passwords never leave your machine. Breach check uses k-anonymity (only 5 chars of a hash sent to HIBP).</div></div>
+      <div class="page-hd"><div class="page-title">Password Vault</div><div class="page-desc">Locked passwords on this Mac. They never leave your computer. We check if they leaked without sending the full password anywhere.</div></div>
       <div class="settings-card">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <button class="k-btn k-btn--primary k-btn--small" data-hc="${_h((event, el) => { pwShowAdd() })}">+ Add entry</button>
@@ -3307,10 +3408,10 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
       <div class="settings-card" style="margin-top:12px">
         <div style="font-weight:600;margin-bottom:8px">What this checks</div>
         <div class="muted" style="font-size:12.5px;line-height:1.7">
-          🔴 <b>Grooming</b> — secrecy requests, meeting requests, age-probing, requests for photos<br>
-          🔴 <b>Self-harm</b> — statements about wanting to hurt or not be alive<br>
-          🟡 <b>PII leaks</b> — phone numbers, street addresses, school names shared with an AI<br>
-          🟡 <b>Platform moves</b> — attempts to shift conversation to less-monitored apps<br>
+          <b>Grooming</b> — secrecy requests, meeting requests, age-probing, requests for photos<br>
+          <b>Self-harm</b> — statements about wanting to hurt or not be alive<br>
+          <b>PII leaks</b> — phone numbers, street addresses, school names shared with an AI<br>
+          <b>Platform moves</b> — attempts to shift conversation to less-monitored apps<br>
           ✓ <b>Transparent</b> — every match shows you exactly what was flagged and why
         </div>
       </div>
@@ -3318,15 +3419,15 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
 
     <!-- ── Identity Watch ── -->
     <div class="page" id="pageIdentity"><div class="page-wrap">
-      <div class="page-hd"><div class="page-title">Identity Watch</div><div class="page-desc">Check if your email has appeared in known data breaches. Uses HaveIBeenPwned's k-anonymity API — your full email never leaves your device unencrypted.</div></div>
+      <div class="page-hd"><div class="page-title">Breach check</div><div class="page-desc">Check if your email showed up in known leaks. Your full email stays on this Mac.</div></div>
       <div class="settings-card">
         <label class="muted" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Email to check</label>
         <div style="display:flex;gap:8px">
           <input class="form-input" id="idEmail" placeholder="you@example.com" style="margin:0;flex:1">
           <button class="k-btn k-btn--primary" data-hc="${_h((event, el) => { idCheck() })}" id="idCheckBtn">Check</button>
         </div>
-        <div class="muted" style="font-size:11px;margin-top:8px">Email check works without a key (free source). Optionally add a HIBP API key for official full results (haveibeenpwned.com/API/Key)</div>
-        <input class="form-input" id="idHibpKey" placeholder="HIBP API key (optional)" style="margin-top:6px;font-size:12px">
+        <div class="muted" style="font-size:11px;margin-top:8px">Your email check works without a key. You can add a free breach-check key for full results (haveibeenpwned.com/API/Key)</div>
+        <input class="form-input" id="idHibpKey" placeholder="Breach check key (optional)" style="margin-top:6px;font-size:12px">
         <div id="idResult" style="margin-top:16px"></div>
       </div>
       <div class="settings-card" style="margin-top:12px">
@@ -3342,7 +3443,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
 
     <!-- ── Secure Backup ── -->
     <div class="page" id="pageBackup"><div class="page-wrap">
-      <div class="page-hd"><div class="page-title">Secure Backup</div><div class="page-desc">Encrypts files on your machine with AES-256-GCM. Backups are stored in ~/.kasbah-backup — machine-local, no cloud, no account needed.</div></div>
+      <div class="page-hd"><div class="page-title">Secure Backup</div><div class="page-desc">Locked files on this Mac. No cloud, no account needed.</div></div>
       <div class="settings-card">
         <div style="font-weight:600;margin-bottom:8px">Encrypt a file</div>
         <div class="muted" style="font-size:12.5px;margin-bottom:12px">Choose any file. It's encrypted with AES-256-GCM using a key derived from this machine's identity. The original file is untouched — the encrypted copy goes to ~/.kasbah-backup/.</div>
@@ -3374,7 +3475,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
     </div></div>
 
       <div class="page" id="pageVpn"><div class="page-wrap">
-      <div class="page-hd"><div class="page-title">Kasbah VPN</div><div class="page-desc">Post-quantum WireGuard. One click. Your traffic exits in Singapore — not your ISP.</div></div>
+      <div class="page-hd"><div class="page-title">Kasbah VPN</div><div class="page-desc">Private, fast VPN. One click. Your traffic leaves from a safe location — not your home internet.</div></div>
 
       <!-- ── Primary: pick a real location, one button, native password prompt ── -->
       <div class="settings-card">
@@ -3495,7 +3596,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
                 <div style="font-weight:600;font-size:13px">AI lane</div>
                 <span id="vpnAiStatus" class="muted" style="font-size:12px">stopped</span>
               </div>
-              <div class="muted" style="font-size:12px;margin-bottom:8px">Forwards to gateway <code>/v1/proxy/:provider/*</code> — governance + receipt per call.</div>
+              <div class="muted" style="font-size:12px;margin-bottom:8px">Every call through the gateway is checked and gets a receipt.</div>
               <div style="display:flex;gap:6px">
                 <button class="k-btn k-btn--primary k-btn--small" data-hc="${_h((event, el) => { vpnAiLaneStart() })}">Start</button>
                 <button class="tl-btn" data-hc="${_h((event, el) => { vpnAiLaneStop() })}">Stop</button>
@@ -3565,9 +3666,9 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
         <div class="nsm-tool on" data-tool="bash">bash</div>
         <div class="nsm-tool on" data-tool="list_dir">list_dir</div>
         <div class="nsm-tool on" data-tool="http_request">http_request</div>
-        <div class="nsm-tool blocked" data-tool="delete_file">delete_file ✕</div>
-        <div class="nsm-tool blocked" data-tool="send_email">send_email ✕</div>
-        <div class="nsm-tool blocked" data-tool="execute_code">execute_code ✕</div>
+        <div class="nsm-tool blocked" data-tool="delete_file">delete_file ✕ </div>
+        <div class="nsm-tool blocked" data-tool="send_email">send_email ✕ </div>
+        <div class="nsm-tool blocked" data-tool="execute_code">execute_code ✕ </div>
       </div>
     </div>
 
@@ -3607,6 +3708,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
       <button class="k-btn k-btn--primary" data-hc="${_h((event, el) => { startNewSession() })}">Start session →</button>
     </div>
   </div>
+</div><!-- /newSessionModal -->
 
 <div id="firstRunModal" class="frm-backdrop" style="display:none">
   <div class="frm-card">
@@ -3614,7 +3716,7 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
       <span class="frm-dot on" data-dot="1"></span><span class="frm-dot" data-dot="2"></span><span class="frm-dot" data-dot="3"></span>
     </div>
     <div class="frm-step frm-step-1">
-      <div class="frm-eyebrow">Kasbah Overwatch</div>
+      <div class="frm-eyebrow">Kasbah Watch list</div>
       <div class="frm-title">Watch every AI on this machine</div>
       <div class="frm-body">Kasbah finds every AI tool, runtime, API key, and agent — then governs all of them. No setup. We just look.</div>
       <div class="frm-actions">
@@ -3632,8 +3734,8 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
     </div>
     <div class="frm-step frm-step-3" style="display:none">
       <div class="frm-eyebrow">You're protected</div>
-      <div class="frm-title">Total Overwatch active</div>
-      <div class="frm-body" id="frmStep3Body">Kasbah is watching your MCP hosts, the network proxy is running, every detected AI CLI is shimmed. You can manage everything from the Overwatch tab.</div>
+      <div class="frm-title">Total Watch list active</div>
+      <div class="frm-body" id="frmStep3Body">Kasbah is watching your connected apps, the safety switch is on, and risky pastes are blocked. Manage it all from the Watch list tab.</div>
       <div class="frm-actions">
         <button class="k-btn k-btn--primary" data-hc="${_h((event, el) => { firstRun.finish() })}">Get started</button>
       </div>
@@ -3642,7 +3744,254 @@ client = protect(openai.OpenAI())  # that's it</pre><button class="ck-copy" data
 </div>
 
 <div id="toasts"></div>
+
+<div class="page" id="pageUservalue"><div class="page-wrap"><div class="page-hd"><div class="page-title">What Kasbah stopped</div><div class="page-desc">Plain-English view of what Kasbah is doing for you right now.</div></div><div class="settings-card" id="userValueCards"></div></div></div>
+
+<div class="page" id="pageDigest"><div class="page-wrap" style="max-width:900px">
+  <div class="page-hd">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div class="page-title">Weekly summary</div>
+        <div class="page-desc">What Kasbah saved you from this week.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="digestTrustGrade" class="trust-grade-chip" style="display:none"></span>
+        <select id="digestPeriod" class="form-input" style="width:auto;padding:6px 12px;font-size:12px" data-hci="${_h((e,el)=>{loadDigest()})}">
+          <option value="session">This Session</option>
+          <option value="day" selected>Last 24h</option>
+          <option value="week">Last 7 Days</option>
+          <option value="month">Last 30 Days</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px" id="digestSummaryCards"></div>
+  
+  <div class="settings-card">
+    <div class="sc-title">Saved-you summary</div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Auto-generated from intervention events. Click items to expand.</div>
+    <div id="digestCards" style="display:grid;gap:8px"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { loadDigest() })}">↻ Refresh</button>
+      <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { exportDigest() })}">Export JSON</button>
+      <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { shareDigest() })}">Share</button>
+      <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { copyDigestSlack() })}">Copy for Slack</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="page" id="pageMcp"><div class="page-wrap" style="max-width:900px">
+  <div class="page-hd">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div class="page-title">App connections</div>
+        <div class="page-desc">Apps that want to use AI on this Mac. Turn access on or off.</div>
+      </div>
+      <div id="mcpStatusBadge" class="status-badge" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--bg2);color:var(--muted)">
+        <span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:var(--muted)"></span>
+        <span>Scanning…</span>
+      </div>
+    </div>
+  </div>
+  
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px" id="mcpQuickStats"></div>
+  
+  <div class="settings-card">
+    <div class="sc-title">Connected apps &amp; tools found</div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Real-time inventory from <code>kasbah.mcp.inventory()</code>. Blocked tools are denied at the gateway.</div>
+    <div id="mcpInventory" style="display:grid;gap:8px"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { refreshMcpInventory() })}">↻ Refresh</button>
+      <button class="k-btn k-btn--small k-btn--primary" data-hc="${_h((event, el) => { scanMcp() })}">Rescan</button>
+      <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { exportMcpInventory() })}">Export</button>
+    </div>
+  </div>
+  
+  <div class="settings-card" style="margin-top:16px">
+    <div class="sc-title">Shared Governance Policies</div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Rules used by all connected apps.</div>
+    <div id="mcpPolicies" style="display:grid;gap:8px"></div>
+  </div>
+</div></div>
+
+<div class="page" id="pageMultimodal"><div class="page-wrap" style="max-width:900px">
+  <div class="page-hd">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div class="page-title">Mic, camera & files</div>
+        <div class="page-desc">No app listens or watches without your permission. Sentinels guard live mic & camera; files you drop are scanned for injections, PII, secrets, and covert channels.</div>
+      </div>
+      <div id="mmScanStatus" style="font-size:12px;color:var(--muted)"></div>
+    </div>
+  </div>
+  
+  <div class="settings-card" style="margin-bottom:12px;background:linear-gradient(135deg,var(--brand-soft),transparent);border:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:26px">🎙️</span>
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:700;font-size:14px">Silent-speech guard — exclusive to Kasbah</div>
+        <div class="muted" style="font-size:12px">Catches whisper harvesting, covert voice commands & ultrasonic signaling. Nothing leaves this Mac.</div>
+      </div>
+      <button class="k-btn k-btn--primary k-btn--small" data-hc="${_h((event, el) => { document.getElementById('mmBiometricWatch').scrollIntoView({behavior:'smooth',block:'start'}) })}">Check my mic</button>
+    </div>
+  </div>
+  <div class="settings-card">
+    <div class="sc-title">Drop Zone</div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Supports: PNG, JPG, WEBP, MP4, WEBM, MP3, WAV, OGG. Max 50MB. Paste (Ctrl+V) also works.</div>
+    <div id="mmDropZone" class="mm-dropzone" tabindex="0" role="button" aria-label="File drop zone" style="border:2px dashed var(--border);border-radius:12px;padding:48px;text-align:center;background:var(--card);cursor:pointer;transition:border-color .15s,background .15s;position:relative">
+      <div style="font-size:48px;margin-bottom:12px;opacity:0.6"></div>
+      <div style="font-size:15px;color:var(--ink);font-weight:500;margin-bottom:4px">Drop files here or click to select</div>
+      <div style="font-size:12px;color:var(--muted)">Paste (Ctrl+V) also works</div>
+      <input type="file" id="mmFileInput" multiple accept="image/*,video/*,audio/*" style="display:none" data-hci="${_h((event, el) => { handleMultimodalFiles(el.files) })}">
+      <div id="mmDropProgress" style="display:none;position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red),var(--brand));border-radius:0 0 12px 12px;transform:scaleX(0);transform-origin:left;transition:transform .2s"></div>
+    </div>
+    <div id="mmResults" style="margin-top:16px;display:grid;gap:12px"></div>
+  </div>
+  
+  <div class="settings-card" style="margin-top:12px">
+    <div class="sc-title">Silent Speech & Biometric Watch <span class="k-tag" style="font-size:10px;background:var(--red-soft);color:var(--red)">EXCLUSIVE</span></div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Detects apps silently accessing your <strong>microphone</strong> (subvocal/near-silent speech harvesting) and your <strong>camera</strong> (face detection, rPPG pulse harvesting). Approved-list model: only apps you explicitly allow may capture. <strong>No competitor has this.</strong></div>
+    <div id="mmBiometricWatch">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <strong style="font-size:13px">Microphone Sentinel</strong>
+            <span id="mmMicDot" style="width:8px;height:8px;border-radius:50%;background:var(--muted)"></span>
+          </div>
+          <div id="mmMicActive" class="muted" style="font-size:11.5px;margin-bottom:8px">Checking…</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { refreshMicSentinel() })}">↻ Check now</button>
+            <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { approveMicApp() })}">✓ Approve app</button>
+          </div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <strong style="font-size:13px">Camera Sentinel</strong>
+            <span id="mmCamDot" style="width:8px;height:8px;border-radius:50%;background:var(--muted)"></span>
+          </div>
+          <div id="mmCamActive" class="muted" style="font-size:11.5px;margin-bottom:8px">Checking…</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { refreshCameraSentinel() })}">↻ Check now</button>
+            <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { approveCameraApp() })}">✓ Approve app</button>
+          </div>
+        </div>
+      </div>
+      <div id="mmBiometricAlerts" style="font-size:11px;font-family:ui-monospace,monospace;max-height:180px;overflow:auto;background:var(--bg);padding:8px;border-radius:8px;border:1px solid var(--border);margin-bottom:12px"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <strong style="font-size:12.5px">ENFORCE mode</strong>
+        <div class="toggle" id="mmEnforceToggle" data-hc="${_h((event, el) => { toggleEnforceMode(el) })}" style="cursor:pointer"><div class="toggle-knob"></div></div>
+        <select id="mmEnforceAction" class="form-input" style="width:auto;padding:4px 10px;font-size:11.5px" data-hcc="${_h((event, el) => { setEnforceAction(el.value) })}">
+          <option value="alert-only">Alert only</option>
+          <option value="tcc-reset">Revoke permission (tccutil)</option>
+          <option value="terminate">Terminate process</option>
+        </select>
+        <span id="mmEnforceTier" class="muted" style="font-size:11px">Tier 1 — observe & alert</span>
+      </div>
+      <div class="muted" style="font-size:11px;margin-bottom:6px">Enforcement audit log (every action is recorded):</div>
+      <div id="mmEnforceLog" style="font-size:11px;font-family:ui-monospace,monospace;max-height:140px;overflow:auto;background:var(--bg);padding:8px;border-radius:8px;border:1px solid var(--border)"></div>
+      <div class="muted" style="font-size:11px;margin-bottom:6px">Approved recorder apps (they will never be flagged):</div>
+      <div id="mmApprovedApps" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div class="muted" style="font-size:11.5px;margin-bottom:8px"><strong>Near-silent speech analyzer</strong> — live audio FFT for covert voice commands, whisper detection, ultrasonic signaling:</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <button class="k-btn k-btn--primary" id="mmAudioStart" data-hc="${_h((event, el) => { startSilentSpeech() })}">Start Listening</button>
+        <button class="k-btn" id="mmAudioStop" data-hc="${_h((event, el) => { stopSilentSpeech() })}" disabled>⏹ Stop</button>
+        <span id="mmAudioStatus" class="muted" style="font-size:12px">Idle</span>
+        <span id="mmAudioIndicator" style="width:8px;height:8px;border-radius:50%;background:var(--muted);margin-left:8px" title="Audio level"></span>
+      </div>
+      <div id="mmAudioEvents" style="margin-top:12px;font-size:11px;font-family:ui-monospace,monospace;max-height:250px;overflow:auto;background:var(--bg);padding:8px;border-radius:8px;border:1px solid var(--border)"></div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { exportAudioEvents() })}">Export Log</button>
+        <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { clearAudioEvents() })}">Clear</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="settings-card" style="margin-top:12px">
+    <div class="sc-title">Live rPPG — camera liveness check <span class="k-tag" style="font-size:10px;background:var(--red-soft);color:var(--red)">EXCLUSIVE</span></div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Captures real camera frames and runs the rPPG DSP (FFT in the 0.7–4 Hz blood-volume band on the green channel). A <strong>live face</strong> shows a pulse; a photo, deepfake, or face-geometry harvester does not. Frames never leave the machine — only per-frame channel means are analyzed.</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <button class="k-btn k-btn--primary" id="rppgStartBtn" data-hc="${_h((event, el) => { startRppgScan() })}">Start live rPPG</button>
+      <button class="k-btn" id="rppgStopBtn" data-hc="${_h((event, el) => { stopRppgStream() })}" disabled>⏹ Stop camera</button>
+      <span id="rppgStatus" class="muted" style="font-size:12px">Idle</span>
+    </div>
+    <div id="rppgVerdict" style="display:none;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600"></div>
+    <div id="rppgDetails" class="muted" style="font-size:11px;font-family:ui-monospace,monospace;margin-top:8px;max-height:160px;overflow:auto;background:var(--bg);padding:8px;border-radius:8px;border:1px solid var(--border)"></div>
+  </div>
+  <div class="settings-card" style="margin-top:12px">
+    <div class="sc-title">Threat Intelligence</div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Real-time threat categories detected across all scans.</div>
+    <div id="mmThreatIntel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"></div>
+  </div>
+</div></div>
+
+<div class="page" id="pageRedteam"><div class="page-wrap" style="max-width:900px">
+  <div class="page-hd">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div class="page-title">Safety test</div>
+        <div class="page-desc">Try to trick Kasbah on purpose, to make sure it catches real attacks.</div>
+      </div>
+      <div id="rtOverallScore" style="text-align:right">
+        <div style="font-size:28px;font-weight:800;color:var(--green)" id="rtScore">—</div>
+        <div class="muted" style="font-size:11px">Detection Rate</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="settings-card">
+    <div class="sc-title">Adversarial Suite Control</div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">Runs <code>packages/api-server/src/live-redteam.js</code> against your Kasbah instance.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+      <button class="k-btn k-btn--primary" id="rtRunBtn" data-hc="${_h((event, el) => { runRedteamSuite() })}">Run Suite Now</button>
+      <button class="k-btn" id="rtScheduleBtn" data-hc="${_h((event, el) => { scheduleRedteam() })}">⏰ Schedule Daily</button>
+      <button class="k-btn" id="rtHistoryBtn" data-hc="${_h((event, el) => { viewRedteamHistory() })}">History</button>
+      <button class="k-btn k-btn--small" id="rtExportBtn" data-hc="${_h((event, el) => { exportRedteamResults() })}" disabled>Export</button>
+      <span id="redteamStatus" style="font-size:12px;color:var(--muted);margin-left:auto">Idle — click Run Suite Now</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px" id="rtQuickStats"></div>
+    <div id="redteamResults" style="display:grid;gap:8px"></div>
+  </div>
+  
+  <div class="settings-card" style="margin-top:12px">
+    <div class="sc-title">Detection Rate Trend</div>
+    <canvas id="redteamChart" width="800" height="200" style="width:100%;height:200px;background:var(--card);border-radius:8px"></canvas>
+    <div style="margin-top:8px;display:flex;gap:16px;font-size:11px;color:var(--muted)">
+      <span>Caught</span>
+      <span>Missed</span>
+      <span>Warning</span>
+      <span>⚪ Benign</span>
+    </div>
+  </div>
+  
+  <div class="settings-card" style="margin-top:12px">
+    <div class="sc-title">Category Breakdown</div>
+    <div id="rtCategoryBreakdown" style="display:grid;gap:8px"></div>
+  </div>
+  
+  <div class="settings-card" style="margin-top:12px">
+    <div class="sc-title">Competitor Comparison (Last Run)</div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">How Kasbah compares when benchmarked against external systems.</div>
+    <div id="rtCompetitorComparison" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);text-align:left">
+            <th style="padding:8px;color:var(--muted);font-weight:600">System</th>
+            <th style="padding:8px;color:var(--muted);font-weight:600">F1</th>
+            <th style="padding:8px;color:var(--muted);font-weight:600">Precision</th>
+            <th style="padding:8px;color:var(--muted);font-weight:600">Recall</th>
+            <th style="padding:8px;color:var(--muted);font-weight:600">p95 Latency</th>
+            <th style="padding:8px;color:var(--muted);font-weight:600">Deployment</th>
+          </tr>
+        </thead>
+        <tbody id="rtCompetitorRows"></tbody>
+      </table>
+    </div>
+  </div>
+</div></div>
+
 <script src="app.js"></script>
 </body>
-<div class="page" id="pageUservalue"><div class="page-wrap"><div class="page-hd"><div class="page-title">Your Safety</div><div class="page-desc">Plain-English view of what Kasbah is doing for you right now.</div></div><div class="settings-card" id="userValueCards"></div></div></div>
 </html>

@@ -92,16 +92,20 @@ function downloadsClear() { writeJSON(DOWNLOADS_FILE, []); }
 // ── Privacy/safety settings — real runtime toggles, not decorative ─────────────
 const DEFAULT_SETTINGS = {
   trackerBlocking: true,       // gates session.webRequest.onBeforeRequest in main.js
-  fingerprintProtection: false, // off by default — enable in Settings (was a multi-second canvas cost) // gates the noise patches applied in webview-preload.js
+  fingerprintProtection: true, // on by default — cheap per-origin noise (was slow before fix)
   httpsOnly: true,             // gates the http->https upgrade in bwrOnWillNavigate
   aiShield: true,              // gates the govern+scan page analysis
   historyEnabled: true,        // gates did-navigate logging in main.js
+  queryStrip: true,            // strip utm/gclid/fbclid tracking params (beats DDG defaults)
+  bounceBlock: true,           // skip known bounce trackers
 };
 function settingsGet() {
   if (_settingsLoaded && _settingsCache) return _settingsCache;
   const disk = readJSON(SETTINGS_FILE, {});
   if (disk && disk.__fpMigrated !== true) {
-    disk.fingerprintProtection = false;
+    disk.fingerprintProtection = true;
+    disk.queryStrip = disk.queryStrip !== false;
+    disk.bounceBlock = disk.bounceBlock !== false;
     disk.__fpMigrated = true;
     try { writeJSON(SETTINGS_FILE, disk); } catch (_) {}
   }

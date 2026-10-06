@@ -249,6 +249,13 @@ const aiTrustGrade = require('./src/ai-trust-grade.js');
 const aiBom = require('./src/ai-bom.js');
 const nlPolicy = require('./src/nl-policy.js');
 const digestMod = require('./src/digest.js');
+// ─── Orphan-module wiring: OS↔Frontier integration ──────────────────────────
+let osIntegration = null;
+try {
+  const { KasbahOSFrontierIntegration } = require('../../src/kasbah-os-integration.js');
+  osIntegration = new KasbahOSFrontierIntegration();
+  console.log('[kasbah-os-integration] hybrid check ready (local detector + Frontier Shield)');
+} catch (e) { console.warn('[kasbah-os-integration] not wired:', e.message); }
 const carbonGate = require('./src/carbon-gate.js');
 const transparencyLog = (() => { try { return require('../desktop/src/transparency-log.js'); } catch (_) { return null; } })();
 const { AgentTrace } = (() => { try { return require('../desktop/src/agent-trace.js'); } catch (_) { return { AgentTrace: null }; } })();
@@ -793,6 +800,29 @@ if (process.env.NODE_ENV === 'production') {
 
 const app = express();
 
+// ─── Advisory suite (orphan-module wiring, advisory-only) ────────────────────
+try {
+  const advisorySuite = require('../../src/advisory-suite.js').createAdvisorySuiteRouter();
+  app.use('/v1/advisory', advisorySuite);
+  console.log('[advisory-suite] mounted at /v1/advisory/* (advisory only, never DENY)');
+} catch (e) { console.warn('[advisory-suite] not mounted:', e.message); }
+
+// ─── Unified sentinel fusion (KasbahSentinel → /v1/scan/full) ───────────────
+// The full 13-layer sentinel (eigenEthics, shadowConsensus, topoShield,
+// causalBreaker, zkProof, reynoldsFlow, punctEquil, harmonicDiss + policy,
+// ethics, provenance, authority) fuses with core govern on the opt-in
+// /v1/scan/full route. Advisory-only: sentinel signals can add threats and
+// raise risk, never lower the core verdict. Core /v1/scan|govern untouched.
+let _sentinelSingleton = null;
+function sentinelSingleton() {
+  if (_sentinelSingleton) return _sentinelSingleton;
+  try {
+    const mod = require('../../src/kasbah-sentinel.js');
+    _sentinelSingleton = new mod.KasbahSentinel({});
+    console.log('[sentinel-fusion] KasbahSentinel live (13 layers + policy/ethics/provenance)');
+  } catch (e) { console.warn('[sentinel-fusion] unavailable:', e.message); _sentinelSingleton = null; }
+  return _sentinelSingleton;
+}
 // Behind Fly/any reverse proxy the socket peer is the proxy, not the client.
 // Trust exactly one hop so req.ip reflects the real client (for per-IP rate
 // limiting) while X-Forwarded-For beyond the first hop stays untrusted.
@@ -844,7 +874,7 @@ app.use(enterpriseMetrics.metricsMiddleware);
 
 // ─── Enterprise structured logger — replace console.log for production ────────
 const log = enterpriseMetrics.logger;
-log.info('server starting', { nodeEnv: process.env.NODE_ENV, port: process.env.PORT || 3000 });
+log.info('server starting', { nodeEnv: process.env.NODE_ENV, port: process.env.PORT || 8788 });
 
 // ─── Global IP rate limiter ───────────────────────────────────────────────────
 // Prevents unauthenticated endpoint abuse (key issuance, health polling, etc.).
@@ -1061,6 +1091,42 @@ function saveApiKey(entry) {
 
 // ─── Tier quotas (persistent usage meter) ─────────────────────────────────────
 const usageMeter = require('./src/usage-meter.js');
+const { ENFORCEMENT_COST } = usageMeter;
+const siemConnectors = (() => { try { return require('./src/siem-connectors.js'); } catch (_) { return null; } })();
+const dataLineage    = (() => { try { return require('./src/data-lineage.js');    } catch (_) { return null; } })();
+
+// ─── SSI cores (Python) via JSON CLI bridge ────────────────────────────────
+// kasbah-os/ssi_cli.py speaks one-JSON-line-in/out. Lazy spawn per request
+// (admin-frequency surface), 25s timeout, 503 when python3/kasbah-os absent.
+const SSI_DIR_CANDIDATES = [
+  path.join(__dirname, '..', '..', 'kasbah-os'),
+  path.join(__dirname, '..', '..', '..', 'kasbah-os'),
+  ...(process.resourcesPath ? [path.join(process.resourcesPath, 'packages', 'kasbah-os')] : []),
+];
+function _ssiDir() {
+  const fs = require('fs');
+  for (const d of SSI_DIR_CANDIDATES) {
+    try { if (fs.existsSync(path.join(d, 'ssi_cli.py'))) return d; } catch (_) {}
+  }
+  return null;
+}
+function _ssiCall(payload, timeoutMs = 25000) {
+  return new Promise((resolve) => {
+    const dir = _ssiDir();
+    if (!dir) return resolve({ ok: false, error: 'kasbah-os/ssi_cli.py not found' });
+    try {
+      const { execFile } = require('child_process');
+      const child = execFile('python3', [path.join(dir, 'ssi_cli.py')], { timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024 },
+        (err, stdout, stderr) => {
+          if (err && !stdout) return resolve({ ok: false, error: (stderr || err.message || '').split('\n')[0] });
+          try { resolve(JSON.parse(stdout)); }
+          catch (e) { resolve({ ok: false, error: `bad output from ssi_cli: ${e.message}` }); }
+        });
+      child.stdin.write(JSON.stringify(payload));
+      child.stdin.end();
+    } catch (e) { resolve({ ok: false, error: e.message }); }
+  });
+}
 const TIER_LIMITS = usageMeter.TIER_LIMITS;
 
 // Helper to detect which product a request is hitting (for cost weighting)
@@ -2919,6 +2985,45 @@ app.post('/v1/scan', async (req, res) => {
       } catch (_) {}
     }
 
+    // ── consume_guard: agents pay for their own enforcement ──────────────────
+    // Every non-silent intervention debits the calling key's prepaid credits
+    // (hard_block debits most). Agents that run out are flagged exhausted —
+    // they get the governance they paid for, then they're denied service.
+    let creditsDebit = null;
+    if (req.apiKeyEntry?.keyId && ENFORCEMENT_COST[seatbelt.intervention] > 0) {
+      try {
+        creditsDebit = usageMeter.consumeCredits(
+          req.apiKeyEntry.keyId,
+          ENFORCEMENT_COST[seatbelt.intervention],
+          'shield:' + seatbelt.intervention
+        );
+      } catch (_) {}
+    }
+
+    // ── SIEM forward (fire-and-forget) — high-severity events to the SOC ─────
+    if (siemConnectors && (verdict === 'DENY' || seatbelt.intervention === 'hard_block')) {
+      siemConnectors.forwardEvent({
+        kind: 'intervention', verdict, risk,
+        intervention: seatbelt.intervention, threats,
+        surface: req.body.surface || 'api',
+        keyId: req.apiKeyEntry?.keyId,
+        receiptUrl: share?.verifyUrl,
+      });
+    }
+
+    // ── Data lineage — record the chain-of-custody edge for this interaction ─
+    if (dataLineage) {
+      dataLineage.record({
+        keyId: req.apiKeyEntry?.keyId,
+        surface: req.body.surface || 'api',
+        verdict, risk,
+        intervention: seatbelt.intervention,
+        threats,
+        receiptUrl: share?.verifyUrl,
+        kind: 'govern',
+      });
+    }
+
     return res.json({
       threats,
       risk: +risk.toFixed(4),
@@ -2927,6 +3032,7 @@ app.post('/v1/scan', async (req, res) => {
       verdict,
       intervention: seatbelt.intervention,
       seatbelt,
+      creditsDebit,
       trustGrade: (() => {
         try {
           return aiTrustGrade.chip(aiTrustGrade.grade({
@@ -2950,6 +3056,60 @@ app.post('/v1/scan', async (req, res) => {
       detail: err.message,
     });
   }
+});
+
+// ─── POST /v1/scan/full — core scan + unified sentinel fusion ───────────────
+// New category: Pre-Execution AI Governance & Proof (PEAGP) — every AI action
+// is scanned, fused across 13 sentinel layers + 20 advisory modules, and
+// returned with portable cryptographic proof, BEFORE execution.
+// Advisory-only fusion: sentinel signals add threats / raise risk, never
+// lower the core verdict and never DENY on their own.
+app.post('/v1/scan/full', async (req, res) => {
+  const start = Date.now();
+  try {
+    const text = typeof req.body?.text === 'string' ? req.body.text
+      : typeof req.body?.prompt === 'string' ? req.body.prompt
+      : typeof req.body?.content === 'string' ? req.body.content
+      : Array.isArray(req.body?.messages) ? req.body.messages.map((m) => m?.content || '').join('\n')
+      : null;
+    if (!text) return res.status(400).json({ error: '"text" (or "prompt"/"messages") field is required' });
+    const core = await (async () => {
+      const r = await fetch(`http://127.0.0.1:${process.env.PORT || 8788}/v1/scan`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }),
+      }).catch(() => null);
+      return r ? r.json().catch(() => null) : null;
+    })();
+    let sentinel = null;
+    try {
+      const s = sentinelSingleton();
+      if (s) {
+        const r = await s.sentinelCheck({ agent: 'scan-full', verb: 'ANALYZE', target: 'api', content: text });
+        sentinel = {
+          decision: r.decision || r.verdict || null,
+          risk: r.governance?.risk ?? r.scan?.risk ?? r.risk ?? null,
+          violations: r.violations || [],
+          layers: ['eigenEthics', 'shadowConsensus', 'topoShield', 'causalBreaker', 'zkProof', 'reynoldsFlow', 'punctEquil', 'harmonicDiss']
+            .map((k) => ({ layer: k, loaded: !!(s && s[k]) })),
+          advisory: true,
+        };
+      }
+    } catch (e) { sentinel = { error: e.message, advisory: true }; }
+    const fusedThreats = [...(core?.threats || [])];
+    if (sentinel?.violations?.length) for (const v of sentinel.violations) {
+      const tag = `sentinel:${v.rule || v.type || 'signal'}`;
+      if (!fusedThreats.includes(tag)) fusedThreats.push(tag);
+    }
+    const fusedRisk = Math.max(core?.risk || 0, Math.min(sentinel?.risk || 0, 0.69));
+    return res.json({
+      category: 'PEAGP',
+      core, sentinel,
+      threats: fusedThreats,
+      risk: +fusedRisk.toFixed(4),
+      verdict: core?.verdict || 'UNKNOWN',
+      note: 'Sentinel fusion is advisory-only: can add threats/raise risk up to WARN band, never overrides core verdict.',
+      latency_ms: Date.now() - start,
+    });
+  } catch (err) { return res.status(500).json({ error: 'Full-scan engine error', detail: err.message }); }
 });
 
 // ─── POST /v1/scam-shield/check ──────────────────────────────────────────────
@@ -3805,6 +3965,12 @@ app.get('/v1/century', (_req, res) => {
     name: 'Kasbah',
     era: '22nd-century AI control plane',
     thesis: 'Use any AI. Leak nothing. Prove everything.',
+    category: {
+      name: 'Pre-Execution AI Governance & Proof (PEAGP)',
+      definition: 'A control plane that scans, governs, and cryptographically proves every AI action BEFORE execution — not a filter, firewall, or audit log after the fact.',
+      whyNew: 'Filters block content. Firewalls block origins. Moderation flags toxicity. PEAGP governs intent: 13-layer sentinel + 20 advisory modules + policy/ethics/provenance fuse pre-execution, and every verdict ships a portable receipt.',
+      endpoints: ['POST /v1/scan/full', 'POST /v1/govern', 'POST /v1/receipt/verify', 'GET /v1/advisory/status'],
+    },
     surfaces: {
       proof: {
         title: 'Kasbah Proof',
@@ -7552,6 +7718,213 @@ app.post('/v1/mcp/teams/:teamId/policies', (req, res) => {
   if (!result) return res.status(404).json({ error: 'Team or policy not found' });
   res.json(result);
 });
+// ─── MCP Inventory (for desktop UI) ────────────────────────────────────────────
+app.get('/v1/mcp/inventory', (req, res) => {
+  if (!multiMCPGovernor) return res.status(503).json({ error: 'Multi-MCP governor not available' });
+  const status = multiMCPGovernor.getMultiMCPStatus();
+  const servers = (status.governedMCPServers || []).map(s => ({
+    id: s.name,
+    name: s.name,
+    transport: s.type.includes('npm') ? 'stdio' : s.type.includes('python') ? 'stdio' : 'stdio',
+    status: s.status || 'governed',
+    tools: (s.models || []).map(m => ({
+      name: m,
+      description: `Model: ${m}`,
+      blocked: false
+    }))
+  }));
+  res.json({ servers, timestamp: new Date().toISOString() });
+});
+
+app.post('/v1/mcp/tool', (req, res) => {
+  if (!multiMCPGovernor) return res.status(503).json({ error: 'Multi-MCP governor not available' });
+  const { serverId, toolName, blocked } = req.body || {};
+  if (!serverId || !toolName) return res.status(400).json({ error: 'serverId and toolName required' });
+  const result = multiMCPGovernor.setToolBlocked(serverId, toolName, blocked);
+  res.json({ ...result, timestamp: new Date().toISOString() });
+});
+
+// Closed-loop enforcement check: is a tool call allowed right now?
+app.post('/v1/mcp/check-tool', (req, res) => {
+  if (!multiMCPGovernor) return res.status(503).json({ error: 'Multi-MCP governor not available' });
+  const { serverId, toolName } = req.body || {};
+  if (!serverId || !toolName) return res.status(400).json({ error: 'serverId and toolName required' });
+  res.json(multiMCPGovernor.governToolCall(serverId, toolName));
+});
+
+// Live block list for audit
+app.get('/v1/mcp/blocks', (req, res) => {
+  if (!multiMCPGovernor) return res.status(503).json({ error: 'Multi-MCP governor not available' });
+  res.json({ blocks: multiMCPGovernor.getToolBlocks(), timestamp: new Date().toISOString() });
+});
+
+app.post('/v1/mcp/scan', (req, res) => {
+  if (!multiMCPGovernor) return res.status(503).json({ error: 'Multi-MCP governor not available' });
+  res.json({ ok: true, message: 'MCP scan triggered (config reload on next request)' });
+});
+
+// ─── SIEM connectors — enterprise fleet visibility ─────────────────────────────
+app.get('/v1/siem/status', (req, res) => {
+  if (!siemConnectors) return res.status(503).json({ error: 'SIEM connectors unavailable' });
+  res.json(siemConnectors.status());
+});
+
+app.post('/v1/siem/test', async (req, res) => {
+  if (!siemConnectors) return res.status(503).json({ error: 'SIEM connectors unavailable' });
+  const st = siemConnectors.status();
+  if (!st.anyConfigured) {
+    return res.status(400).json({
+      error: 'No SIEM connectors configured',
+      env: ['KASBAH_SPLUNK_HEC_URL + KASBAH_SPLUNK_TOKEN', 'KASBAH_DD_API_KEY', 'KASBAH_SIEM_WEBHOOK_URL (+TOKEN)'],
+    });
+  }
+  // Send a probe event through every configured connector, then report stats.
+  siemConnectors.forwardEvent({ kind: 'siem-test', verdict: 'ALLOW', severity: 'info', surface: 'siem-test', ts: new Date().toISOString() });
+  await new Promise(r => setTimeout(r, 1500));
+  res.json({ ok: true, message: 'Probe event forwarded to all configured connectors', ...siemConnectors.status() });
+});
+
+// ─── Data lineage — chain of custody for agentic data ──────────────────────────
+app.get('/v1/lineage', (req, res) => {
+  if (!dataLineage) return res.status(503).json({ error: 'Data lineage unavailable' });
+  const keyId = req.apiKeyEntry?.keyId || req.query.keyId;
+  res.json({
+    provenance: dataLineage.provenance(keyId),
+    chain: dataLineage.chain(keyId, { surface: req.query.surface, limit: Number(req.query.limit) || 100 }),
+    stats: dataLineage.stats(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/v1/lineage/stats', (req, res) => {
+  if (!dataLineage) return res.status(503).json({ error: 'Data lineage unavailable' });
+  res.json(dataLineage.stats());
+});
+
+// ─── SSI cores — admission gates over HTTP ─────────────────────────────────
+// JS mirror (ssi-admission.js) for hot paths + Python cores via ssi_cli.
+const ssiMirror = (() => { try { return require('../../src/ssi-admission.js'); } catch (_) { return null; } })();
+
+app.get('/v1/ssi/status', async (req, res) => {
+  const mirror = ssiMirror ? ssiMirror.selfTest() : { error: 'js mirror unavailable' };
+  const py = await _ssiCall({ cmd: 'selftest' });
+  res.json({
+    mirror, python: py,
+    ok: (mirror.passed === mirror.total) && py.ok === true,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.post('/v1/ssi/screen', async (req, res) => {
+  const body = req.body || {};
+  if (ssiMirror) {
+    try { return res.json({ ok: true, via: 'js-mirror', ...ssiMirror.ssiScreen(body) }); }
+    catch (e) { /* fall through to python */ }
+  }
+  const r = await _ssiCall({ cmd: 'screen', ...body });
+  res.status(r.ok ? 200 : 503).json({ ...r, via: 'python-core' });
+});
+
+app.post('/v1/ssi/admit', async (req, res) => {
+  const r = await _ssiCall({ cmd: 'admit', ...(req.body || {}) });
+  res.status(r.ok ? 200 : 503).json(r);
+});
+
+app.post('/v1/ssi/engine/admit', async (req, res) => {
+  const r = await _ssiCall({ cmd: 'engine_admit', ...(req.body || {}) });
+  res.status(r.ok ? 200 : 503).json(r);
+});
+
+app.get('/v1/ssi/engine/selftest', async (req, res) => {
+  const r = await _ssiCall({ cmd: 'engine_selftest' }, 60000);
+  res.status(r.ok ? 200 : 503).json(r);
+});
+
+// ─── Multimodal Scan (image/video/audio) ───────────────────────────────────────
+const multer = require('multer');
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/', 'video/', 'audio/'];
+    if (allowed.some(t => file.mimetype.startsWith(t))) cb(null, true);
+    else cb(new Error('Only image, video, audio files allowed'));
+  }
+});
+
+app.post('/v1/multimodal/scan', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const { buffer, mimetype, originalname } = req.file;
+    const results = {
+      filename: originalname,
+      mimetype,
+      size: buffer.length,
+      threats: [],
+      pii: [],
+      secrets: [],
+      promptInjection: false,
+      stego: null,
+      timestamp: new Date().toISOString()
+    };
+    const textContent = buffer.toString('utf8', 0, Math.min(buffer.length, 100000));
+    const secretPatterns = [
+      { type: 'AWS_KEY', regex: /AKIA[0-9A-Z]{16}/g },
+      { type: 'GITHUB_TOKEN', regex: /gh[pousr]_[A-Za-z0-9_]{36,}/g },
+      { type: 'PRIVATE_KEY', regex: /-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/g },
+      { type: 'JWT', regex: /eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g },
+      { type: 'API_KEY', regex: /(api[_-]?key|secret[_-]?key|access[_-]?token)['\"\\s:=]+[a-zA-Z0-9_-]{20,}/gi },
+    ];
+    for (const { type, regex } of secretPatterns) {
+      const matches = textContent.match(regex);
+      if (matches) results.secrets.push({ type, count: matches.length, samples: matches.slice(0, 3) });
+    }
+    const piiPatterns = [
+      { type: 'EMAIL', regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
+      { type: 'PHONE', regex: /(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g },
+      { type: 'SSN', regex: /\d{3}-\d{2}-\d{4}/g },
+      { type: 'CREDIT_CARD', regex: /\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}/g },
+      { type: 'IP_ADDRESS', regex: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g },
+    ];
+    for (const { type, regex } of piiPatterns) {
+      const matches = textContent.match(regex);
+      if (matches) results.pii.push({ type, count: matches.length, samples: matches.slice(0, 3) });
+    }
+    const injectionPatterns = [
+      /ignore (all )?previous instructions/gi,
+      /you are now (dan|unrestricted|free)/gi,
+      /system (override|prompt)/gi,
+      /<system>.*<\/system>/gi,
+      /execute[:]\s*(rm|curl|wget|bash|sh)/gi,
+    ];
+    for (const regex of injectionPatterns) {
+      if (regex.test(textContent)) {
+        results.promptInjection = true;
+        results.threats.push({ type: 'PROMPT_INJECTION', pattern: regex.source });
+        break;
+      }
+    }
+    if (mimetype.startsWith('image/')) {
+      try {
+        const hasExif = buffer.includes(Buffer.from('Exif', 'ascii'));
+        const hasPngChunks = buffer.includes(Buffer.from('tEXt', 'ascii')) || buffer.includes(Buffer.from('iTXt', 'ascii'));
+        if (hasExif || hasPngChunks) {
+          results.stego = { exif: hasExif, pngTextChunks: hasPngChunks };
+          results.threats.push({ type: 'STEGANOGRAPHY', detail: 'Image contains metadata chunks' });
+        }
+      } catch (_) {}
+    }
+    if (mimetype.startsWith('audio/')) {
+      results.threats.push({ type: 'AUDIO_SCAN', detail: 'Audio file uploaded — silent speech analysis available in desktop' });
+    }
+    if (mimetype.startsWith('video/')) {
+      results.threats.push({ type: 'VIDEO_SCAN', detail: 'Video file uploaded — frame extraction not yet implemented' });
+    }
+    res.json(results);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.get('/v1/govern/codewhale', (req, res) => {
   if (!codeWhaleGovernor) return res.status(503).json({ error: 'CodeWhale governor not available' });
@@ -8127,6 +8500,91 @@ try {
   console.warn('[server] ⚠️  QuranFrontier routes not available:', e.message);
 }
 
+// ─── MCISE OS Integration Routes ─────────────────────────────────────────────
+// Fixed Core, Audit Chain, Autonomy Ladder, Adversarial Agents
+try {
+  const { FixedCore } = require('../../packages/mcise-core/src/fixed-core');
+  const { AuditChain } = require('../../packages/mcise-core/src/audit');
+  const { AutonomyLadder } = require('../../packages/mcise-core/src/ladder');
+  const { AgentRuntime } = require('../../packages/mcise-core/src/agent-runtime');
+
+  const fixedCore = new FixedCore();
+  fixedCore.seedDefaults();
+  const auditChain = new AuditChain();
+  const ladder = new AutonomyLadder();
+  const agentRuntime = new AgentRuntime(auditChain, ladder);
+
+  // Fixed Core
+  app.get('/v1/mcise/fixed-core', (req, res) => {
+    try { res.json({ ok: true, items: fixedCore.list() }); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.get('/v1/mcise/fixed-core/:key', (req, res) => {
+    try { const rec = fixedCore.get(req.params.key); if (!rec) return res.status(404).json({ error: 'not found' }); res.json({ ok: true, record: rec }); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.post('/v1/mcise/fixed-core/:key', (req, res) => {
+    try {
+      const rec = fixedCore.update(req.params.key, req.body.value, req.body.actor || 'api', req.headers['x-board-token']);
+      res.json({ ok: true, record: rec });
+    } catch (e) { res.status(403).json({ error: e.message }); }
+  });
+
+  // Audit Chain
+  app.post('/v1/mcise/audit/append', async (req, res) => {
+    try {
+      const entry = await auditChain.append(req.body);
+      res.json({ ok: true, entry });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.get('/v1/mcise/audit/verify', (req, res) => {
+    try { res.json({ ok: true, result: auditChain.verify() }); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.get('/v1/mcise/audit/list', (req, res) => {
+    try { res.json({ ok: true, entries: auditChain.list(parseInt(req.query.limit || '100')) }); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // Autonomy Ladder
+  app.post('/v1/mcise/ladder/register', (req, res) => {
+    try {
+      ladder.register(req.body.agentId, req.body.rung || 1);
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.post('/v1/mcise/ladder/evaluate', (req, res) => {
+    try {
+      ladder.recordEvaluation(req.body.agentId, req.body.accuracy);
+      const promo = ladder.maybePromote(req.body.agentId);
+      res.json({ ok: true, promo });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.get('/v1/mcise/ladder/:agentId', (req, res) => {
+    try { res.json({ ok: true, status: ladder.status(req.params.agentId) }); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // Agent Runtime
+  app.post('/v1/mcise/agents/register', (req, res) => {
+    try {
+      agentRuntime.registerAgent(req.body.id, req.body.spec);
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.post('/v1/mcise/agents/pair', (req, res) => {
+    try {
+      agentRuntime.setPair(req.body.primary, req.body.adversary);
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.post('/v1/mcise/agents/trigger', async (req, res) => {
+    try {
+      const result = await agentRuntime.trigger(req.body.agentId, req.body.input);
+      res.json({ ok: true, result });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  console.log('[server] ✅ MCISE OS integration routes registered');
+} catch (e) {
+  console.warn('[server] ⚠️  MCISE OS integration not available:', e.message);
+}
+
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 
 app.use((req, res) => {
@@ -8135,7 +8593,7 @@ app.use((req, res) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8788;
 // (audit 2026-09): precedence bug — this previously parsed as
 // `(process.env.HOST || NODE_ENV === 'production') ? '0.0.0.0' : '127.0.0.1'`,
 // so an explicitly-set HOST was ignored for binding decisions. Parenthesized
