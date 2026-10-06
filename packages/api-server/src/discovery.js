@@ -162,7 +162,8 @@ function classifyKey(name, value) {
 
 const AI_CLI_TOOLS = [
   'claude', 'codex', 'codewhale', 'deepseek', 'ollama', 'lms', 'gpt', 'llm', 'aichat', 'aider',
-  'continue', 'gh', 'copilot', 'cursor-agent', 'cody', 'tabby', 'windsurf', 'gemini'
+  'continue', 'gh', 'copilot', 'cursor-agent', 'cody', 'tabby', 'windsurf', 'gemini',
+  'opencode', 'openclaw', 'kimi', 'cline', 'codex', 'zed', 'goose', 'aider'
 ];
 
 const AI_APP_PATTERNS = [
@@ -176,6 +177,11 @@ const AI_APP_PATTERNS = [
   /^Cody.*\.app$/i,
   /^Warp\.app$/i,
   /^Raycast\.app$/i,
+  /^OpenCode.*\.app$/i,
+  /^ZCode.*\.app$/i,
+  /^Zed.*\.app$/i,
+  /^Windsurf.*\.app$/i,
+  /^Kimi.*\.app$/i,
   /^Perplexity.*\.app$/i,
 ];
 
@@ -537,8 +543,14 @@ const discoverPackages = makeAsyncCache({ node: [], python: [] }, CACHE_TTL_MS, 
 const FRONTIER_AGENTS = [
   { id: 'codewhale',       label: 'CodeWhale (DeepSeek)',signals: ['cli:deepseek', 'config:~/.codewhale/config.toml', 'config:~/.deepseek/config.toml'], govern: ['proxy', 'shim'] },
   { id: 'claude-code',     label: 'Claude Code',        signals: ['cli:claude', 'config:~/.claude.json'],            govern: ['mcp', 'proxy', 'shim'] },
-  { id: 'claude-desktop',  label: 'Claude Desktop',     signals: ['app:Claude.app', 'config:~/Library/Application Support/Claude/claude_desktop_config.json'], govern: ['mcp', 'browser'] },
-  { id: 'cursor',          label: 'Cursor',             signals: ['app:Cursor.app', 'cli:cursor-agent'],              govern: ['mcp', 'proxy'] },
+  { id: 'claude-desktop',  label: 'Claude Desktop',     signals: ['app:Claude.app', 'proc:claude', 'config:~/Library/Application Support/Claude/claude_desktop_config.json'], govern: ['mcp', 'browser'] },
+  { id: 'cursor',          label: 'Cursor',             signals: ['app:Cursor.app', 'cli:cursor-agent', 'proc:cursor'], govern: ['mcp', 'proxy'] },
+  { id: 'opencode',        label: 'OpenCode',           signals: ['app:OpenCode.app', 'cli:opencode', 'proc:opencode'], govern: ['shim', 'proxy'] },
+  { id: 'zcode',          label: 'ZCode harness',      signals: ['app:ZCode.app', 'proc:zcode'],                     govern: ['proxy'] },
+  { id: 'zed',            label: 'Zed',                signals: ['app:Zed.app', 'cli:zed'],                            govern: ['proxy'] },
+  { id: 'windsurf',       label: 'Windsurf',           signals: ['app:Windsurf.app', 'cli:windsurf'],                 govern: ['proxy'] },
+  { id: 'kimi',           label: 'Kimi (Moonshot)',    signals: ['cli:kimi'],                                         govern: ['shim', 'proxy'] },
+  { id: 'openclaw',       label: 'OpenClaw',           signals: ['cli:openclaw'],                                     govern: ['shim', 'proxy', 'mcp'] },
   { id: 'codex-cli',       label: 'OpenAI Codex CLI',   signals: ['cli:codex'],                                       govern: ['shim', 'proxy'] },
   { id: 'aider',           label: 'Aider',              signals: ['cli:aider', 'pip:aider-chat'],                     govern: ['shim', 'proxy'] },
   { id: 'cline',           label: 'Cline',              signals: ['vscode-ext:saoudrizwan.claude-dev'],               govern: ['mcp'] },
@@ -576,6 +588,7 @@ function matchFrontierAgents(snapshot) {
   const npmPkgs  = new Set((snapshot.packages?.node||[]).map(p => p.name));
   const ports    = new Set((snapshot.llm||[]).map(l => String(l.port)));
   const sites    = new Set((snapshot.browser||[]).map(b => b.site));
+  const procs    = new Set((snapshot.procs||[]).map(p => String(p).toLowerCase()));
 
   const result = [];
   for (const a of FRONTIER_AGENTS) {
@@ -591,6 +604,7 @@ function matchFrontierAgents(snapshot) {
       else if (type === 'bookmark' && sites.has(v))                    matched.push(sig);
       else if (type === 'config' && fs.existsSync(v.replace(/^~/, os.homedir()))) matched.push(sig);
       else if (type === 'vscode-ext' && _vscodeExtInstalled(v))        matched.push(sig);
+      else if (type === 'proc' && [...procs].some(p => p.includes(v.toLowerCase()))) matched.push(sig);
     }
     if (matched.length) {
       result.push({
@@ -670,7 +684,7 @@ async function _discoverRunningProcessesRaw() {
       const m = line.match(/^\s*\d+\s+(.+)$/);
       if (!m) continue;
       const cmd = m[1];
-      if (/Claude|Ollama|ChatGPT|Cursor|LM Studio|llama-server|vllm|gpt4all|continue|cody/i.test(cmd)) {
+      if (/Claude|Ollama|ChatGPT|Cursor|LM Studio|llama-server|vllm|gpt4all|continue|cody|opencode|OpenCode|ZCode|Zed|Windsurf|windsurf|aider|codex|cline|kimi|openclaw|Copilot|copilot|Gemini|gemini|AnythingLLM|Jan|CursorUIViewService/i.test(cmd)) {
         const key = path.basename(cmd);
         if (seen.has(key)) continue;
         seen.add(key);
@@ -714,7 +728,7 @@ function mount(app) {
 
       // Match frontier agents against everything we discovered
       const frontierAgents = matchFrontierAgents({
-        apps, clis, mcp, packages: pkgs, llm, browser
+        apps, clis, mcp, packages: pkgs, llm, browser, procs
       });
 
       const integratable = {
