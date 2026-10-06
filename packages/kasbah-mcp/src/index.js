@@ -9,7 +9,7 @@
  * conscience: every side-effecting action can be governed, signed, and later
  * verified by anyone — offline, forever.
  *
- * SIXTEEN tools, three jobs:
+ * SEVENTEEN tools, three jobs:
  *
  *   TRUST LAYER
  *     kasbah_attest        — govern + Ed25519-sign an action before it runs.
@@ -299,6 +299,28 @@ const TOOLS = [
         framework: { type: 'string', enum: ['soc2', 'iso27001', 'nist', 'html', 'all'] }
       },
       required: ['framework']
+    }
+  },
+  {
+    name: 'kasbah_consent',
+    description:
+      'Request human tap approval for a sensitive tool call (Consent Stone protocol). ' +
+      'Holds execution until the Stone is tapped (5s grace window), then returns ' +
+      'the conjunctive gate outcome A with fusion score, BFT certification, and ' +
+      'a signed attestation. Use before shell_execute, file_write, network_post, db_mutate.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', description: 'what the agent wants to do' },
+        tool: { type: 'string', description: 'tool name, e.g. shell_execute' },
+        text: { type: 'string', description: 'optional content for govern cross-check' },
+        scalars: { type: 'array', description: 'domain scalars [{value, tier, weight}]', items: { type: 'object' } },
+        n: { type: 'number', description: 'corroborating source count' },
+        agree: { type: 'number', description: 'agreeing source count' },
+        coherence: { type: 'boolean', description: 'multi-step task in progress' },
+        waitMs: { type: 'number', description: 'how long to hold for the tap (default 8000)' }
+      },
+      required: ['action']
     }
   }
 ];
@@ -632,6 +654,33 @@ async function handleComplianceReport(args) {
   return textResult(res.body || {});
 }
 
+async function handleConsent(args) {
+  const { action, tool, text, scalars, n, agree, coherence, waitMs } = args || {};
+  if (!action) throw new Error('action is required');
+  const req = await httpJson('POST', KASBAH_API + '/v1/consent/request', {
+    action, tool, text, scalars: scalars || [], n: n || 0, agree: agree || 0,
+    coherence: !!coherence,
+  });
+  const gate = req.body || {};
+  if (!gate.id) throw new Error('consent request failed: ' + JSON.stringify(gate).slice(0, 200));
+  const deadline = Date.now() + Math.min(Number(waitMs) || 8000, 30000);
+  for (;;) {
+    const st = await httpJson('GET', KASBAH_API + '/v1/consent/pending', null);
+    const still = (st.body?.pending || []).some((p) => p.id === gate.id);
+    if (!still) break;
+    if (Date.now() > deadline) break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  const audit = await httpJson('GET', KASBAH_API + '/v1/consent/audit?limit=5', null);
+  const mine = (audit.body?.audit || []).find((e) => e.id === gate.id && (e.event === 'TAP_AUTHORIZED' || e.event === 'TAP_DENIED' || e.event === 'DISCONNECT_TIMEOUT'));
+  return textResult({
+    id: gate.id, S: gate.S, veto: gate.veto, certified: gate.certified,
+    gateReady: gate.gateReady,
+    outcome: mine ? mine.event : 'pending (tap within 5s grace window)',
+    guidance: mine && mine.event === 'TAP_AUTHORIZED' ? 'Human tapped — proceed.' : 'No tap authorization — DO NOT execute.',
+  });
+}
+
 // ─── JSON-RPC plumbing ────────────────────────────────────────────────────────
 const CALL = {
   kasbah_attest:           handleAttest,
@@ -649,7 +698,8 @@ const CALL = {
   kasbah_scan:             handleScan,
   kasbah_redteam:          handleRedteam,
   kasbah_fti_query:        handleFtiQuery,
-  kasbah_compliance_report: handleComplianceReport
+  kasbah_compliance_report: handleComplianceReport,
+  kasbah_consent:          handleConsent
 };
 
 const handlers = {

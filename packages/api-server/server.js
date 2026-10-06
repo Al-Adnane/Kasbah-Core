@@ -4826,6 +4826,46 @@ app.get('/v1/proxy/info', (req, res) => {
   res.json(_govProxy.info());
 });
 
+// ─── Consent Gate (Consent Stone protocol; software Stone today) ───────────
+// Conjunctive admission: A = ignition ∧ coherence ∧ (S > θdel) ∧ CERTIFIED ∧
+// STONE_SIGNED. 5s grace window, then auto-deny. Stone signatures are
+// software-issued (signer soft-stone); the verify path dispatches on signer
+// so a hardware secure element slots in without changing the gate.
+const consentGate = require('./src/consent-gate.js');
+app.post('/v1/consent/request', async (req, res) => {
+  try {
+    const { action, tool, scalars = [], n = 0, agree = 0, text, ignition, coherence, delegationThreshold, epsilon } = req.body || {};
+    if (!action) return res.status(400).json({ error: 'action required' });
+    let ign = ignition, gov = null;
+    if (text && ign === undefined) {
+      try {
+        const dec = await governanceEngine.govern(buildScanRequest(String(text)));
+        gov = { verdict: dec.verdict, risk: typeof dec.risk === 'number' ? dec.risk : null };
+        ign = (typeof dec.risk === 'number' ? dec.risk : 1) < 0.7;
+      } catch (_) { ign = false; }
+    }
+    const { gate } = consentGate.startTap({
+      action, tool, scalars, n, agree,
+      ignition: !!ign, coherence: !!coherence,
+      delegationThreshold: delegationThreshold ?? 0.5, epsilon,
+    });
+    res.status(202).json({ ...gate, govern: gov, graceMs: consentGate.GRACE_MS, stoneRequired: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/v1/consent/pending', (_req, res) => res.json({ pending: consentGate.pending() }));
+app.get('/v1/consent/audit', (req, res) => res.json({ audit: consentGate.auditLog(Number(req.query.limit) || 100) }));
+app.post('/v1/consent/tap/:id', (req, res) => {
+  const r = consentGate.tap(req.params.id, { approve: req.body?.approve !== false });
+  if (r.error) return res.status(404).json(r);
+  res.json(r);
+});
+app.post('/v1/consent/deny/:id', (req, res) => {
+  const r = consentGate.deny(req.params.id);
+  if (r.error) return res.status(404).json(r);
+  res.json(r);
+});
+console.log('[consent-gate] mounted — request/pending/tap/deny/audit (5s grace, soft-stone signer)');
+
 // ─── Advisory Suite: removed 2026-07 ──────────────────────────────────────────
 // Was a live, publicly-reachable grab-bag of ~20 endpoints (CHSH coordination,
 // persistent-homology covert detection, orthogonal-manifold evasion bounds,
