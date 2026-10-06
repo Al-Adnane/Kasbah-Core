@@ -7895,12 +7895,26 @@ app.get('/v1/mcp/inventory', (req, res) => {
     name: s.name,
     transport: s.type.includes('npm') ? 'stdio' : s.type.includes('python') ? 'stdio' : 'stdio',
     status: s.status || 'governed',
+    governed: true,
     tools: (s.models || []).map(m => ({
       name: m,
       description: `Model: ${m}`,
       blocked: false
     }))
   }));
+  // Merge real discovered hosts: servers configured in Claude Desktop/Code
+  // that Kasbah does not govern yet show as observed (honest, not governed).
+  try {
+    const disc = require('./src/discovery.js');
+    const seen = new Set(servers.map(s => s.id));
+    for (const h of disc.discoverMCPHosts()) {
+      for (const name of h.servers || []) {
+        if (seen.has(name)) continue;
+        seen.add(name);
+        servers.push({ id: name, name, transport: 'stdio', status: 'observed', governed: false, host: h.name, tools: [] });
+      }
+    }
+  } catch (_) {}
   res.json({ servers, timestamp: new Date().toISOString() });
 });
 
@@ -7928,7 +7942,13 @@ app.get('/v1/mcp/blocks', (req, res) => {
 
 app.post('/v1/mcp/scan', (req, res) => {
   if (!multiMCPGovernor) return res.status(503).json({ error: 'Multi-MCP governor not available' });
-  res.json({ ok: true, message: 'MCP scan triggered (config reload on next request)' });
+  let hosts = [];
+  try {
+    const disc = require('./src/discovery.js');
+    hosts = disc.discoverMCPHosts();
+  } catch (_) {}
+  const serverCount = hosts.reduce((n, h) => n + (h.servers || []).length, 0);
+  res.json({ ok: true, hosts: hosts.length, servers: serverCount, message: `Found ${serverCount} server(s) across ${hosts.length} host(s)` });
 });
 
 // ─── SIEM connectors — enterprise fleet visibility ─────────────────────────────

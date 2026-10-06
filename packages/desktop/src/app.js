@@ -4247,42 +4247,6 @@ function shareDigest() {
 /* ═══════════════════════════════════════════════════════════════════════════
    FORENSICS — Biometric · ZK · Security · Honeytokens
    ═══════════════════════════════════════════════════════════════════════════ */
-// MCP Inventory page
-async function refreshMcpInventory() {
-  const wrap = $('mcpInventory');
-  if (!wrap) return;
-  wrap.innerHTML = '<div class="muted" style="padding:16px">Loading MCP inventory…</div>';
-  try {
-    const r = await window.kasbah.api('GET', '/v1/mcp/inventory');
-    const j = r.body || {};
-    const servers = j.servers || [];
-    if (servers.length === 0) {
-      wrap.innerHTML = '<div class="muted" style="padding:16px">No MCP servers discovered. Run a scan.</div>';
-      return;
-    }
-    wrap.innerHTML = servers.map(s => `
-      <div class="mcp-server">
-        <div class="mcp-server-header">
-          <div>
-            <strong>${esc(s.name || 'Unnamed')}</strong>
-            <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.transport || 'stdio')}</span>
-            <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.status || 'unknown')}</span>
-          </div>
-        </div>
-        <div>
-          ${(s.tools || []).map(t => `
-            <div class="mcp-tool ${t.blocked ? 'blocked' : ''}" data-tool="${esc(t.name)}">
-              <span>${esc(t.name)}</span>
-              <div class="mcp-toggle ${t.blocked ? 'active' : ''}" data-hc="${_h((e, el) => { toggleMcpTool(el, '${esc(s.id)}', '${esc(t.name)}') })}"></div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
-  }
-}
 async function toggleMcpTool(el, serverId, toolName) {
   const isActive = el.classList.toggle('active');
   try {
@@ -4296,9 +4260,10 @@ async function toggleMcpTool(el, serverId, toolName) {
 async function scanMcp() {
   toast('Checking connected apps…', 'info');
   try {
-    await window.kasbah.api('POST', '/v1/mcp/scan', {});
+    const r = await window.kasbah.api('POST', '/v1/mcp/scan', {});
     await refreshMcpInventory();
-    toast('App check complete', 'success');
+    const b = r?.body || {};
+    toast(b.message || 'App check complete', 'success');
   } catch (e) {
     toast('Scan failed: ' + e.message, 'error');
   }
@@ -5037,7 +5002,7 @@ async function refreshMcpInventory() {
           <div>
             <strong>${esc(s.name || 'Unnamed')}</strong>
             <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.transport || 'stdio')}</span>
-            <span class="muted" style="margin-left:8px;font-size:11px">${esc(s.status || 'unknown')}</span>
+            <span class="muted" style="margin-left:8px;font-size:11px">${s.governed === false ? `seen in ${esc(s.host || 'an app')} — not governed yet` : esc(s.status || 'governed')}</span>
           </div>
         </div>
         <div>
