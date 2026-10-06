@@ -210,6 +210,13 @@ const MCP_HOST_CONFIGS = [
     family: 'cursor',
   },
   {
+    name:  'Windsurf',
+    paths: [
+      path.join(os.homedir(), '.codeium/windsurf/mcp_config.json'),
+    ],
+    family: 'windsurf',
+  },
+  {
     name:  'Cline (VS Code)',
     paths: [
       path.join(os.homedir(), 'Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json'),

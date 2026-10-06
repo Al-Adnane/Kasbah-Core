@@ -4860,6 +4860,16 @@ app.post('/v1/consent/assess', (req, res) => {
   res.json({ ...consentGate.assess({ action, tool, args }), stoneDark: !consentGate.assess({ action, tool, args }).tapRequired });
 });
 app.get('/v1/consent/audit', (req, res) => res.json({ audit: consentGate.auditLog(Number(req.query.limit) || 100) }));
+app.get('/v1/consent/stats', (_req, res) => {
+  // Trailblazer metric: taps per day. >3/day for a 200-call engineer = thresholds wrong.
+  const rows = consentGate.auditLog(2000);
+  const day = new Date().toISOString().slice(0, 10);
+  const today = rows.filter((e) => (e.ts || '').slice(0, 10) === day);
+  const taps = today.filter((e) => e.event === 'TAP_AUTHORIZED').length;
+  const denies = today.filter((e) => e.event === 'TAP_DENIED' || e.event === 'DISCONNECT_TIMEOUT').length;
+  const reqs = today.filter((e) => e.event === 'TAP_REQUESTED').length;
+  res.json({ day, taps, denies, requests: reqs, tapsPerDayTarget: 3, overBudget: taps > 3, totalEvents: rows.length });
+});
 app.post('/v1/consent/tap/:id', (req, res) => {
   const r = consentGate.tap(req.params.id, { approve: req.body?.approve !== false });
   if (r.error) return res.status(404).json(r);
