@@ -9156,20 +9156,18 @@ async function userValueInit() {
   const el = $('userValueCards');
   if (!el) return;
   try {
-    const [vR, mR, cR, pR] = await Promise.all([
+    const [vR, cR, pR] = await Promise.all([
       window.kasbah.viralCoefficient().catch(()=>null),
-      window.kasbah.moats().catch(()=>null),
       window.kasbah.cryptoGenesis().catch(()=>null),
       window.kasbah.piiOnDevice('test@example.com').catch(()=>null)
     ]);
     const viral = vR?.body?.viralCoefficient ?? 0;
-    const moats = mR?.body?.moats?.join(', ') ?? '—';
     const crypto = cR?.body?.hash ?? '—';
     const pii = pR?.body?.score ?? 0;
     el.innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
         <div class="settings-card"><div style="font-weight:600;margin-bottom:6px">Private</div><div class="muted">Ads & trackers blocked, VPN on, IP hidden</div></div>
-        <div class="settings-card"><div style="font-weight:600;margin-bottom:6px">Safe</div><div class="muted">AI risks blocked before they reach you. Moats: ${moats}</div></div>
+        <div class="settings-card"><div style="font-weight:600;margin-bottom:6px">Safe</div><div class="muted">Injections, leaks & risky prompts blocked before they reach AI.</div></div>
         <div class="settings-card"><div style="font-weight:600;margin-bottom:6px">Fast</div><div class="muted">Best exit chosen automatically. Viral K = ${viral}</div></div>
         <div class="settings-card"><div style="font-weight:600;margin-bottom:6px">Grow</div><div class="muted">Share safely. Crypto anchor: ${String(crypto).slice(0,12)}…</div></div>
         <div class="settings-card"><div style="font-weight:600;margin-bottom:6px">Leak Guard</div><div class="muted">On-device PII scan score for test: ${(pii*100).toFixed(0)}%</div></div>

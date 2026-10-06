@@ -371,10 +371,13 @@ var SHELL_RE = /(?:\brm\s+-rf\b|\bdrop\s+table\b|\bformat\s+[a-z]:|\bpowershell\
 
 // ── TIER 3c: Forged chat roles (Downloads: COMPLETE_MOAT_ARCHITECTURE L4) ──
 // Catches pasted role separators that promote user text to system/developer.
-var ROLE_FORGE_RE = /(?:###\s*(?:system|assistant|developer|user)\s*:|<\|im_start\|>\s*(?:system|developer|assistant)|<\|im_end\|>|\[INST\]|\[\/INST\]|<<SYS>>|<<\/SYS>>|assistant\s+to\s*=|system\s*:\s*\n)/i;
+var ROLE_FORGE_RE = /(?:###\s*(?:system|assistant|developer|user)\s*:|<\|im_start\|>\s*(?:system|developer|assistant)|<\|im_end\|>|\[INST\]|\[\/INST\]|<<SYS>>|<<\/SYS>>|\[(?:SYSTEM|SYS)\]|assistant\s+to\s*=|system\s*:\s*\n)/i;
 
 // ── TIER 3d: Tool-call exfiltration (Downloads: COMPLETE_MOAT_ARCHITECTURE L3) ──
 // Catches pasted agent traces / function calls that move data or run actions.
+// ── TIER 3e: Fraud-impersonation (voice/deepfake + financial fraud intent) ──
+var FRAUD_RE = /(?:impersonat|clone\s+(?:the\s+)?voice|deepfake\s+(?:audio|video|message)|synthesize\s+(?:a\s+)?voice).{0,80}(?:authoriz|wire\s*transfer|steal|PIN\s*number|bank|fraud)|(?:authoriz(?:ing|e)?\s+(?:the\s+)?wire\s*transfer)/i;
+
 var TOOL_ABUSE_RE = /"(?:tool|function_call|tool_call|function\.call|name)"\s*:\s*"(?:send|post|upload|transfer|execute|run|email|exfiltrate|shell|fetch|curl|webhook)/i;
 
 // ── TIER 3b: Exfiltration intent ──
@@ -392,7 +395,7 @@ var CONNSTR_RE = /(?:mongodb|postgres(?:ql)?|mysql|redis|amqp|mssql):\/\/[^\s"'<
 var _ALL_PATTERNS = [PASSPORT_RE, VISA_RE, NATIONAL_ID_RE, DRIVERS_LICENSE_RE,
   MEDICAL_RE, BANK_ACCOUNT_RE, TAX_ID_RE, BIRTH_CERT_RE, CRYPTO_RE, INSURANCE_RE,
   CC_RE, SSN_RE, GH_PAT_RE, AWS_KEY_RE, OPENAI_KEY_RE, BEARER_RE, INJECTION_RE, SHELL_RE,
-  EXFIL_RE, EMAIL_RE, CONNSTR_RE, ROLE_FORGE_RE, TOOL_ABUSE_RE];
+  EXFIL_RE, EMAIL_RE, CONNSTR_RE, ROLE_FORGE_RE, TOOL_ABUSE_RE, FRAUD_RE];
 function computePatternHash() {
   var combined = _ALL_PATTERNS.map(function(r) { return r.source; }).join("|");
   return hybridHash(combined);
@@ -918,6 +921,7 @@ function classify(text) {
   var has_concat_bypass = detectStringConcatBypass(t);
   var has_role_forge = ROLE_FORGE_RE.test(tn);
   var has_tool_abuse = TOOL_ABUSE_RE.test(tn);
+  var has_fraud = FRAUD_RE.test(tn);
 
   if (has_injection) tiers_triggered.push("T3:injection");
   if (has_shell) tiers_triggered.push("T3:shell");
@@ -925,6 +929,7 @@ function classify(text) {
   if (has_concat_bypass) tiers_triggered.push("T3:concat_bypass");
   if (has_role_forge) tiers_triggered.push("T3:role_forge");
   if (has_tool_abuse) tiers_triggered.push("T3:tool_abuse");
+  if (has_fraud) tiers_triggered.push("T3:fraud_impersonation");
 
   // Suspicious keyword ngrams
   var suspicious = [
@@ -995,6 +1000,7 @@ function classify(text) {
   if (has_exfil)          { score += 70; reasons.push("data exfiltration intent"); } // -> DENY
   if (has_role_forge)     { score += 50; reasons.push("forged chat role"); } // WARN alone, DENY with corroboration
   if (has_tool_abuse)     { score += 60; reasons.push("tool-call exfiltration"); } // WARN alone, DENY with corroboration
+  if (has_fraud)         { score += 70; reasons.push("fraud impersonation"); } // -> DENY
   if (has_concat_bypass)  { score += 60; reasons.push("string concatenation bypass"); }
   if (has_env_secret && keyword_hits >= 3) { score += 45; reasons.push("env/shell secret pattern"); }
   if (!has_named_api_key && has_api_key_word && entropy <= 3.5) { score += 40; reasons.push("API key keyword"); }

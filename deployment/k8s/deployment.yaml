@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kasbah-api
+  namespace: kasbah
+  labels:
+    app: kasbah-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kasbah-api
+  template:
+    metadata:
+      labels:
+        app: kasbah-api
+    spec:
+      containers:
+        - name: api
+          image: kasbah-api:9.1.0
+          ports:
+            - containerPort: 8788
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "8788"
+            - name: KASBAH_PROOF_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kasbah-secrets
+                  key: proof-key
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8788
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8788
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

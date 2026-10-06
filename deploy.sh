@@ -5,7 +5,7 @@ set -e
 # Usage: ./deploy.sh [--namespace NAMESPACE] [--image-tag TAG]
 
 NAMESPACE="${NAMESPACE:-kasbah}"
-IMAGE_TAG="${IMAGE_TAG:-2.0.0}"
+IMAGE_TAG="${IMAGE_TAG:-9.1.0}"
 COLOR_GREEN='\033[0;32m'
 COLOR_YELLOW='\033[1;33m'
 COLOR_RED='\033[0;31m'
@@ -40,13 +40,8 @@ echo -e "${COLOR_GREEN}✓${COLOR_NC} Namespace ${NAMESPACE} ready"
 
 # Apply RBAC
 echo "Applying RBAC configuration..."
-kubectl apply -f k8s/rbac.yaml -n ${NAMESPACE}
+kubectl apply -f deployment/k8s/rbac.yaml -n ${NAMESPACE}
 echo -e "${COLOR_GREEN}✓${COLOR_NC} RBAC configured"
-
-# Apply Prometheus config
-echo "Applying Prometheus configuration..."
-kubectl apply -f k8s/prometheus-config.yaml -n ${NAMESPACE}
-echo -e "${COLOR_GREEN}✓${COLOR_NC} Prometheus configured"
 
 # Apply ConfigMap
 echo "Creating ConfigMap..."
@@ -58,22 +53,17 @@ echo -e "${COLOR_GREEN}✓${COLOR_NC} ConfigMap created"
 
 # Apply Deployment
 echo "Deploying application..."
-kubectl apply -f k8s/deployment.yaml -n ${NAMESPACE}
+kubectl apply -f deployment/k8s/deployment.yaml -n ${NAMESPACE}
 echo -e "${COLOR_GREEN}✓${COLOR_NC} Deployment created"
 
-# Apply Service
-echo "Creating service..."
-kubectl apply -f k8s/service.yaml -n ${NAMESPACE}
-echo -e "${COLOR_GREEN}✓${COLOR_NC} Service created"
-
-# Apply HPA
-echo "Configuring auto-scaling..."
-kubectl apply -f k8s/hpa.yaml -n ${NAMESPACE}
-echo -e "${COLOR_GREEN}✓${COLOR_NC} HPA configured"
+# Apply Service + HPA
+echo "Creating service and autoscaler..."
+kubectl apply -f deployment/k8s/service-hpa.yaml -n ${NAMESPACE}
+echo -e "${COLOR_GREEN}✓${COLOR_NC} Service + HPA created"
 
 # Apply Ingress
 echo "Configuring ingress..."
-kubectl apply -f k8s/ingress.yaml -n ${NAMESPACE}
+kubectl apply -f deployment/k8s/ingress.yaml -n ${NAMESPACE}
 echo -e "${COLOR_GREEN}✓${COLOR_NC} Ingress configured"
 
 # Wait for rollout
