@@ -76,6 +76,18 @@ const PATTERNS = [
     re: /createHash\s*\(\s*['"]md5['"]\s*\)/g, why: 'MD5 is broken for security; use SHA-256+.' },
   { id: 'js_math_random_secret', lang: ['js', 'ts'], cwe: 'CWE-338', base: 6.0,
     re: /Math\.random\s*\(\)/g, why: 'Math.random is not cryptographically secure; use crypto.randomBytes for secrets.' },
+
+  // Python (ported from kasbah-os/zeroday_engine.py CWE patterns)
+  { id: 'py_pickle',      lang: ['py'], cwe: 'CWE-502', base: 8.0,
+    re: /\b(?:pickle|cPickle|dill|shelve)\s*\.\s*(?:loads?|load|Unpickler)\s*\(|yaml\s*\.\s*load\s*\((?![^)]*SafeLoader)/g, why: 'Deserializing untrusted data can execute code; use json or yaml.safe_load.' },
+  { id: 'py_hardcoded_secret', lang: ['py'], cwe: 'CWE-798', base: 8.5,
+    re: /\b(?:password|passwd|secret|api[_-]?key|aws_secret|token)\s*=\s*['"][^'"]{8,}['"]/gi, why: 'Hardcoded credential — move to env vars or a vault.' },
+  { id: 'py_urlopen',     lang: ['py'], cwe: 'CWE-918', base: 6.0,
+    re: /\burllib\.request\.urlopen\s*\(/g, why: 'URL fetch from code — validate the URL against an allowlist to avoid SSRF.' },
+
+  // Shell (ported from kasbah-os/zeroday_engine.py CWE patterns)
+  { id: 'sh_chmod777',    lang: ['sh'], cwe: 'CWE-732', base: 6.5,
+    re: /\bchmod\s+(?:-[Rfv]*\s+)?777\b/g, why: 'World-writable permissions; use the least privilege that works.' },
 ];
 
 // Context keywords that raise severity (attack surface / privilege).
@@ -90,6 +102,8 @@ const EXT_TO_LANG = {
   '.c': 'c', '.h': 'c', '.cc': 'c', '.cpp': 'c', '.hpp': 'c',
   '.js': 'js', '.mjs': 'js', '.cjs': 'js', '.jsx': 'js',
   '.ts': 'ts', '.tsx': 'ts',
+  '.py': 'py', '.pyw': 'py',
+  '.sh': 'sh', '.bash': 'sh', '.zsh': 'sh',
 };
 
 function langForPath(path) {

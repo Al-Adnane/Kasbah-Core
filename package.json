@@ -16,7 +16,8 @@
     "test:capabilities": "node tests/capabilities.test.js",
     "test:intervention": "node packages/api-server/src/intervention.test.js",
     "test:trust": "node packages/api-server/src/ai-trust-grade.test.js",
-    "test:digest": "node packages/api-server/src/digest.test.js"
+    "test:digest": "node packages/api-server/src/digest.test.js",
+    "bench:scorecard": "node bench/detection-scorecard.js"
   },
   "dependencies": {
     "@noble/curves": "^2.4.0",
