@@ -64,6 +64,11 @@ function startAiLane({ port = DEFAULT_PORT, gateway = DEFAULT_GATEWAY, onEvent }
     for (const [k, v] of Object.entries(req.headers)) {
       if (!HOP_BY_HOP.has(k.toLowerCase())) headers[k] = v;
     }
+    // Inject lane-level API key when the client did not supply one.
+    if (process.env.KASBAH_API_KEY && !headers['authorization'] && !headers['x-api-key']) {
+      headers['authorization'] = 'Bearer ' + process.env.KASBAH_API_KEY;
+      headers['x-api-key'] = process.env.KASBAH_API_KEY;
+    }
 
     try {
       const chunks = [];
@@ -74,6 +79,7 @@ function startAiLane({ port = DEFAULT_PORT, gateway = DEFAULT_GATEWAY, onEvent }
         method: req.method,
         headers,
         body: ['GET', 'HEAD'].includes(req.method) ? undefined : body,
+        duplex: 'half',
       });
 
       const outHeaders = {};
@@ -101,7 +107,13 @@ function startAiLane({ port = DEFAULT_PORT, gateway = DEFAULT_GATEWAY, onEvent }
   });
 
   return new Promise((resolve, reject) => {
-    server.once('error', reject);
+    server.once('error', (err) => {
+      if (err && err.code === 'EADDRINUSE') {
+        reject(new Error(`AI lane port ${port} is already in use — pass a free port, e.g. startAiLane({ port: ${port + 1} })`));
+        return;
+      }
+      reject(err);
+    });
     server.listen(port, '127.0.0.1', () => resolve({ server, port, gateway: base }));
   });
 }

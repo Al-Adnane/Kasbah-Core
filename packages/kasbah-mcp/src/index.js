@@ -9,7 +9,7 @@
  * conscience: every side-effecting action can be governed, signed, and later
  * verified by anyone — offline, forever.
  *
- * SEVEN tools, three jobs:
+ * SIXTEEN tools, three jobs:
  *
  *   TRUST LAYER
  *     kasbah_attest        — govern + Ed25519-sign an action before it runs.
@@ -588,6 +588,50 @@ async function handleKasbahOS(args) {
   return textResult(res.body || {});
 }
 
+async function handleScan(args) {
+  const { text } = args || {};
+  if (!text) throw new Error('text is required');
+  const res = await httpJson('POST', KASBAH_API + '/v1/scan', { text });
+  const r = res.body || {};
+  return textResult({ verdict: r.verdict || 'UNKNOWN', risk: r.risk ?? null, threats: r.threats || [], intervention: r.intervention || null });
+}
+
+async function handleRedteam(args) {
+  const { action } = args || {};
+  if (action === 'metrics' || action === 'history' || !action) {
+    const res = await httpJson('GET', KASBAH_API + '/v1/benchmark', null);
+    const r = res.body || {};
+    return textResult({ passed: r.passed, total: r.totalTests, detectionRate: r.detectionRate, falsePositiveRate: r.falsePositiveRate, missed: r.missedAttacks || [] });
+  }
+  const res = await httpJson('POST', KASBAH_API + '/v1/redteam/run', {});
+  return textResult(res.body || {});
+}
+
+async function handleFtiQuery(args) {
+  const { hash, text } = args || {};
+  const crypto = require('crypto');
+  const h = hash || (text ? crypto.createHash('sha256').update(String(text)).digest('hex') : null);
+  if (!h) throw new Error('hash or text is required (text is hashed locally, never transmitted)');
+  const res = await httpJson('POST', KASBAH_API + '/v1/fti/query', { hash: h });
+  return textResult(res.body || {});
+}
+
+async function handleComplianceReport(args) {
+  const { framework } = args || {};
+  const routes = { soc2: '/v1/compliance/soc2', iso27001: '/v1/compliance/iso27001', nist: '/v1/compliance/nist' };
+  if (framework === 'all') {
+    const out = {};
+    for (const [k, route] of Object.entries(routes)) {
+      const res = await httpJson('GET', KASBAH_API + route, null);
+      out[k] = res.body || {};
+    }
+    return textResult(out);
+  }
+  const route = routes[framework] || routes.soc2;
+  const res = await httpJson('GET', KASBAH_API + route, null);
+  return textResult(res.body || {});
+}
+
 // ─── JSON-RPC plumbing ────────────────────────────────────────────────────────
 const CALL = {
   kasbah_attest:           handleAttest,
@@ -601,7 +645,11 @@ const CALL = {
   kasbah_mcp_teams:        handleMCPTeams,
   kasbah_govern_turn:      handleGovernTurn,
   kasbah_advisory:         handleAdvisory,
-  kasbah_os:               handleKasbahOS
+  kasbah_os:               handleKasbahOS,
+  kasbah_scan:             handleScan,
+  kasbah_redteam:          handleRedteam,
+  kasbah_fti_query:        handleFtiQuery,
+  kasbah_compliance_report: handleComplianceReport
 };
 
 const handlers = {

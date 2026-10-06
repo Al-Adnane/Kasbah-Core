@@ -147,6 +147,13 @@ chrome.storage.local.get(['enabled'], (res) => {
   enabledLabel.textContent = on ? 'On' : 'Off';
 });
 
+const keyInput = $('api-key');
+chrome.storage.local.get(['apiKey'], (res) => { if (res.apiKey) { keyInput.value = res.apiKey; $('key-msg').textContent = 'Key saved — strict gateways will accept scans.'; } });
+$('btn-key').addEventListener('click', () => {
+  const v = (keyInput.value || '').trim();
+  chrome.storage.local.set({ apiKey: v }, () => { $('key-msg').textContent = v ? 'Key saved.' : 'Key cleared — local mode.'; });
+});
+
 enabledToggle.addEventListener('change', () => {
   const on = enabledToggle.checked;
   enabledLabel.textContent = on ? 'On' : 'Off';

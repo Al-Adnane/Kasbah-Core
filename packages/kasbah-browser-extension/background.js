@@ -17,13 +17,22 @@ async function resolveGateway() {
   return null;
 }
 
+async function authHeaders(extra = {}) {
+  const h = { ...extra };
+  try {
+    const stored = (await chrome.storage.local.get('apiKey')).apiKey;
+    if (stored) { h['x-api-key'] = stored; h['Authorization'] = 'Bearer ' + stored; }
+  } catch (_) {}
+  return h;
+}
+
 async function scan(text) {
   const base = await resolveGateway();
   if (!base) return { ok: false, offline: true };
   try {
     const r = await fetch(base + '/v1/scan', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: await authHeaders({ 'content-type': 'application/json' }),
       body: JSON.stringify({ prompt: text, surface: 'paste' }),
     });
     if (!r.ok) return { ok: false, status: r.status };
@@ -49,7 +58,7 @@ async function attest(text) {
   try {
     const r = await fetch(base + '/v1/attest', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: await authHeaders({ 'content-type': 'application/json' }),
       body: JSON.stringify({ prompt: text }),
     });
     if (!r.ok) return { ok: false, status: r.status };
@@ -66,7 +75,7 @@ async function issueVC(scanResult, attestResult) {
   try {
     const r = await fetch(base + '/v1/vc/issue', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: await authHeaders({ 'content-type': 'application/json' }),
       body: JSON.stringify({ scanResult, attestResult }),
     });
     if (!r.ok) return { ok: false, status: r.status };
@@ -331,11 +340,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // without touching browser history or bookmarks. Gateway notified to flush
   // in-flight agent traces for this session.
   if (msg?.type === 'BURN_SESSION') {
-    resolveGateway().then((base) => {
+    resolveGateway().then(async (base) => {
       const wipe = chrome.storage.local.remove(['stats', 'mediaLog', 'siteGrades', 'lastScan']);
       const notifyGateway = base
         ? fetch(base + '/v1/kernel/killswitch', { method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: await authHeaders({ 'content-type': 'application/json' }),
             body: JSON.stringify({ reason: 'fire_button', actorId: 'browser-session' }),
           }).catch(() => null)
         : Promise.resolve();

@@ -1669,6 +1669,56 @@ try {
   if (process.env.KASBAH_DEBUG_OPTIONAL) console.warn('[threat-coop] optional — not installed:', e.message);
 }
 
+// ─── Syscall sandbox monitor (ported models: kasbah-os/kernel_fuzzer.py) ──
+// validateArgs: typed argument checks. anomaly: mean(1-p) over transition
+// pairs; unknown edge scores 1.0. next: weighted pick (fuzzing harness use).
+try {
+  const syscallMon = require('./src/syscall-monitor.js');
+  app.post('/v1/syscall/validate', (req, res) => {
+    const { name, args } = req.body || {};
+    if (!name) return res.status(400).json({ error: 'name required' });
+    res.json(syscallMon.validateArgs(name, args || {}));
+  });
+  app.post('/v1/syscall/anomaly', (req, res) => {
+    const { seq } = req.body || {};
+    if (!Array.isArray(seq)) return res.status(400).json({ error: 'seq array required' });
+    const r = syscallMon.anomalyScore(seq);
+    res.json({ ...r, verdict: r.score >= 0.7 ? 'ANOMALOUS' : r.score >= 0.4 ? 'SUSPICIOUS' : 'NORMAL' });
+  });
+  app.post('/v1/syscall/next', (req, res) => {
+    const { current } = req.body || {};
+    if (!current) return res.status(400).json({ error: 'current required' });
+    res.json(syscallMon.nextState(current));
+  });
+  console.log('[syscall-monitor] mounted — validate/anomaly/next (18 syscalls, 55 edges)');
+} catch (e) { console.warn('[syscall-monitor] not mounted:', e.message); }
+
+// ─── Threat orchestration (pipeline shape: kasbah-os/kasbah_mythos.py) ─────
+// analyze → correlate (merge by CWE) → prioritize (confidence × severity) →
+// bounded advisory (CLEAR/WARN/REQUIRE_APPROVAL). Deterministic, no ML.
+app.post('/v1/threat/orchestrate', async (req, res) => {
+  try {
+    const { findings } = req.body || {};
+    if (!Array.isArray(findings)) return res.status(400).json({ error: 'findings array required' });
+    const SEV_W = { CRITICAL: 10, HIGH: 7, MEDIUM: 4, LOW: 1 };
+    const byCwe = new Map();
+    for (const f of findings) {
+      const cwe = f?.metadata?.cwe_id || f?.cwe || 'unknown';
+      const conf = Number(f?.confidence ?? 0.5);
+      const prev = byCwe.get(cwe);
+      const sources = (prev?.sources || 0) + 1;
+      if (!prev || conf > prev.confidence) byCwe.set(cwe, { cwe_id: cwe, confidence: conf, severity: f?.metadata?.severity || f?.severity || 'LOW', sources });
+      else prev.sources = sources;
+    }
+    const prioritized = [...byCwe.values()].sort((a, b) => (b.confidence * (SEV_W[b.severity] || 1)) - (a.confidence * (SEV_W[a.severity] || 1)));
+    const critCount = prioritized.filter((f) => f.severity === 'CRITICAL').length;
+    const top = prioritized[0]?.confidence || 0;
+    const advisory = (top >= 0.7 && critCount >= 2) ? 'REQUIRE_APPROVAL' : top >= 0.35 ? 'WARN' : 'CLEAR';
+    const level = top > 0.85 ? 'CRITICAL' : top > 0.65 ? 'HIGH' : top > 0.4 ? 'MEDIUM' : prioritized.length ? 'LOW' : 'NONE';
+    res.json({ findings: prioritized, summary: { total_findings: findings.length, unique_findings: prioritized.length, advisory, threat_level: level } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── Biometric / Deepfake Detection ───────────────────────────────────────────
 try {
   const biometric = require('../biometric-detection/src/index.js');
@@ -3580,7 +3630,7 @@ app.delete('/v1/passport/:id', async (req, res) => {
 
 const engineKey = require('./src/engine-key.js');
 
-app.post('/v1/receipt/verify', (req, res) => {
+app.post('/v1/receipt/verify', async (req, res) => {
   const { receipt, payload, proofKey, once = true, merkleRoot, merkleProof } = req.body || {};
   if (!receipt) {
     return res.status(400).json({ error: '"receipt" field required' });
@@ -3596,6 +3646,18 @@ app.post('/v1/receipt/verify', (req, res) => {
     if (merkleRoot && merkleProof) {
       merkleValid = merkleBatch.verifyMerkleProof(receipt, payload, merkleProof, merkleRoot);
     }
+
+    // Single-use nullifier (mirrors kernel ticket consume): opt-in via once.
+    // Stateless verify stays pure; once:true spends the receipt (409 on replay).
+    let replayed = false;
+    if (once && result.valid) {
+      const rh = crypto.createHash('sha256').update(String(receipt)).digest('hex');
+      try {
+        const claimed = await persistence.setnx(`kasbah:receipt:consumed:${rh}`, Date.now(), 86400).catch(() => false);
+        replayed = claimed === false;
+      } catch (_) {}
+    }
+    if (replayed) return res.status(409).json({ verified: false, valid: true, replayed: true, error: 'Receipt already spent', timestamp: new Date().toISOString() });
 
     return res.json({
       verified: result.valid && merkleValid,
@@ -3615,11 +3677,25 @@ app.post('/v1/receipt/verify', (req, res) => {
   if (typeof receipt === 'string' && receipt.startsWith('kasbah_receipt:v2:ed25519:')) {
     if (!payload) return res.status(400).json({ error: '"payload" required for v2 receipts' });
     const result = engineKey.verify(receipt, payload);
+    let merkleValid = true;
+    if (merkleRoot && merkleProof) {
+      merkleValid = merkleBatch.verifyMerkleProof(receipt, payload, merkleProof, merkleRoot);
+    }
+    let replayed = false;
+    if (once && result.valid) {
+      const rh = crypto.createHash('sha256').update(String(receipt)).digest('hex');
+      try {
+        const claimed = await persistence.setnx(`kasbah:receipt:consumed:${rh}`, Date.now(), 86400).catch(() => false);
+        replayed = claimed === false;
+      } catch (_) {}
+    }
+    if (replayed) return res.status(409).json({ verified: false, valid: true, replayed: true, error: 'Receipt already spent', timestamp: new Date().toISOString() });
     return res.json({
-      verified: result.valid, valid: result.valid,
+      verified: result.valid && merkleValid, valid: result.valid,
       version: 2, alg: 'ed25519',
       decoded: result.decoded || null,
       keyId: result.keyId || null,
+      merkleVerified: merkleRoot ? merkleValid : undefined,
       error: result.error || undefined,
       spec: 'https://github.com/Al-Adnane/Kasbah-Core/blob/main/docs/RECEIPT-SPEC-v3.md',
       timestamp: new Date().toISOString()
@@ -3673,6 +3749,23 @@ app.post('/v1/receipt/verify-batch', (req, res) => {
     spec: 'https://github.com/Al-Adnane/Kasbah-Core/blob/main/docs/RECEIPT-SPEC-v3.md-v3#7-merkle-tree-batch-verification',
     timestamp: new Date().toISOString(),
   });
+});
+
+// ─── POST /v1/receipt/merkle-build ─────────────────────────────────────────
+// Mint a Merkle root + per-receipt inclusion proofs over a receipt set
+// (crypto_audit.py Merkle-tree pattern, now live on the API).
+// Body: { receipts: [{ receipt, payload }] } → { root, count, proofs }
+app.post('/v1/receipt/merkle-build', (req, res) => {
+  const { receipts } = req.body || {};
+  if (!receipts || !Array.isArray(receipts) || receipts.length === 0) {
+    return res.status(400).json({ error: '"receipts" array required' });
+  }
+  try {
+    const tree = merkleBatch.buildMerkleTree(receipts);
+    const proofs = {};
+    for (const [leaf, proof] of tree.proofs) proofs[leaf] = proof;
+    res.json({ root: tree.root, count: tree.leaves.length, proofs, timestamp: new Date().toISOString() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── Shared proof (viral loop) + Intervention catalog ────────────────────────

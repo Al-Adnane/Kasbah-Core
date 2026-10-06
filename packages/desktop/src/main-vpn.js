@@ -817,7 +817,15 @@ module.exports = function registerVpnHandlers(ipcMain, ctx) {
     const { aiLane, receipts } = vpn();
     if (vpnState.aiLaneHandle) return { ok: true, already: true, port: vpnState.aiLaneHandle.port, gateway: vpnState.aiLaneHandle.gateway };
     vpnState.aiLaneEvents = [];
-    const lane = await aiLane.startAiLane({ port: Number(body.port || aiLane.DEFAULT_PORT), gateway: body.gateway || aiLane.DEFAULT_GATEWAY, onEvent: (e) => { vpnState.aiLaneEvents.push({ ...e, ts: Date.now() }); } });
+    // Prefer the local gateway (desktop-spawned API on :8788); explicit body.gateway or env wins.
+    const localGw = 'http://127.0.0.1:8788';
+    let gw = body.gateway || process.env.KASBAH_GATEWAY_URL || localGw;
+    let lane;
+    try {
+      lane = await aiLane.startAiLane({ port: Number(body.port || aiLane.DEFAULT_PORT), gateway: gw, onEvent: (e) => { vpnState.aiLaneEvents.push({ ...e, ts: Date.now() }); } });
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
     vpnState.aiLaneHandle = lane;
     receipts.record('ai-lane.start', { port: lane.port, gateway: lane.gateway });
     return { ok: true, port: lane.port, gateway: lane.gateway };

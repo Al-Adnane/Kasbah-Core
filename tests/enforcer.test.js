@@ -44,10 +44,11 @@ console.log('\n═══ Enforcer + Camera Sentinel + Data Lineage ═══\n')
   // 3. Terminate action on an unapproved app (pid won't exist — action attempts + logs)
   enforcer.setAction('terminate');
   const before = enforcer.recentActions(50).length;
+  const beforeLatest = enforcer.recentActions(1)[0]?.ts || '';
   const r3 = await enforcer.actOnAlert({ device: 'camera', name: 'DefinitelyNotRealApp', pid: 3999999 });
   const after = enforcer.recentActions(50);
   check('terminate attempted (result logged)', typeof r3.reason === 'string', JSON.stringify(r3));
-  check('action audit-logged', after.length > before && after[0].action === 'terminate', JSON.stringify(after[0] || {}));
+  check('action audit-logged', after.some(e => e.action === 'terminate' && (e.ts || '') >= beforeLatest), JSON.stringify(after[0] || {}));
 
   // 4. tcc-reset path
   enforcer.setAction('tcc-reset');
