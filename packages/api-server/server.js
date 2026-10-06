@@ -1826,14 +1826,38 @@ app.get('/v1/mathematical_core', (_req, res) => {
       'Continuous semantic tool drift via Lie derivative on differentiable manifold (#20)',
       '3+ party collusion via hypergraph Laplacian spectral gap (#21)',
       'Covert timing channel via Bandt-Pompe permutation entropy (#22)',
-      'Evasion complexity: Ω(2²²) ≈ 4M bits across 22 orthogonal detection manifolds',
+      'Forged chat-role detection as formal-language role grammar (#23)',
+      'Tool-call schema abuse via JSON call-shape matching (#24)',
+      'Fraud-impersonation conjunction (voice/deepfake × financial intent) (#25)',
+      'Concealment decoding operators: HTML comment strip, entity decode (#26)',
+      'Covert-alphabet decoders: morse (space-normalized), braille (bitmask map) (#27)',
+      'Obfuscated-verb detection as edit-distance ball d≤2 over 7 verbs (#28)',
+      'Evasion complexity: Ω(2²⁸) ≈ 268M bits across 28 orthogonal detection manifolds',
     ],
+    fusion_theorem: {
+      name: 'Advisory-only fusion (sentinel → /v1/scan/full)',
+      statement: 'Let V be the core verdict and S the sentinel signal set. Fusion F(V,S) = (V, threats ∪ S.violations, max(risk_V, min(risk_S, 0.69))). F is verdict-preserving (never lowers V), monotone in threats, and risk-capped below the DENY band — sentinel evidence can escalate WARN, never manufacture DENY.',
+      corollary: 'No single advisory module is load-bearing: removing any S leaves F(V,∅) = core-only behavior.',
+    },
+    incentive_layer: {
+      name: 'Earn as mechanism design',
+      statement: 'Credits spend before tier caps, so contributing (shares, referrals, check-ins) strictly dominates free-riding up to the cap. Anti-farm bounds: share rewards capped 10/day, referrals single-use per pair, streaks weekly. Ledger is append-only JSONL and replayable — balances rebuild from history, so no trusted counter needed.',
+      cashout: 'Cash payout above 10,000 credits declared roadmap (Stripe Connect), not promised.',
+    },
+    verified_results: {
+      benchmark: '39/39 scenarios, detection rate 1.0, false-positive rate 0 (GET /v1/benchmark, verdict mapping DENY+REQUIRE_APPROVAL=blocked)',
+      corpus: '100-case bench/corpus/v1.json: scan F1 0.86, govern F1 0.87, 0 errors',
+      engine: 'kasbah-sentinel (real detector wired; fallback path retained for degraded boot)',
+      reproduced: 'run node bench/run.js --api http://127.0.0.1:8788',
+    },
     islamic_mathematical_mapping: {
       Shahādah: 'k ≥ 2 flags (multi-witness requirement for REQUIRE_APPROVAL)',
       Shūrā: 'EWA adaptive weights (regret-bounded consultation)',
       Ḥisāb: 'Forward-secure regenerative Merkle audit',
       'ʿIlm & Yaqīn': 'Conformal p-values + persistent sheaf drift (epistemic humility)',
       'Planetary Maqṣad': 'Regenerative score protecting ecosystems (PPP extension)',
+      Amānah: 'Append-only earn ledger (trust accounting: every credit traceable)',
+      'ʿAdl': 'Zero false-positive calibration on benchmark (justice: no innocents flagged)',
     },
     advisory_levels: ['CLEAR', 'WARN', 'REQUIRE_APPROVAL', 'REGENERATIVE'],
     planetary: {
@@ -1843,7 +1867,8 @@ app.get('/v1/mathematical_core', (_req, res) => {
       description: 'PPP extension: Planet sites weighted at 40% in the sheaf base space. REGENERATIVE signal emitted when sheaf cohomology shows stable, life-affirming cycles.',
     },
     status: 'Production-ready. No simulation theater. No offensive capabilities.',
-    version: 'KasbahOS-P3SG-Final',
+    version: 'KasbahOS-P3SG-2',
+    revision: '2026-10-06: +6 detection manifolds (#23–#28), fusion theorem, incentive layer, verified results, Amānah/ʿAdl mappings.',
   });
 });
 
