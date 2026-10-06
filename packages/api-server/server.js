@@ -1555,41 +1555,67 @@ try {
 }
 
 // ─── Policy Fuzzer ────────────────────────────────────────────────────────────
+// Standalone policy-fuzzer package retired; the live fallback mutates the
+// input through bypass transforms and runs each variant through the real
+// govern engine in-process. Reports which mutations bypass detection.
 try {
-  const { PolicyFuzzer, fuzz } = require('../policy-fuzzer/src/index.js');
+  let fuzz = null;
+  try { ({ fuzz } = require('../policy-fuzzer/src/index.js')); } catch (_) { /* retired — live fallback below */ }
 
   app.post('/v1/governance/fuzz', async (req, res) => {
-    const { policy, iterations, mode } = req.body || {};
-    if (!policy) return res.status(400).json({ error: 'policy required' });
-
-    const governFn = async (p, ctx) => {
-      return new Promise((resolve) => {
-        const http = require('http');
-        const body = JSON.stringify({ prompt: p, context: ctx || 'fuzz' });
-        const fuzzReq = http.request({
-          hostname: '127.0.0.1', port: process.env.PORT || 8788,
-          path: '/v1/govern', method: 'POST',
-          headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) }
-        }, (fuzzRes) => {
-          let d = ''; fuzzRes.on('data', c => d += c);
-          fuzzRes.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve({ verdict: 'ALLOW' }); } });
+    const { policy, text, iterations, mode } = req.body || {};
+    const seed = policy || text;
+    if (!seed) return res.status(400).json({ error: 'policy (or text) required' });
+    if (fuzz) {
+      const governFn = async (p, ctx) => {
+        return new Promise((resolve) => {
+          const http = require('http');
+          const body = JSON.stringify({ prompt: p, context: ctx || 'fuzz' });
+          const fuzzReq = http.request({
+            hostname: '127.0.0.1', port: process.env.PORT || 8788,
+            path: '/v1/govern', method: 'POST',
+            headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) }
+          }, (fuzzRes) => {
+            let d = ''; fuzzRes.on('data', c => d += c);
+            fuzzRes.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve({ verdict: 'ALLOW' }); } });
+          });
+          fuzzReq.on('error', () => resolve({ verdict: 'ALLOW' }));
+          fuzzReq.setTimeout(3000, () => { fuzzReq.destroy(); resolve({ verdict: 'ALLOW' }); });
+          fuzzReq.write(body); fuzzReq.end();
         });
-        fuzzReq.on('error', () => resolve({ verdict: 'ALLOW' }));
-        fuzzReq.setTimeout(3000, () => { fuzzReq.destroy(); resolve({ verdict: 'ALLOW' }); });
-        fuzzReq.write(body); fuzzReq.end();
-      });
-    };
-
-    try {
-      const result = fuzz(governFn, {
-        corpus: policy ? [{ id: 'user-policy', policy }] : undefined,
-        iterations: Math.min(iterations || 20, 100),
-        mode: mode || 'random'
-      });
-      res.json({ ok: true, ...result });
-    } catch(e) {
-      res.status(500).json({ error: e.message });
+      };
+      try {
+        const result = await fuzz(governFn, {
+          corpus: [{ id: 'user-policy', policy: seed }],
+          iterations: Math.min(iterations || 20, 100),
+          mode: mode || 'random'
+        });
+        return res.json({ ok: true, ...result });
+      } catch(e) {
+        return res.status(500).json({ error: e.message });
+      }
     }
+    // Live fallback: bypass-transform battery through the real engine.
+    const variants = { original: String(seed) };
+    variants.upper = variants.original.toUpperCase();
+    variants.spaced = variants.original.split('').join(' ');
+    variants.comment = `<!-- ${variants.original} -->`;
+    variants.entity = variants.original.replace(/./g, (c) => `&#${c.charCodeAt(0)};`);
+    variants.zalgo = variants.original.replace(/([a-zA-Z])/g, '$1\u0305');
+    const judged = [];
+    for (const [name, v] of Object.entries(variants)) {
+      try {
+        const dec = await governanceEngine.govern(buildScanRequest(v));
+        const threats = extractThreats(dec);
+        judged.push({ variant: name, verdict: dec.verdict || 'ALLOW', risk: typeof dec.risk === 'number' ? dec.risk : 0, threats: threats.slice(0, 5) });
+      } catch (e) { judged.push({ variant: name, error: e.message }); }
+    }
+    const base = judged[0];
+    const bypasses = judged.slice(1).filter((j) => {
+      const order = { ALLOW: 0, WARN: 1, REQUIRE_APPROVAL: 2, DENY: 3 };
+      return (order[j.verdict] || 0) < (order[base.verdict] || 0);
+    });
+    res.json({ ok: true, engine: 'live-fallback', base, variants: judged, bypasses, bypassCount: bypasses.length });
   });
 
   console.log('[policy-fuzzer] mounted — governance policy security testing');
@@ -1598,9 +1624,42 @@ try {
 }
 
 // ─── Verification Network (human-in-loop appeals + bounties) ─────────────────
+// Standalone verification-network package retired; the live fallback keeps
+// appeals + reviews + leaderboard in memory with the same route contract.
 try {
-  const { VerificationNetwork } = require('../verification-network/src/index.js');
-  const verificationNet = new VerificationNetwork();
+  let verificationNet = null;
+  try {
+    const { VerificationNetwork } = require('../verification-network/src/index.js');
+    verificationNet = new VerificationNetwork();
+  } catch (_) {
+    const _cases = new Map();
+    const _reviews = [];
+    verificationNet = {
+      submitAppeal: ({ verdict, prompt, threats }, meta = {}) => {
+        const id = 'appeal_' + crypto.randomBytes(6).toString('hex');
+        const c = { id, verdict, prompt: prompt || '', threats: threats || [], reason: meta.reason || '', submitterId: meta.submitterId || 'anonymous', status: 'open', createdAt: new Date().toISOString(), reviews: [] };
+        _cases.set(id, c);
+        return c;
+      },
+      getCase: (id) => _cases.get(id) || null,
+      submitReview: (id, reviewerId, r = {}) => {
+        const c = _cases.get(id);
+        if (!c) return { error: 'case not found' };
+        c.reviews.push({ reviewerId, verdict: r.verdict || null, notes: r.notes || '', ts: new Date().toISOString() });
+        if (c.reviews.length >= 2) c.status = 'reviewed';
+        _reviews.push({ id, reviewerId });
+        return c;
+      },
+      leaderboard: () => {
+        const by = new Map();
+        for (const r of _reviews) by.set(r.reviewerId, (by.get(r.reviewerId) || 0) + 1);
+        return [...by.entries()].map(([id, score]) => ({ id, score })).sort((a, b) => b.score - a.score).slice(0, 10);
+      },
+      stats: () => ({ cases: _cases.size, reviews: _reviews.length }),
+      cases: _cases,
+      reviews: _reviews,
+    };
+  }
 
   // Submit an appeal
   app.post('/v1/verification/appeal', (req, res) => {
@@ -1646,25 +1705,58 @@ try {
 }
 
 // ─── Threat Cooperation Network ────────────────────────────────────────────────
+// Standalone threat-coop package retired; the live fallback implements the
+// same contract inline: sha256 fingerprint over normalized text+threats,
+// Jaccard similarity over token shingles.
 try {
-  const { fingerprint, similarity, patternBloom } = require('../threat-coop/src/index.js');
+  let coop = null;
+  try { coop = require('../threat-coop/src/index.js'); } catch (_) { /* retired — live fallback below */ }
+  const _fpNorm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const _liveFingerprint = (text, threats = []) => {
+    const norm = _fpNorm(text) + '|' + [...threats].sort().join(',');
+    return crypto.createHash('sha256').update(norm).digest('hex');
+  };
+  const _shingles = (t) => {
+    const toks = _fpNorm(t).split(' ').filter(Boolean);
+    const s = new Set();
+    for (let i = 0; i < toks.length; i++) {
+      s.add(toks[i]);
+      if (i + 1 < toks.length) s.add(toks[i] + ' ' + toks[i + 1]);
+    }
+    return s;
+  };
+  const _liveSimilarity = (fp1, fp2) => {
+    if (fp1 === fp2) return 1;
+    return null; // hashes alone are not comparable — caller should send texts
+  };
 
   // Fingerprint a threat
   app.post('/v1/threat/fingerprint', (req, res) => {
     const { text, threats } = req.body || {};
     if (!text) return res.status(400).json({ error: 'text required' });
     try {
-      const fp = fingerprint(text, threats || []);
+      const fp = coop ? coop.fingerprint(text, threats || []) : _liveFingerprint(text, threats || []);
       res.json({ ok: true, fingerprint: fp });
     } catch(e) { res.status(500).json({ error: e.message }); }
   });
 
-  // Similarity check
+  // Similarity check (accepts fingerprints OR raw texts)
   app.post('/v1/threat/similarity', (req, res) => {
-    const { fp1, fp2 } = req.body || {};
-    if (!fp1 || !fp2) return res.status(400).json({ error: 'fp1 and fp2 required' });
+    const { fp1, fp2, text1, text2 } = req.body || {};
     try {
-      const score = similarity(fp1, fp2);
+      let score;
+      if (text1 && text2) {
+        const a = _shingles(text1), b = _shingles(text2);
+        const inter = [...a].filter((x) => b.has(x)).length;
+        score = a.size + b.size === 0 ? 1 : (2 * inter) / (a.size + b.size);
+      } else if (!fp1 || !fp2) {
+        return res.status(400).json({ error: 'fp1 and fp2 (or text1 and text2) required' });
+      } else if (coop) {
+        score = coop.similarity(fp1, fp2);
+      } else {
+        score = _liveSimilarity(fp1, fp2);
+        if (score === null) return res.status(400).json({ error: 'hashes alone are not comparable — send text1 and text2' });
+      }
       res.json({ ok: true, similarity: score, similar: score > 0.7 });
     } catch(e) { res.status(500).json({ error: e.message }); }
   });
