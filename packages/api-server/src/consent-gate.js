@@ -67,12 +67,55 @@ function salience(base, tier, mode = 'bias') {
 // ---- pending tap store (grace window) ----
 const _pending = new Map(); // id -> { createdAt, timer, resolve, payload }
 const _audit = [];
+let _dataDir = null;
+const fs = require('fs');
+const nodePath = require('path');
+
+function init({ dataDir } = {}) {
+  _dataDir = dataDir || null;
+  if (_dataDir) { try { fs.mkdirSync(_dataDir, { recursive: true, mode: 0o700 }); } catch (_) {} }
+}
 
 function _auditLog(entry) {
   const row = { ts: new Date().toISOString(), ...entry };
   _audit.push(row);
   if (_audit.length > 500) _audit.splice(0, _audit.length - 500);
+  if (_dataDir) {
+    try { fs.appendFileSync(nodePath.join(_dataDir, 'consent-audit.jsonl'), JSON.stringify(row) + '\n', { mode: 0o600 }); } catch (_) {}
+  }
   return row;
+}
+
+// ---- Consequence tiers: selective ignition (anti prompt-fatigue) ----
+// READ: auto-allow, Stone stays dark. WRITE: tap required. DESTRUCTIVE /
+// EXFIL: tap required + flagged high-consequence. Patterns, not ML.
+const TIER_DESTRUCTIVE = [
+  /\brm\s+-rf?\b/i, /\bsudo\b/i, /\bdd\b.*of=/i, /\bmkfs\b/i,
+  /\bdrop\s+(table|database)\b/i, /\bdelete\s+from\b/i, /\btruncate\b/i,
+  /\bformat\s+[a-z]:/i, /\bshutdown\b|\breboot\b|\bhalt\b/i,
+  /git\s+push.*--force/i, /git\s+push.*\bmain\b/i, /\bterraform\s+(apply|destroy)\b/i,
+];
+const TIER_SENSITIVE_PATH = [
+  /\.ssh\//i, /\.env\b/i, /\.aws\//i, /\.gnupg\//i, /id_rsa/i,
+  /credential/i, /secret/i, /wallet/i, /\.key\b/i, /keychain/i, /\.p12\b/i,
+];
+const TIER_EXFIL_TOOL = new Set(['network_post', 'webhook', 'send_email', 'upload', 'transmit', 'publish']);
+const TIER_WRITE_TOOL = new Set(['file_write', 'shell_execute', 'db_mutate', 'db_write', 'git_push', 'deploy', 'send_email']);
+
+function assess({ action = '', tool = '', args = {} } = {}) {
+  const text = [action, tool, JSON.stringify(args || {})].join(' ');
+  const reasons = [];
+  for (const re of TIER_DESTRUCTIVE) {
+    if (re.test(text)) { reasons.push('destructive pattern'); break; }
+  }
+  for (const re of TIER_SENSITIVE_PATH) {
+    if (re.test(text)) { reasons.push('sensitive path'); break; }
+  }
+  const t = String(tool || '').toLowerCase();
+  if (TIER_EXFIL_TOOL.has(t)) reasons.push('exfil-capable tool ' + t);
+  if (reasons.length) return { tier: reasons[0] === 'destructive pattern' ? 'DESTRUCTIVE' : 'EXFIL', tapRequired: true, highConsequence: true, reasons };
+  if (TIER_WRITE_TOOL.has(t)) return { tier: 'WRITE', tapRequired: true, highConsequence: false, reasons: ['write-capable tool ' + t] };
+  return { tier: 'READ', tapRequired: false, highConsequence: false, reasons: ['read-only: Stone stays dark'] };
 }
 
 // Software Stone keypair (ephemeral unless STONE_SEED set). Hardware Stone
@@ -160,7 +203,7 @@ function auditLog(limit = 100) { return _audit.slice(-limit).reverse(); }
 
 module.exports = {
   TIER_ORDER, TIER_TAU, GRACE_MS,
-  tierTau, fuse, certify, salience,
+  tierTau, fuse, certify, salience, assess, init,
   stoneSign, stoneVerify, canonicalGate,
   startTap, requestTap, tap, deny, pending, auditLog,
 };

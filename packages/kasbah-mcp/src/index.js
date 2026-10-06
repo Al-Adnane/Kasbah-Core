@@ -657,6 +657,13 @@ async function handleComplianceReport(args) {
 async function handleConsent(args) {
   const { action, tool, text, scalars, n, agree, coherence, waitMs } = args || {};
   if (!action) throw new Error('action is required');
+  // Selective ignition: READ-tier actions auto-allow, Stone stays dark.
+  // Only WRITE+ tiers hold for a tap — this is what prevents prompt fatigue.
+  const assessRes = await httpJson('POST', KASBAH_API + '/v1/consent/assess', { action, tool });
+  const tier = assessRes.body || {};
+  if (!tier.tapRequired) {
+    return textResult({ id: null, tier: tier.tier, tapRequired: false, outcome: 'auto-allowed (read-only)', guidance: 'Proceed. The Stone stays dark for reads.' });
+  }
   const req = await httpJson('POST', KASBAH_API + '/v1/consent/request', {
     action, tool, text, scalars: scalars || [], n: n || 0, agree: agree || 0,
     coherence: !!coherence,

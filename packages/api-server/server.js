@@ -4832,6 +4832,7 @@ app.get('/v1/proxy/info', (req, res) => {
 // software-issued (signer soft-stone); the verify path dispatches on signer
 // so a hardware secure element slots in without changing the gate.
 const consentGate = require('./src/consent-gate.js');
+try { consentGate.init({ dataDir: KASBAH_DATA_DIR }); } catch (e) { console.warn('[consent-gate] persistence off:', e.message); }
 app.post('/v1/consent/request', async (req, res) => {
   try {
     const { action, tool, scalars = [], n = 0, agree = 0, text, ignition, coherence, delegationThreshold, epsilon } = req.body || {};
@@ -4853,6 +4854,11 @@ app.post('/v1/consent/request', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/v1/consent/pending', (_req, res) => res.json({ pending: consentGate.pending() }));
+app.post('/v1/consent/assess', (req, res) => {
+  const { action, tool, args } = req.body || {};
+  if (!action && !tool) return res.status(400).json({ error: 'action or tool required' });
+  res.json({ ...consentGate.assess({ action, tool, args }), stoneDark: !consentGate.assess({ action, tool, args }).tapRequired });
+});
 app.get('/v1/consent/audit', (req, res) => res.json({ audit: consentGate.auditLog(Number(req.query.limit) || 100) }));
 app.post('/v1/consent/tap/:id', (req, res) => {
   const r = consentGate.tap(req.params.id, { approve: req.body?.approve !== false });
