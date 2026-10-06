@@ -2349,6 +2349,25 @@ Or click a case study above to load a documented scenario." style="width:100%;mi
           </div>
         </div>
 
+        <div class="settings-card" style="margin-bottom:12px;background:linear-gradient(135deg,var(--green-bg),transparent)">
+          <div class="sc-title">Earn with Kasbah <span class="k-tag" style="font-size:10px;background:var(--green-bg);color:var(--green)">NEW</span></div>
+          <div class="muted" style="font-size:12.5px;margin-bottom:10px">Share receipts, invite friends, stay protected — earnings pay for your usage automatically.</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+            <div><div style="font-size:10px;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em">Balance</div>
+            <div id="earnBalance" style="font-size:22px;font-weight:700">—</div></div>
+            <div><div style="font-size:10px;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em">Your invite code</div>
+            <div style="display:flex;gap:6px;align-items:center"><code id="earnCode" style="font-size:13px">—</code>
+            <button class="tl-btn" data-hc="${_h((event, el) => { earnCopy() })}">Copy</button></div></div>
+            <button class="tl-btn" data-hc="${_h((event, el) => { earnCheckin() })}">Weekly check-in +50</button>
+          </div>
+          <div class="muted" style="font-size:11.5px;margin-bottom:8px">Share +10 · Friend joins +500 each · Weekly check-in +50</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input class="form-input" id="earnRedeemInput" placeholder="Friend's code (KASBAH-XXXX-XXXX)" style="flex:1;min-width:200px">
+            <button class="k-btn k-btn--small" data-hc="${_h((event, el) => { earnRedeem() })}">Redeem</button>
+          </div>
+          <div id="earnMsg" class="muted" style="font-size:12px;margin-top:8px"></div>
+        </div>
+
         <div class="settings-card" style="margin-bottom:12px">
           <div class="sc-title">Activate with code</div>
           <div class="muted" style="font-size:12.5px;margin-bottom:10px">Codes are machine-bound (HMAC). Founder: generate a code for <em>this</em> Mac.</div>

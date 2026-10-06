@@ -3779,6 +3779,45 @@ app.post('/v1/viral/slack', async (req, res) => {
   res.json({ ok });
 });
 
+// ─── Kasbah Earn — users earn credits, credits pay for usage ───────────────
+// Ladder: share (+10, capped) → refer (+500 both sides) → weekly check-in (+50).
+// Credits spend before tier caps, so earnings directly cut bills.
+const earn = require('./src/earn.js');
+try { earn.init({ dataDir: KASBAH_DATA_DIR, addCredits: usageMeter.addCredits }); } catch (e) { console.warn('[earn] init failed:', e.message); }
+const _earnKey = (req) => req.apiKeyEntry?.keyId || 'dev-localhost';
+app.get('/v1/earn/balance', (req, res) => {
+  const keyId = _earnKey(req);
+  res.json({ balance: earn.balance(keyId), code: earn.myCode(keyId), rewards: earn.REWARDS });
+});
+app.post('/v1/earn/share', (req, res) => {
+  res.json(earn.shareReward(_earnKey(req)));
+});
+app.post('/v1/earn/redeem', (req, res) => {
+  const { code } = req.body || {};
+  if (!code) return res.status(400).json({ error: 'code required' });
+  const r = earn.redeem(code, _earnKey(req));
+  if (r.error) return res.status(400).json(r);
+  res.json(r);
+});
+app.post('/v1/earn/checkin', (req, res) => {
+  const r = earn.checkin(_earnKey(req));
+  if (r.error) return res.status(400).json(r);
+  res.json(r);
+});
+app.get('/v1/earn/ledger', (req, res) => {
+  res.json({ ledger: earn.ledger(_earnKey(req)) });
+});
+app.get('/v1/earn/cashout', (req, res) => {
+  const bal = earn.balance(_earnKey(req));
+  res.json({
+    balance: bal,
+    threshold: earn.REWARDS.CASHOUT_THRESHOLD,
+    eligible: bal >= earn.REWARDS.CASHOUT_THRESHOLD,
+    status: 'roadmap',
+    note: 'Cash payout above threshold needs Stripe Connect — not yet live. Credits spend on usage today.',
+  });
+});
+
 /** 13-Moat status */
 app.get('/v1/moats', (_req, res) => {
   res.json({

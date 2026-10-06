@@ -86,6 +86,43 @@ const PLANS = {
     targetPersona: 'Try it on your Claude Code or Cursor setup',
     cta: 'Start free — no card'
   },
+  personal: {
+    tier: 'personal',
+    name: 'Personal',
+    tagline: 'Everyday protection for one human.',
+    priceMonthly: 9,
+    priceAnnual:  86,
+    limits: { daily: 500, monthly: 10_000, teamMembers: 1, sessions: -1 },
+    features: [
+      'VPN — all exits, fastest auto-pick',
+      'Mic & camera guard with auto-revoke',
+      'Password vault on this Mac',
+      'Unlimited message checks',
+      'Safety receipts you can share',
+      '30-day audit history',
+      'Email support'
+    ],
+    targetPersona: 'Everyday users who paste into AI and want to be safe',
+    cta: 'Go Personal',
+    badge: 'For humans'
+  },
+  family: {
+    tier: 'family',
+    name: 'Family',
+    tagline: 'Protection for the whole household.',
+    priceMonthly: 15,
+    priceAnnual:  144,
+    limits: { daily: 2_000, monthly: 40_000, teamMembers: 5, sessions: -1 },
+    features: [
+      'Everything in Personal, 5 seats',
+      'Child-safe AI chat checks',
+      'One shared vault + individual vaults',
+      'Weekly family safety summary',
+      'Parental alerts on blocks'
+    ],
+    targetPersona: 'Households with kids using AI',
+    cta: 'Protect family'
+  },
   developer: {
     tier: 'developer',
     name: 'Developer',

@@ -3370,6 +3370,7 @@ function tsPause() {
 
 /* ── Hook page navigation to load data ───────────────────────────────────── */
 const PAGE_CHANGE = {
+  plans:      () => { try { earnRefresh(); } catch (_) {} },
   analytics:  () => loadAnalytics(_analyticsHours),
   webhooks:   () => loadWebhooks(),
   compliance: () => loadPassportSelect(),
@@ -7807,6 +7808,35 @@ async function proRefreshStatus() {
   } catch (_) {}
 }
 function proActivatePrompt() { nav('plans'); setTimeout(()=>$('proCodeInput')?.focus(), 200); }
+
+// ─── Earn — referral + share rewards ───────────────────────────────────────
+async function earnRefresh() {
+  try {
+    const r = await window.kasbah.api('GET', '/v1/earn/balance');
+    const b = r?.body || {};
+    if ($('earnBalance')) $('earnBalance').textContent = `${b.balance ?? '—'} credits`;
+    if ($('earnCode')) $('earnCode').textContent = b.code || '—';
+  } catch (_) {}
+}
+async function earnCopy() {
+  try { await navigator.clipboard.writeText($('earnCode')?.textContent || ''); toast('Invite code copied — friend gets +500, you get +500', 'ok', 3000); } catch (_) {}
+}
+async function earnRedeem() {
+  const code = ($('earnRedeemInput')?.value || '').trim();
+  if (!code) return;
+  try {
+    const r = await window.kasbah.api('POST', '/v1/earn/redeem', { code });
+    if ($('earnMsg')) $('earnMsg').textContent = r?.body?.ok ? `+${r.body.earned} credits — you and your friend both earned.` : (r?.body?.error || 'Failed');
+    earnRefresh();
+  } catch (e) { if ($('earnMsg')) $('earnMsg').textContent = e.message; }
+}
+async function earnCheckin() {
+  try {
+    const r = await window.kasbah.api('POST', '/v1/earn/checkin', {});
+    if ($('earnMsg')) $('earnMsg').textContent = r?.body?.ok ? `+${r.body.earned} credits for staying protected.` : (r?.body?.error || 'Already checked in');
+    earnRefresh();
+  } catch (e) { if ($('earnMsg')) $('earnMsg').textContent = e.message; }
+}
 async function vpnInstallHelper() {
   const msg = $('vpnHelperMsg');
   if (msg) msg.textContent = 'Installing… enter your Mac password once.';
