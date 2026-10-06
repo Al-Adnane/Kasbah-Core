@@ -174,9 +174,11 @@ var _pasteHistory = [];
 var _PASTE_WINDOW_MS = 30000; // 30-second sliding window
 var _PASTE_BURST_THRESHOLD = 10;
 
-function checkBehavioral(score) {
+var FRAG_RE_LIST = [/ignor/, /disregard/, /\bdan\b/i, /no\s+filter/, /do\s+anything/, /unrestricted/, /bypass/, /jailbreak/, /system\s+prompt/, /previous\s+instructions/];
+
+function checkBehavioral(score, text) {
   var now = Date.now();
-  _pasteHistory.push({ ts: now, risk: score });
+  _pasteHistory.push({ ts: now, risk: score, text: String(text || '').slice(0, 500) });
   // Prune entries older than window
   while (_pasteHistory.length > 0 && now - _pasteHistory[0].ts > _PASTE_WINDOW_MS) {
     _pasteHistory.shift();
@@ -1067,7 +1069,31 @@ function classify(text) {
   // ── LAYER 11: Behavioral burst detection ──
   // Only amplify content that is already suspicious — burst context should not
   // create false positives on genuinely clean content (score === 0).
-  var behavioral = checkBehavioral(score);
+  var behavioral = checkBehavioral(score, tn);
+  // Multi-turn fragment assembly: slow-burn jailbreaks split across turns.
+  // Distinct attack fragments across the 30s window assemble into a signal.
+  try {
+    var fragSeen = {};
+    var fragCount = 0;
+    for (var fi = 0; fi < _pasteHistory.length; fi++) {
+      var ft = (_pasteHistory[fi].text || '').toLowerCase();
+      for (var fri = 0; fri < FRAG_RE_LIST.length; fri++) {
+        if (FRAG_RE_LIST[fri].test(ft) && !fragSeen[fri]) { fragSeen[fri] = true; fragCount++; }
+      }
+    }
+    if (fragCount >= 3 && score > 0) { score += 30; reasons.push("cross-turn attack assembly (" + fragCount + " fragments)"); tiers_triggered.push("T3:multiturn"); }
+  } catch (_) {}
+  // Dynamic threat-adaptive threshold (Moat O): sustained attack pressure
+  // lowers the bar for borderline content instead of using static cutoffs.
+  try {
+    var _hr = 0;
+    for (var hi = 0; hi < _pasteHistory.length; hi++) if (_pasteHistory[hi].risk >= 70) _hr++;
+    var _threatLevel = Math.min(1, _hr / 10);
+    if (_threatLevel > 0 && score >= 40 && score < 70) {
+      var _lift = Math.round(15 * _threatLevel);
+      score += _lift; reasons.push("threat-adaptive lift (+" + _lift + ")");
+    }
+  } catch (_) {}
   if (behavioral.anomaly && score > 0) {
     if (behavioral.severity === "high") { score += 20; reasons.push(behavioral.reason); }
     else if (behavioral.severity === "medium") { score += 10; reasons.push(behavioral.reason); }

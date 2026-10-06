@@ -50,6 +50,16 @@ const DEFAULT_MANIFEST = {
   requireTicket:  false,
 };
 
+// ── Agent-governance modules (dep-free) — identity, Maqasid, GCMDP ──
+let _govMods = null;
+function govMods() {
+  if (!_govMods) {
+    try { _govMods = require('../../agent-governance/src/index.js'); }
+    catch (_) { _govMods = {}; }
+  }
+  return _govMods;
+}
+
 // ── Risk accumulator weights ──────────────────────────────────────────────────
 const RISK_W = {
   injectionInChain:  0.30,
@@ -89,6 +99,11 @@ class AgentSession extends EventEmitter {
     this.toolCalls    = [];
     this.riskScore    = 0;
     this.budget       = { promptTokens: 0, completionTokens: 0, totalTokens: 0, costCents: 0 };
+    try {
+      const gm = govMods();
+      this.identity = gm.AgentIdentity ? gm.AgentIdentity.generate(this.agentId, { passportId: this.passportId }) : null;
+      this.identityCert = this.identity ? this.identity.createCertificate() : null;
+    } catch (_) { this.identity = null; this.identityCert = null; }
     this.parentSessionId = null;
 
     // ── Policy-constrained spawning: child CANNOT be more permissive than parent ──
@@ -227,6 +242,43 @@ class AgentSession extends EventEmitter {
         this.riskScore = Math.min(1.0, this.riskScore + 0.05);
       }
     }
+
+    // 6 ── Maqasid pillar gate (multilingual, geometric-mean composite)
+    let maqasid = null;
+    try {
+      const gm = govMods();
+      if (gm.evaluateMaqasid && argsText && argsText.length > 8) {
+        maqasid = gm.evaluateMaqasid(argsText);
+        if (maqasid?.grade === 'VIOLATION') {
+          this._logTool({ tool, args, argsText, verdict: 'DENY', reason: 'maqasid_violation', maqasid: maqasid.deonticRuling });
+          _broadcast({ type: 'tool_denied', sessionId: this.sessionId, tool, reason: 'maqasid_violation' });
+          return { ok: false, verdict: 'DENY', reason: 'maqasid_violation', deontic: maqasid.deonticRuling };
+        }
+        if (maqasid?.grade === 'CONDITIONAL') this.riskScore = Math.min(1.0, this.riskScore + 0.05);
+      }
+    } catch (_) {}
+
+    // 7 ── GCMDP constraint evaluation (fail-closed, binding-constraint readout)
+    try {
+      const gm = govMods();
+      if (gm.GCMDP) {
+        const g = new gm.GCMDP().evaluate(
+          { type: tool, cost: 0, risk: this.riskScore },
+          { spent: this.budget.costCents, actionRisk: this.riskScore, callsThisMinute: this._callsThisMinute?.() ?? 0 },
+          {
+            budget: this.manifest.maxCostCents,
+            maxRisk: 0.9,
+            allowedActions: Array.isArray(this.manifest.allowedTools) ? this.manifest.allowedTools : undefined,
+            forbiddenActions: this.manifest.blockedTools,
+          }
+        );
+        if (g.decision === 'DENY') {
+          this._logTool({ tool, args, argsText, verdict: 'DENY', reason: 'gcmdp_violation', violated: g.violated, binding: g.bindingConstraint });
+          _broadcast({ type: 'tool_denied', sessionId: this.sessionId, tool, reason: 'gcmdp_violation' });
+          return { ok: false, verdict: 'DENY', reason: 'gcmdp_violation', violated: g.violated, bindingConstraint: g.bindingConstraint };
+        }
+      }
+    } catch (_) {}
 
     this._logTool({ tool, args, argsText, verdict: 'ALLOW', govResult });
     _broadcast({ type: 'tool_allowed', sessionId: this.sessionId, tool, riskScore: this.riskScore });
