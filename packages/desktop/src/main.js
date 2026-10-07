@@ -361,6 +361,23 @@ function apiCall(method, apiPath, body, { timeout = 15000 } = {}) {
 
 // ─── BrowserWindow ───────────────────────────────────────────────────────────
 
+// ── Per-site shields-down (Brave-style): hosts with shields down skip
+// tracker/bounce filtering. Module scope — used by session filters
+// (createWindow) and the settings IPC handler below.
+const _bvHost = new Map(); // viewId/webContentsId → tab hostname
+let _shieldExcept = new Set();
+function _refreshShieldExcept() {
+  try {
+    const st = browserStore.settingsGet();
+    _shieldExcept = new Set((st.shieldExceptions || []).map(h => String(h).toLowerCase()));
+  } catch (_) {}
+}
+_refreshShieldExcept();
+function _shieldsDownFor(webContentsId) {
+  const host = _bvHost.get(Number(webContentsId));
+  return !!(host && _shieldExcept.has(host.toLowerCase()));
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400, height: 900, minWidth: 1100, minHeight: 700,
@@ -493,6 +510,7 @@ function createWindow() {
             try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return cb({ cancel: true }); } catch (_) {}
           }
         } catch (_) {}
+        if (_shieldsDownFor(details.webContentsId)) return cb({});
         if (!_trkOn2) return cb({});
         if (details.resourceType === 'mainFrame') return cb({});
         try {
@@ -561,7 +579,11 @@ function createWindow() {
     _bvMap.delete(id);
   });
 
-  ipcMain.handle('bv:navigate',     (_e, { id, url }) => { _bvMap.get(id)?.webContents.loadURL(url).catch(()=>{}); });
+  ipcMain.handle('bv:navigate',     (_e, { id, url }) => {
+    try { _bvHost.set(Number(id), new URL(String(url)).hostname.toLowerCase()); } catch (_) {}
+    _refreshShieldExcept();
+    _bvMap.get(id)?.webContents.loadURL(url).catch(()=>{});
+  });
   ipcMain.handle('bv:set-bounds',   (_e, { id, x, y, w, h }) => { const v = _bvMap.get(id); if (v) v.setBounds({ x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h) }); });
   ipcMain.handle('bv:go-back',      (_e, id) => { const wc = _bvMap.get(id)?.webContents; if (wc?.canGoBack()) wc.goBack(); });
   ipcMain.handle('bv:go-forward',   (_e, id) => { const wc = _bvMap.get(id)?.webContents; if (wc?.canGoForward()) wc.goForward(); });
@@ -621,6 +643,7 @@ function createWindow() {
           if (s && s.bounceBlock !== false && details.resourceType !== 'mainFrame') {
             try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return callback({ cancel: true }); } catch (_) {}
           }
+          if (_shieldsDownFor(webContents.id)) return callback({ cancel: false });
           if (!_trkOn) return callback({ cancel: false });
           let hostname;
           try { hostname = new URL(details.url).hostname; } catch (_) { return callback({ cancel: false }); }
@@ -865,7 +888,7 @@ ipcMain.handle('browser:download-reveal', (_e, savePath) => {
   } catch (e) { return { ok: false, error: e.message }; }
 });
 ipcMain.handle('browser:settings-get', () => browserStore.settingsGet());
-ipcMain.handle('browser:settings-set', (_e, patch) => browserStore.settingsSet(patch));
+ipcMain.handle('browser:settings-set', (_e, patch) => { const r = browserStore.settingsSet(patch); try { _refreshShieldExcept(); } catch (_) {} try { ipcMain.emit('browser:settings-changed'); } catch (_) {} return r; });
 
 // IPC: renderer asks main to force-resize the webview guest viewport.
 // Electron v28+ does not reliably propagate CSS size changes to the guest;

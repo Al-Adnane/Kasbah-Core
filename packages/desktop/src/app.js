@@ -6675,6 +6675,47 @@ const BWR_TOOL_META = {
   settings:     { icon:'⚙️', title:'Settings & Privacy', desc:'' },
 };
 
+
+// ── Per-site shields (Brave-style) ──────────────────────────────────────────
+// Shields DOWN = tracker/bounce filtering off for this host. Use when a page
+// renders broken: if it fixes it, our filters were the cause.
+function _bwrTabHost() {
+  try { return new URL(_bwr.activeTab?.url || '').hostname.toLowerCase(); } catch (_) { return ''; }
+}
+async function bwrRenderShieldToggle(content) {
+  const host = _bwrTabHost();
+  let down = false;
+  try {
+    const st = await window.kasbah.browserSettings.get();
+    down = (st.shieldExceptions || []).map(h => String(h).toLowerCase()).includes(host);
+  } catch (_) {}
+  const row = document.createElement('div');
+  row.id = 'bwrShieldToggleRow';
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px';
+  row.innerHTML = `<span style="font-size:16px">${down ? '🛡‍' : '🛡️'}</span>
+    <span style="flex:1;font-size:12.5px">Shields <strong>${down ? 'DOWN' : 'UP'}</strong> for <strong>${esc(host || 'this site')}</strong><br>
+    <span style="color:var(--text-muted);font-size:11.5px">${down ? 'Filtering off — reload to test.' : 'Blocking trackers here.'}</span></span>
+    <button class="k-btn k-btn--small" id="bwrShieldToggleBtn">${down ? 'Shields up' : 'Shields down'}</button>`;
+  content.prepend(row);
+  document.getElementById('bwrShieldToggleBtn')?.addEventListener('click', () => bwrToggleShields());
+}
+async function bwrToggleShields() {
+  const host = _bwrTabHost();
+  if (!host) { toast('Open a site first', 'info'); return; }
+  try {
+    const st = await window.kasbah.browserSettings.get();
+    const list = (st.shieldExceptions || []).map(h => String(h).toLowerCase());
+    const i = list.indexOf(host);
+    if (i >= 0) list.splice(i, 1); else list.push(host);
+    await window.kasbah.browserSettings.set({ shieldExceptions: list });
+    const nowDown = i < 0;
+    toast(nowDown ? `Shields DOWN for ${host} — reloading` : `Shields UP for ${host} — reloading`, 'info');
+    const tab = _bwr.activeTab;
+    if (tab?.webview) { try { tab.webview.reload(); } catch (_) {} }
+    bwrRenderToolPanel('shield');
+  } catch (e) { toast('Toggle failed: ' + e.message, 'error'); }
+}
+
 function bwrRenderToolPanel(tool) {
   const meta = BWR_TOOL_META[tool] || { icon:'🛡', title: tool, desc:'' };
   document.getElementById('bwrPanelIcon').textContent = meta.icon;
@@ -6684,7 +6725,8 @@ function bwrRenderToolPanel(tool) {
   if (!content) return;
 
   if (tool === 'shield') {
-    // Shield shows last scan result — already written by bwrShieldOk/Warn
+    // Shields-down toggle lives at the top; scan result stays below.
+    bwrRenderShieldToggle(content);
     return;
   }
   if (tool === 'menu')      return bwrRenderMenu(content);

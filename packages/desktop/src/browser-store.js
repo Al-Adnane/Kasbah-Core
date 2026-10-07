@@ -98,6 +98,7 @@ const DEFAULT_SETTINGS = {
   historyEnabled: true,        // gates did-navigate logging in main.js
   queryStrip: true,            // strip utm/gclid/fbclid tracking params (beats DDG defaults)
   bounceBlock: true,           // skip known bounce trackers
+  shieldExceptions: [],        // hosts with shields DOWN (tracker+bounce filtering off)
 };
 function settingsGet() {
   if (_settingsLoaded && _settingsCache) return _settingsCache;
