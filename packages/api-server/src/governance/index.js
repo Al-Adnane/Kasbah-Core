@@ -10,12 +10,17 @@
  *   risk < 0.35  → ALLOW
  *   0.35 ≤ r < 0.70 → WARN
  *   risk ≥ 0.70  → REQUIRE_APPROVAL (per bounded-advisory-semantics invariant — never DENY)
+ *
+ * PLUS: multi-strategy defensibility scoring (QuranFrontier integration)
+ * — validates LLM output claims against available sources, scores confidence,
+ *   and flags unsupported statements / hallucination risk.
  */
 
 const promptInjection   = require('./prompt-injection.js');
 const secretLeak        = require('./secret-leak.js');
 const pii               = require('./pii.js');
 const destructiveIntent = require('./destructive-intent.js');
+const { DefensibilityOrchestrator, StrategyArchetype } = require('./quran-frontier-bridge.js');
 
 const DETECTORS = [
   { name: 'prompt-injection',   weight: 1.0, fn: promptInjection.detect },
@@ -24,11 +29,13 @@ const DETECTORS = [
   { name: 'destructive-intent', weight: 1.0, fn: destructiveIntent.detect }
 ];
 
+const DEFENSIBILITY = new DefensibilityOrchestrator();
+
 /**
  * Run the full pipeline.
  * @param {string} text
  * @param {object} ctx — optional context (currently unused, future: agent, surface, …)
- * @returns {{ verdict: 'ALLOW'|'WARN'|'REQUIRE_APPROVAL', risk: number, threats: string[], detectors: {name, risk, threats, details}[] }}
+ * @returns {{ verdict: 'ALLOW'|'WARN'|'REQUIRE_APPROVAL', risk: number, threats: string[], detectors: {name, risk, threats, details}[] , defensibility?: {score, confidence, violations, strategyScores} }}
  */
 function evaluate(text, ctx = {}) {
   const results = [];
@@ -42,7 +49,27 @@ function evaluate(text, ctx = {}) {
   const risk = +combined.toFixed(3);
   const verdict = risk >= 0.70 ? 'REQUIRE_APPROVAL' : risk >= 0.35 ? 'WARN' : 'ALLOW';
   const allThreats = [].concat(...results.map(r => r.threats));
-  return { verdict, risk, threats: allThreats, detectors: results };
+
+  // ── QuranFrontier multi-strategy defensibility scoring ──
+  // Validates LLM output claims against available sources, scores confidence,
+  // and flags unsupported statements / hallucination risk.
+  const defensibility = DEFENSIBILITY.preprocess_llm_output(
+    text,
+    ctx.query || 'analysis',
+    ctx.available_sources || []
+  );
+
+  return {
+    verdict, risk, threats: allThreats, detectors: results,
+    defensibility: {
+      score: defensibility.defensibility_score,
+      confidence: defensibility.confidence_level,
+      violations: defensibility.violations,
+      strategyScores: defensibility.strategyScores,
+      sourceCount: defensibility.source_count,
+      auditTrail: defensibility.audit_trail
+    }
+  };
 }
 
 // Convenience PII redaction (used by the proxy)

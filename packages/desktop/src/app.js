@@ -4129,18 +4129,6 @@ async function trajAnalyze() {
 /* ═══════════════════════════════════════════════════════════════════════════
    RED-TEAM — /v1/redteam/suite + /v1/redteam/run
    ═══════════════════════════════════════════════════════════════════════════ */
-let _rtInited = false;
-async function redteamInit() {
-  if (_rtInited) return; _rtInited = true;
-  try {
-    const r = await window.kasbah.api('GET', '/v1/redteam/suite');
-    const j = r.body || {};
-    const byCat = {};
-    (j.suite || []).forEach(t => byCat[t.category] = (byCat[t.category]||0)+1);
-    const cats = Object.entries(byCat).map(([k,v])=>`${k}:<strong style="color:var(--ink)">${v}</strong>`).join(' · ');
-    $('rtSuiteInfo').innerHTML = `${j.total||0} adversarial cases · ${cats}`;
-  } catch (e) { $('rtSuiteInfo').textContent = 'Suite unavailable: ' + e.message; }
-}
 async function redteamRun() {
   const btn = $('rtRunBtn'); btn.disabled = true; btn.textContent = 'Running suite…';
   $('rtProgress').textContent = 'Firing every adversarial case at the engine — this typically takes 10–30 seconds.';
@@ -4194,55 +4182,6 @@ async function redteamRun() {
 /* ═══════════════════════════════════════════════════════════════════════════════
    NEW PAGES — Digest, MCP Inventory, Multimodal, Red-Team Dashboard
    ══════════════════════════════════════════════════════════════════════════════ */
-
-// Digest page — weekly "saved you" summary from /v1/intervention/digest
-async function loadDigest() {
-  const wrap = $('digestCards');
-  if (!wrap) return;
-  wrap.innerHTML = '<div class="muted" style="padding:16px">Loading digest…</div>';
-  try {
-    const r = await window.kasbah.api('GET', '/v1/intervention/digest');
-    const j = r.body || {};
-    const events = j.events || [];
-    if (events.length === 0) {
-      wrap.innerHTML = '<div class="muted" style="padding:16px">No interventions this week. You\'re clean.</div>';
-      return;
-    }
-    wrap.innerHTML = events.map((ev, i) => `
-      <div class="digest-card" data-hc="${_h((e, el) => { toggleDigestCard(el) })}">
-        <div class="digest-card-header">
-          <span>${esc(ev.type || 'Intervention')}</span>
-          <span class="digest-card-type">${esc(ev.severity || 'info')}</span>
-        </div>
-        <div class="digest-card-expanded" style="display:none">
-          <strong>Prompt:</strong> ${esc((ev.prompt || '').slice(0, 200))}<br>
-          <strong>Action:</strong> ${esc(ev.action || 'N/A')}<br>
-          <strong>Risk:</strong> ${ev.riskScore != null ? (ev.riskScore * 100).toFixed(0) + '%' : 'N/A'}<br>
-          <strong>Time:</strong> ${esc(ev.timestamp || new Date().toISOString())}
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
-  }
-}
-function toggleDigestCard(el) {
-  const expanded = el.querySelector('.digest-card-expanded');
-  if (expanded) expanded.style.display = expanded.style.display === 'none' ? 'block' : 'none';
-}
-function exportDigest() {
-  window.kasbah.api('GET', '/v1/intervention/digest').then(r => {
-    const blob = new Blob([JSON.stringify(r.body, null, 2)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `kasbah-digest-${Date.now()}.json`; a.click();
-    URL.revokeObjectURL(url);
-    toast('Digest exported', 'success');
-  }).catch(e => toast('Export failed: ' + e.message, 'error'));
-}
-function shareDigest() {
-  toast('Share feature coming soon', 'info');
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FORENSICS — Biometric · ZK · Security · Honeytokens
@@ -4814,77 +4753,10 @@ async function loadDigest() {
   }
 }
 
-function copyDigestSlack() {
-  window.kasbah.api('GET', '/v1/intervention/digest').then(r => {
-    const j = r.body || {};
-    const slack = j.slack;
-    if (slack?.blocks) {
-      const text = slack.blocks.map(b => b.text?.text || '').join('\n');
-      navigator.clipboard.writeText(text).then(() => toast('Slack format copied', 'success'));
-    } else {
-      toast('No Slack format available', 'info');
-    }
-  }).catch(e => toast('Copy failed: ' + e.message, 'error'));
-}
 /* ═══════════════════════════════════════════════════════════════════════════════
    NEW PAGE HANDLERS — Digest, MCP, Multimodal, Red-Team (Enhanced)
    ══════════════════════════════════════════════════════════════════════════════ */
 
-// Digest — Enhanced handlers
-async function loadDigest() {
-  const wrap = $('digestCards');
-  const summaryWrap = $('digestSummaryCards');
-  if (!wrap) return;
-  wrap.innerHTML = '<div class="muted" style="padding:16px">Loading digest…</div>';
-  const period = $('digestPeriod')?.value || 'week';
-  try {
-    const r = await window.kasbah.api('GET', '/v1/intervention/digest', null, { params: { period } });
-    const j = r.body || {};
-    
-    // Update KPI cards
-    const c = j.counters || {};
-    const saved = c.saved || 0;
-    const scanned = (c.silent_pass || 0) + (c.warning_toast || 0) + (c.hard_block || 0) + (c.mute_block || 0);
-    const warned = c.warning_toast || 0;
-    const mute = c.mute_block || 0;
-    
-    if ($('digestSaved')) $('digestSaved').textContent = saved;
-    if ($('digestScanned')) $('digestScanned').textContent = scanned;
-    if ($('digestWarnings')) $('digestWarnings').textContent = warned;
-    if ($('digestMute')) $('digestMute').textContent = mute;
-    
-    // Trust grade chip
-    if ($('digestTrustGrade') && j.trustGrade) {
-      const tg = j.trustGrade;
-      $('digestTrustGrade').textContent = `${tg.grade} (${tg.score})`;
-      $('digestTrustGrade').style.display = 'inline-flex';
-      $('digestTrustGrade').className = 'trust-grade-chip ' + tg.grade.toLowerCase();
-    }
-    
-    const events = j.events || [];
-    if (events.length === 0) {
-      wrap.innerHTML = '<div class="muted" style="padding:16px">No interventions this period. You\'re clean.</div>';
-      return;
-    }
-    wrap.innerHTML = events.map((ev, i) => `
-      <div class="digest-card" data-hc="${_h((e, el) => { toggleDigestCard(el) })}">
-        <div class="digest-card-header">
-          <span>${esc(ev.type || 'Intervention')}</span>
-          <span class="digest-card-type">${esc(ev.severity || 'info')}</span>
-        </div>
-        <div class="digest-card-expanded" style="display:none">
-          <strong>Prompt:</strong> ${esc((ev.prompt || '').slice(0, 300))}<br>
-          <strong>Action:</strong> ${esc(ev.action || 'N/A')}<br>
-          <strong>Risk:</strong> ${ev.riskScore != null ? (ev.riskScore * 100).toFixed(0) + '%' : 'N/A'}<br>
-          <strong>Time:</strong> ${esc(ev.timestamp || new Date().toISOString())}<br>
-          <strong>Verdict:</strong> ${esc(ev.verdict || 'N/A')}
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    wrap.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
-  }
-}
 function toggleDigestCard(el) {
   const expanded = el.querySelector('.digest-card-expanded');
   if (expanded) expanded.style.display = expanded.style.display === 'none' ? 'block' : 'none';
@@ -8493,24 +8365,10 @@ async function vuScanDir() {
       r.results.slice(0,8).map(x=>`<div style="font-size:11.5px">${esc(x.file)}: ${x.sev} (${x.findings.length})</div>`).join('');
   } catch (e) { if ($('vuOut')) $('vuOut').textContent = e.message; }
 }
-async function llmInstall() {
-  const r = await window.kasbah.llmproxy.install();
-  if ($('agMsg')) $('agMsg').textContent = 'LLM proxy installed · blocks secrets in fetch\\n' + ($('agMsg')?.textContent||'');
-}
-async function llmUninstall() {
-  await window.kasbah.llmproxy.uninstall();
-  agStatus();
-}
 async function honeyDeploy() {
   const r = await window.kasbah.honey.deploy();
   toast('Honeytokens', `${r.count} canaries ready — they appear in clipboard watch.`, 3000);
 }
-async function honeyList() {
-  const l = await window.kasbah.honey.list();
-  if ($('agMsg')) $('agMsg').textContent = l.map(x=>`${x.label} ${x.valueHint} triggers=${x.triggers}`).join('\\n');
-}
-
-
 async function popMerkle() {
   try {
     const r = await window.kasbah.popExtra.merkle();

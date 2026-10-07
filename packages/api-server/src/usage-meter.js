@@ -115,6 +115,15 @@ function _rollIfNeeded(rec) {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
+// All tracked keys with their rolled counters (admin view for /v1/usage).
+function getAllUsage() {
+  const out = {};
+  for (const [keyId, rec] of _usage) {
+    out[keyId] = { ..._rollIfNeeded(rec) };
+  }
+  return out;
+}
+
 function recordRequest(keyId, { tier = 'free', product = 'general' } = {}) {
   const rec = _rollIfNeeded(_usage.get(keyId) || _initRecord(keyId));
   const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
@@ -262,6 +271,7 @@ module.exports = {
   PRODUCT_WEIGHTS,
   recordRequest,
   getUsage,
+  getAllUsage,
   addCredits,
   consumeCredits,
   ENFORCEMENT_COST,

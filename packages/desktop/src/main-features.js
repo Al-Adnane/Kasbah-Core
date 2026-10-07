@@ -263,83 +263,104 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   // Zero-knowledge voice-auth and silent-speech primitives (voice-privacy.js).
   // All handlers are rate-limited and never log secrets.
   const voiceRL = rateLimit('voice:*', { maxPerSecond: 5 });
-  const voiceSafe = () => {
-    if (voicePrivacy.error) return { error: 'voice-privacy module unavailable' };
-    return true;
-  };
+  const voiceSafe = () => (voicePrivacy.error ? false : true);
+  // Main-process ZK session: secrets (tokens/blinds/creds) NEVER leave this
+  // process — the renderer only ever sees public commitments and proofs.
+  let _voiceSession = null;   // { utterance, secret }  set by commit-utterance
+  let _voiceRegistry = null;  // { registry, creds }    set by build-registry
   ipcMain.handle('voice:self-test', async () => {
-    try { voiceRL(); voiceSafe() || []; return voicePrivacy.selfTest(); } catch (e) { auditError('voice:self-test', e); return { error: e.message }; }
+    try { voiceRL(); if (!voiceSafe()) return { error: 'voice-privacy module unavailable' }; return voicePrivacy.selfTest(); } catch (e) { auditError('voice:self-test', e); return { error: e.message }; }
   });
-  ipcMain.handle('voice:simulate-silent-speech', async (_e, tokens) => {
+  ipcMain.handle('voice:simulate-silent-speech', async (_e, spec) => {
     try {
       voiceRL();
       if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      const t = Array.isArray(tokens) ? tokens.map(Number) : [];
-      return voicePrivacy.simulateSilentSpeech(t);
+      // Accept a token count (number) or an array (uses its length); default 16.
+      const n = Math.min(64, Math.max(1, Number(Array.isArray(spec) ? spec.length : spec) || 16));
+      return { ok: true, tokens: voicePrivacy.simulateSilentSpeech(n) };
     } catch (e) { auditError('voice:simulate-silent-speech', e); return { error: e.message }; }
   });
   ipcMain.handle('voice:simulate-voiceprint', async (_e, seed) => {
     try {
       voiceRL();
       if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      return voicePrivacy.simulateVoiceprint(String(seed || ''));
+      return { ok: true, voiceprint: voicePrivacy.simulateVoiceprint(String(seed || '')) };
     } catch (e) { auditError('voice:simulate-voiceprint', e); return { error: e.message }; }
   });
   ipcMain.handle('voice:build-registry', async (_e, voiceprints) => {
     try {
       voiceRL();
       if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      const vp = Array.isArray(voiceprints) ? voiceprints : [];
+      const vp = (Array.isArray(voiceprints) ? voiceprints : []).map(Number);
+      if (!vp.length) return { ok: false, error: 'voiceprints required (array of ints)' };
       const { registry, creds } = voicePrivacy.buildRegistry(vp);
-      // Never return raw creds; return only registry metadata.
-      return { ok: true, registrySize: registry.length };
+      _voiceRegistry = { registry, creds };  // creds stay in main — never returned
+      return { ok: true, registrySize: registry.length, registry };
     } catch (e) { auditError('voice:build-registry', e); return { error: e.message }; }
   });
-  ipcMain.handle('voice:auth-prove', async (_e, payload) => {
+  ipcMain.handle('voice:auth-prove', async (_e, payload = {}) => {
     try {
       voiceRL();
       if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      // payload is for demo only – real app would hold private creds locally.
-      return { ok: false, error: 'demo stub – credentials must be held client-side' };
-    } catch (e) { auditError('voice:auth-prove', e); return { error: e.message }; }
+      if (!_voiceRegistry) return { ok: false, error: 'no registry session — call voice:build-registry first' };
+      const idx = Math.min(_voiceRegistry.creds.length - 1, Math.max(0, Number(payload.registryIndex) || 0));
+      const proof = voicePrivacy.voiceAuthProve(_voiceRegistry.creds[idx], _voiceRegistry.registry);
+      return { ok: true, proof };  // {freshCommitment, A, c, z} — no witness
+    } catch (e) { auditError('voice:auth-prove', e); return { ok: false, error: e.message }; }
   });
-  ipcMain.handle('voice:auth-verify', async (_e, args) => {
+  ipcMain.handle('voice:auth-verify', async (_e, args = {}) => {
     try {
       voiceRL();
-      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      return { ok: false, error: 'demo stub – verification requires registry + proof' };
-    } catch (e) { auditError('voice:auth-verify', e); return { error: e.message }; }
+      if (!voiceSafe()) return { ok: false, valid: false, error: 'voice-privacy unavailable' };
+      if (!_voiceRegistry) return { ok: false, valid: false, error: 'no registry session — call voice:build-registry first' };
+      if (!args.proof) return { ok: false, valid: false, error: 'proof required' };
+      return { ok: true, valid: !!voicePrivacy.voiceAuthVerify(_voiceRegistry.registry, args.proof) };
+    } catch (e) { auditError('voice:auth-verify', e); return { ok: false, valid: false, error: e.message }; }
   });
   ipcMain.handle('voice:commit-utterance', async (_e, tokens) => {
     try {
       voiceRL();
       if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      const t = Array.isArray(tokens) ? tokens.map(Number) : [];
-      const { utterance } = voicePrivacy.commitUtterance(t);
-      // Return only the public commitment, not the secret.
-      return { ok: true, numTokens: utterance.numTokens, commitments: utterance.commitments.slice(0, 3) };
+      const t = (Array.isArray(tokens) ? tokens : []).map(Number);
+      if (!t.length) return { ok: false, error: 'tokens required (array of ints)' };
+      const { utterance, secret } = voicePrivacy.commitUtterance(t);
+      _voiceSession = { utterance, secret };
+      // Commitments are public by construction; the secret stays in main.
+      return { ok: true, utterance };
     } catch (e) { auditError('voice:commit-utterance', e); return { error: e.message }; }
   });
-  ipcMain.handle('voice:rerandomize-utterance', async (_e, payload) => {
+  ipcMain.handle('voice:rerandomize-utterance', async () => {
     try {
       voiceRL();
       if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      return { ok: false, error: 'demo stub – requires secret' };
-    } catch (e) { auditError('voice:rerandomize-utterance', e); return { error: e.message }; }
+      if (!_voiceSession) return { ok: false, error: 'no utterance session — call voice:commit-utterance first' };
+      const r = voicePrivacy.rerandomizeUtterance(_voiceSession.utterance, _voiceSession.secret);
+      _voiceSession = { utterance: r.utterance, secret: r.secret };
+      return { ok: true, utterance: r.utterance };
+    } catch (e) { auditError('voice:rerandomize-utterance', e); return { ok: false, error: e.message }; }
   });
-  ipcMain.handle('voice:or-sigma-prove-keyword', async (_e, payload) => {
+  ipcMain.handle('voice:or-sigma-prove-keyword', async (_e, payload = {}) => {
     try {
       voiceRL();
       if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      return { ok: false, error: 'demo stub – requires utterance + secret + keyword' };
-    } catch (e) { auditError('voice:or-sigma-prove-keyword', e); return { error: e.message }; }
+      if (!_voiceSession) return { ok: false, error: 'no utterance session — call voice:commit-utterance first' };
+      const keyword = Number(payload.keyword);
+      if (!Number.isFinite(keyword)) return { ok: false, error: 'keyword (number) required' };
+      const proof = voicePrivacy.orSigmaProveKeyword(_voiceSession.utterance, _voiceSession.secret, keyword);
+      return { ok: true, proof };  // {A, c, z} only — witness never included
+    } catch (e) { auditError('voice:or-sigma-prove-keyword', e); return { ok: false, error: e.message }; }
   });
-  ipcMain.handle('voice:or-sigma-verify-keyword', async (_e, payload) => {
+  ipcMain.handle('voice:or-sigma-verify-keyword', async (_e, payload = {}) => {
     try {
       voiceRL();
-      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
-      return { ok: false, error: 'demo stub – requires utterance + keyword + proof' };
-    } catch (e) { auditError('voice:or-sigma-verify-keyword', e); return { error: e.message }; }
+      if (!voiceSafe()) return { ok: false, valid: false, error: 'voice-privacy unavailable' };
+      const utt = payload.utterance || (_voiceSession && _voiceSession.utterance);
+      const keyword = Number(payload.keyword);
+      if (!utt || !Number.isFinite(keyword) || !payload.proof) {
+        return { ok: false, valid: false, error: 'utterance, keyword and proof required' };
+      }
+      return { ok: true, valid: !!voicePrivacy.orSigmaVerifyKeyword(utt, keyword, payload.proof) };
+    } catch (e) { auditError('voice:or-sigma-verify-keyword', e); return { ok: false, valid: false, error: e.message }; }
   });
 
   // ─── Pro license ──────────────────────────────────────────────────────────────
@@ -1164,10 +1185,10 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   });
 
   // ─── Voice: silent-speech ZK + anonymous voiceprint auth (merge) ────────────
-  // The EARLIER block (L270-337) already registered voice:self-test etc.
-  // A second registration throws and killed every handler after it
-  // (mic/camera/enforcer/app) — the root cause of the blank-shell bug.
-  // These variants handle a different shape; expose only the missing ones.
+  // The EARLIER block registers voice:self-test … voice:auth-verify with real
+  // main-process ZK sessions (secrets never leave main). Only the two keyword
+  // channels that exist nowhere else are added here; ipcMain.handle throws on
+  // duplicates, so registration failures are swallowed.
   const _voiceReg = (ch, fn) => { try { ipcMain.handle(ch, fn); } catch (_) {} };
   _voiceReg('voice:prove-keyword', (_e, body = {}) => {
     try {
@@ -1186,18 +1207,6 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
       const valid = v.orSigmaVerifyKeyword(body.utterance, Number(body.keyword), body.proof);
       return { ok: true, valid: !!valid };
     } catch (e) { return { ok: false, valid: false, error: e.message }; }
-  });
-  _voiceReg('voice:auth-prove', (_e, body = {}) => {
-    try {
-      const v = require('./voice-privacy.js');
-      return { ok: true, ...v.voiceAuthProve(Number(body.voiceprint), body.registry) };
-    } catch (e) { return { ok: false, error: e.message }; }
-  });
-  _voiceReg('voice:auth-verify', (_e, body = {}) => {
-    try {
-      const v = require('./voice-privacy.js');
-      return v.voiceAuthVerify(body.registry, body.proof);
-    } catch (e) { return { ok: false, error: e.message }; }
   });
 
   // ─── Local nomos ethics (packages/nomos-engine) ─────────────────────────────
@@ -1249,7 +1258,12 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   });
   ipcMain.handle('bio:status', () => {
     const local = bioLocal?.status ? bioLocal.status() : { available: false };
-    return { guard: 'BIOMETRIC_GUARD', package: local, apiStub: '/v1/biometric/* needs package' };
+    return {
+      guard: 'BIOMETRIC_GUARD',
+      package: local,
+      localChannels: ['bio:scan', 'bio:rppg', 'bio:neural-fingerprint', 'bio:voice-clone', 'bio:neural-codec'],
+      apiStub: '/v1/biometric/* API mirror still needs the package — local bio:* channels are wired',
+    };
   });
   ipcMain.handle('bio:rppg', (_e, body = {}) => {
     if (bioLocal?.rppg) return bioLocal.rppg(body.frames || [], Number(body.frameRate) || 30);

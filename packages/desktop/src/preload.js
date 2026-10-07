@@ -58,7 +58,19 @@ contextBridge.exposeInMainWorld('kasbah', {
   },
 
   // ── API Proxy ──────────────────────────────────────────────────────────────
-  api:     (method, endpoint, body) => ipcRenderer.invoke('api', method, endpoint, body),
+  // opts.params (4th arg) is serialized into the query string — the main
+  // handler only understands (method, endpoint, body).
+  api:     (method, endpoint, body, opts) => {
+    if (opts && opts.params && typeof endpoint === 'string') {
+      try {
+        const qs = new URLSearchParams(
+          Object.entries(opts.params).filter(([, v]) => v !== undefined && v !== null)
+        ).toString();
+        if (qs) endpoint += (endpoint.includes('?') ? '&' : '?') + qs;
+      } catch (_) {}
+    }
+    return ipcRenderer.invoke('api', method, endpoint, body);
+  },
   // Generic request helper used by premium feature controllers
   request: (method, endpoint, body) => ipcRenderer.invoke('api', method, endpoint, body),
   // Base URL for direct browser navigation (compliance PDF)

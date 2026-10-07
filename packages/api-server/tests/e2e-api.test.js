@@ -148,7 +148,7 @@ describe('E2E: Core API Endpoints', () => {
   describe('GET /v1/stream', () => {
     it('should establish SSE connection', (done) => {
       const http = require('http');
-      const req = http.get('http://localhost:3000/v1/stream', { headers: { Accept: 'text/event-stream' } }, (res) => {
+      const req = http.get('http://localhost:8788/v1/stream', { headers: { Accept: 'text/event-stream' } }, (res) => {
         expect(res.statusCode).toBe(200);
         expect(res.headers['content-type']).toMatch(/text\/event-stream/);
         req.destroy();

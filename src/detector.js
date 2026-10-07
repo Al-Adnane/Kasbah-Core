@@ -143,6 +143,14 @@ function normalizeHomoglyphs(text) {
   result = result.replace(/[\ufe00-\ufe0f]/g, '');
   // Step 4: Strip combining diacritical marks (Zalgo text U+0300-036F)
   result = result.replace(/[\u0300-\u036f]/g, '');
+  // Step 4b: Arabic tashkeel + orthographic folding (ported: QuranFrontier
+  // normalize_arabic — closes diacritic-concealment bypass in Arabic text)
+  result = result
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/[إأآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/ـ/g, '');
   // Step 5: Normalize smart quotes and dashes
   result = result
     .replace(/[\u2018\u2019\u201a\u201b]/g, "'")

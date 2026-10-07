@@ -838,6 +838,19 @@ module.exports = function registerVpnHandlers(ipcMain, ctx) {
 
   ipcMain.handle('vpn:receipts-verify', () => vpn().receipts.verifyAll());
 
+  // Export all VPN receipts to a JSON file in the user's documents folder.
+  ipcMain.handle('vpn:export-receipts', () => {
+    try {
+      const { receipts } = vpn();
+      const list = receipts.list();
+      const dir = app.getPath('documents') || app.getPath('home');
+      const file = path.join(dir, `kasbah-vpn-receipts-${Date.now()}.json`);
+      fs.writeFileSync(file, JSON.stringify(list, null, 2));
+      _fsAudit?.append?.({ event: 'vpn_receipts_export', count: list.length, file });
+      return { ok: true, count: list.length, file };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
+
   // ─── Helper install ───────────────────────────────────────────────────────────
   ipcMain.handle('vpn:helper-status', () => ({ installed: fs.existsSync(SUDOERS_PATH), path: SUDOERS_PATH }));
 

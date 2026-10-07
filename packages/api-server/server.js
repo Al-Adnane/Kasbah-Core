@@ -1249,7 +1249,11 @@ app.get('/v1/usage/me', (req, res) => {
 
 // ─── /v1/usage — admin: all keys, all usage ────────────────────────────────
 app.get('/v1/usage', (req, res) => {
-  res.json({ usage: usageMeter.getAllUsage() });
+  try {
+    res.json({ usage: usageMeter.getAllUsage() });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // products-router.js REMOVED (2026-07): it registered its own competing copy
