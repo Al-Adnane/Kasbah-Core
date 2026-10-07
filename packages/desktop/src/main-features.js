@@ -1559,6 +1559,18 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   })();
 
   // ─── Microphone Sentinel ─────────────────────────────────────────────────────
+  // Sentinel → Stone: alerts also push to the local consent-gate aura so
+  // the Stone/wearable glows without the renderer. Best-effort, never throws.
+  function pushStoneAlert(source, detail) {
+    try {
+      const http = require('http');
+      const body = JSON.stringify({ source, detail: detail || {} });
+      const req = http.request({ host: '127.0.0.1', port: Number(process.env.KASBAH_API_PORT) || 8788, path: '/v1/consent/stone/local-user/alert', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }, timeout: 3000 }, (res) => { res.resume(); });
+      req.on('error', () => {});
+      req.on('timeout', () => { try { req.destroy(); } catch (_) {} });
+      req.write(body); req.end();
+    } catch (_) {}
+  }
   if (micSentinel && !micSentinel.error) {
     micSentinel.start((result) => {
       try {
@@ -1568,6 +1580,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
         if (enforcer && !enforcer.error && result.alerts) {
           result.alerts.forEach(a => enforcer.actOnAlert({ device: 'mic', name: a.name, pid: a.pid }).catch(() => {}));
         }
+        if (result.alerts && result.alerts.length) pushStoneAlert('mic-unapproved', { app: result.alerts[0]?.name, count: result.alerts.length });
       } catch (_) {}
     });
   }
@@ -1582,6 +1595,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
         if (enforcer && !enforcer.error && result.alerts) {
           result.alerts.forEach(a => enforcer.actOnAlert({ device: 'camera', name: a.name, pid: a.pid }).catch(() => {}));
         }
+        if (result.alerts && result.alerts.length) pushStoneAlert('camera-capture', { app: result.alerts[0]?.name, count: result.alerts.length });
       } catch (_) {}
     });
   }

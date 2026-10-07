@@ -1221,6 +1221,9 @@ function selfTest() {
   var t20 = classify("John Smith\n123 Main St, Springfield\n(555) 123-4567\nDOB: 03/15/1985");
   results.push({ name: "soil_weak_signals", pass: t20.risk >= 30 });
   // v3.5 PPP #17: Breathe Easy — educational context should reduce FP
+  // NOTE: reset burst tracker first — the 20 preceding high-risk vectors
+  // would otherwise trigger burst amplification and mask the filter.
+  resetBehavioral();
   var t21 = classify("Example: password format is password=value");
   results.push({ name: "breathe_easy_filter", pass: t21.risk < 40 });
   // v3.5 PPP #17: Breathe Easy — real password must still trigger
@@ -1239,6 +1242,8 @@ function selfTest() {
   results.push({ name: "ml_entropy_score", pass: t24.risk >= 80 && t24.entropy_score !== undefined });
 
   // v1.0.0 NEW TEST 25: Context Filter — educational context should reduce risk
+  // NOTE: same burst-tracker isolation as t21 (see above).
+  resetBehavioral();
   var t25 = classify("// Example: password=test123 (for documentation only)");
   results.push({ name: "context_filter_edu", pass: t25.risk < 40 && t25.context_filtered === true });
 

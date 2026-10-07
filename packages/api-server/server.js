@@ -4847,6 +4847,11 @@ app.post('/v1/consent/request', async (req, res) => {
     const tier = ssiGate.classifyRisk(tool || action || '', { ...(args || {}), _action: action || '' });
     const ks = ssiGate.killSwitchGuard({ requestingAgent: actor, targetAgent: targetAgent || actor, tier });
     if (!ks.ok) return res.status(403).json({ error: ks.reason, tier: tier.tier, killSwitch: true });
+    // Snooze: SOFT-tier requests from a snoozed agent are quietly logged,
+    // never tapped. NEVER applies to PHYSICAL_TOUCH / kill-switch.
+    if (tier.tier === 'SOFT_GATE' && !tier.killSwitch && consentGate.snoozed(actor)) {
+      return res.json({ ok: true, snoozed: true, tier: tier.tier, reason: 'soft-tier snoozed (tap stays dark)' });
+    }
     let ign = ignition, gov = null;
     if (text && ign === undefined) {
       try {
