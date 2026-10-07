@@ -4836,11 +4836,17 @@ app.get('/v1/proxy/info', (req, res) => {
 // software-issued (signer soft-stone); the verify path dispatches on signer
 // so a hardware secure element slots in without changing the gate.
 const consentGate = require('./src/consent-gate.js');
+const ssiGate = require('./src/ssi-gate.js'); // risk tiers + per-user stones + kill-switch guard
 try { consentGate.init({ dataDir: KASBAH_DATA_DIR }); } catch (e) { console.warn('[consent-gate] persistence off:', e.message); }
 app.post('/v1/consent/request', async (req, res) => {
   try {
-    const { action, tool, scalars = [], n = 0, agree = 0, text, ignition, coherence, delegationThreshold, epsilon } = req.body || {};
+    const { action, tool, scalars = [], n = 0, agree = 0, text, ignition, coherence, delegationThreshold, epsilon, agentId, targetAgent, args } = req.body || {};
     if (!action) return res.status(400).json({ error: 'action required' });
+    const actor = String(agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
+    // Risk-tier pre-check: kill-switch patterns force PHYSICAL_TOUCH + per-agent binding
+    const tier = ssiGate.classifyRisk(tool || action || '', { ...(args || {}), _action: action || '' });
+    const ks = ssiGate.killSwitchGuard({ requestingAgent: actor, targetAgent: targetAgent || actor, tier });
+    if (!ks.ok) return res.status(403).json({ error: ks.reason, tier: tier.tier, killSwitch: true });
     let ign = ignition, gov = null;
     if (text && ign === undefined) {
       try {
@@ -4853,8 +4859,9 @@ app.post('/v1/consent/request', async (req, res) => {
       action, tool, scalars, n, agree,
       ignition: !!ign, coherence: !!coherence,
       delegationThreshold: delegationThreshold ?? 0.5, epsilon,
+      agentId: actor, targetAgent: targetAgent || actor,
     });
-    res.status(202).json({ ...gate, govern: gov, graceMs: consentGate.GRACE_MS, stoneRequired: true });
+    res.status(202).json({ ...gate, govern: gov, graceMs: consentGate.GRACE_MS, stoneRequired: true, tier: tier.tier });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/v1/consent/pending', (_req, res) => res.json({ pending: consentGate.pending() }));
@@ -4875,14 +4882,29 @@ app.get('/v1/consent/stats', (_req, res) => {
   res.json({ day, taps, denies, requests: reqs, tapsPerDayTarget: 3, overBudget: taps > 3, totalEvents: rows.length });
 });
 app.post('/v1/consent/tap/:id', (req, res) => {
-  const r = consentGate.tap(req.params.id, { approve: req.body?.approve !== false });
+  const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
+  const r = consentGate.tap(req.params.id, { approve: req.body?.approve !== false, agentId: actor });
   if (r.error) return res.status(404).json(r);
+  if (r.reason && /cross-agent/.test(r.reason)) return res.status(403).json(r);
   res.json(r);
 });
 app.post('/v1/consent/deny/:id', (req, res) => {
-  const r = consentGate.deny(req.params.id);
+  const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
+  const r = consentGate.deny(req.params.id, { agentId: actor });
   if (r.error) return res.status(404).json(r);
   res.json(r);
+});
+// Per-user Stone lifecycle: create/status/revoke. Creation is implicit on
+// first requestTap (stone derived per agentId); these endpoints expose it.
+app.post('/v1/consent/stone', (req, res) => {
+  const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
+  res.json({ ok: true, ...consentGate.stoneStatus(actor), ssi: { stoneId: ssiGate.stoneFor(actor).stoneId } });
+});
+app.get('/v1/consent/stone/:agentId', (req, res) => {
+  res.json({ ok: true, ...consentGate.stoneStatus(req.params.agentId) });
+});
+app.delete('/v1/consent/stone/:agentId', (req, res) => {
+  res.json(consentGate.revokeStone(req.params.agentId));
 });
 console.log('[consent-gate] mounted — request/pending/tap/deny/audit (5s grace, soft-stone signer)');
 

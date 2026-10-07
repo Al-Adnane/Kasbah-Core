@@ -230,17 +230,23 @@ function canonicalGate(payload) {
   return JSON.stringify(ordered);
 }
 
-function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ignition = false, coherence = false, delegationThreshold = 0.5, epsilon = 1e-6 } = {}) {
+function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ignition = false, coherence = false, delegationThreshold = 0.5, epsilon = 1e-6, agentId = 'anonymous', targetAgent = null } = {}) {
   const id = 'tap_' + crypto.randomBytes(8).toString('hex');
   const { S, veto, vetoBy } = fuse(scalars, [], epsilon);
   const cert = certify(n, agree);
+  // Kill-switch guard at request time: cross-agent kill requests are
+  // rejected before a tap is even minted — no tap, no replay surface.
+  const ks = killSwitchGuard({ requestingAgent: agentId, targetAgent: targetAgent || agentId, action, tool });
   const gate = {
-    id, action, tool: tool || null,
+    id, action, tool: tool || null, agentId: String(agentId || 'anonymous'),
+    targetAgent: String(targetAgent || agentId || 'anonymous'),
+    stoneId: stoneIdFor(agentId),
     S: +S.toFixed(6), veto: !!veto, vetoBy: vetoBy ? { tier: vetoBy.tier, value: vetoBy.value } : null,
     certified: cert.certified, n: cert.n, agree: cert.a, dissent: cert.d, faultBound: cert.f,
     ignition: !!ignition, coherence: !!coherence, delegationThreshold,
-    gateReady: !!ignition && !!coherence && S > delegationThreshold && cert.certified,
-    createdAt: Date.now(), status: 'awaiting-tap',
+    gateReady: !!ignition && !!coherence && S > delegationThreshold && cert.certified && ks.ok,
+    killSwitch: !ks.ok || !!ks.needsLocalTap,
+    createdAt: Date.now(), status: ks.ok ? 'awaiting-tap' : 'denied-killswitch',
   };
   let resolve;
   const done = new Promise((res) => { resolve = res; });
@@ -262,12 +268,19 @@ function requestTap(opts = {}) {
   return gate;
 }
 
-function tap(id, { approve = true } = {}) {
+function tap(id, { approve = true, agentId = null } = {}) {
   const p = _pending.get(id);
   if (!p) return { error: 'unknown or expired tap request' };
+  const g = p.gate;
+  // Agent binding: only the owning agent's tap counts. A tap presented
+  // for another agent is rejected — this is the remote kill-switch block.
+  const actor = String(agentId || g.agentId || 'anonymous');
+  if (actor !== String(g.agentId || 'anonymous')) {
+    _auditLog({ event: 'TAP_CROSS_AGENT_DENIED', id, action: g.action, actor, owner: g.agentId });
+    return { ...g, A: 0, reason: 'cross-agent tap denied: remote kill-switch blocked' };
+  }
   clearTimeout(p.timer);
   _pending.delete(id);
-  const g = p.gate;
   if (!approve) {
     g.status = 'denied-human';
     _auditLog({ event: 'TAP_DENIED', id, action: g.action });
@@ -275,9 +288,9 @@ function tap(id, { approve = true } = {}) {
     return { ...g, A: 0 };
   }
   const ah = auditHead();
-  const canonical = canonicalGate({ id, action: g.action, tool: g.tool, S: g.S, n: g.n, agree: g.agree, ah, ts: Date.now() });
-  const att = stoneSign(canonical);
-  const ok = stoneVerify(canonical, att);
+  const canonical = canonicalGate({ id, action: g.action, tool: g.tool, S: g.S, n: g.n, agree: g.agree, ah, ts: Date.now(), agentId: g.agentId, stoneId: g.stoneId });
+  const att = stoneSign(canonical, g.agentId);
+  const ok = stoneVerify(canonical, att, g.agentId);
   const A = g.gateReady && ok === true ? 1 : 0;
   g.status = A ? 'authorized' : 'denied-gate';
   // Tap elevates epistemic tier: MODEL (statistical guess) -> RULE (human warrant).
@@ -287,7 +300,29 @@ function tap(id, { approve = true } = {}) {
   return { ...g, A, attestation: att, canonical };
 }
 
-function deny(id) { return tap(id, { approve: false }); }
+function deny(id, opts = {}) { return tap(id, { approve: false, ...opts }); }
+// Revocation: drop an agent's in-memory keys + pending taps. Disk keys
+// remain but are orphaned — a new session mints a new agentId/stoneId.
+// Old signatures stay verifiable for audit; new taps require the new stone.
+function revokeStone(agentId = 'anonymous') {
+  const id = String(agentId || 'anonymous');
+  let dropped = 0;
+  for (const [tid, p] of _pending.entries()) {
+    if (String(p.gate.agentId) === id) {
+      clearTimeout(p.timer);
+      _pending.delete(tid);
+      dropped++;
+      p.resolve({ ...p.gate, A: 0, status: 'denied-revoked', reason: 'stone revoked' });
+    }
+  }
+  _softKeys.delete(id);
+  _auditLog({ event: 'STONE_REVOKED', agentId: id, stoneId: stoneIdFor(id), droppedTaps: dropped });
+  return { ok: true, agentId: id, stoneId: stoneIdFor(id), droppedTaps: dropped };
+}
+function stoneStatus(agentId = 'anonymous') {
+  const id = String(agentId || 'anonymous');
+  return { agentId: id, stoneId: stoneIdFor(id), signer: 'soft-stone', hardware: false, pendingTaps: [..._pending.values()].filter((p) => String(p.gate.agentId) === id).length };
+}
 function pending() {
   return [..._pending.entries()].map(([id, p]) => ({ id, action: p.gate.action, tool: p.gate.tool, S: p.gate.S, ageMs: Date.now() - p.gate.createdAt, graceMs: GRACE_MS }));
 }
@@ -297,5 +332,5 @@ module.exports = {
   TIER_ORDER, TIER_TAU, GRACE_MS,
   tierTau, fuse, certify, salience, assess, init,
   stoneSign, stoneVerify, canonicalGate, stoneIdFor, killSwitchGuard,
-  startTap, requestTap, tap, deny, pending, auditLog,
+  startTap, requestTap, tap, deny, pending, auditLog, revokeStone, stoneStatus,
 };
