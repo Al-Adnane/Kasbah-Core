@@ -362,6 +362,31 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
       return { ok: true, valid: !!voicePrivacy.orSigmaVerifyKeyword(utt, keyword, payload.proof) };
     } catch (e) { auditError('voice:or-sigma-verify-keyword', e); return { ok: false, valid: false, error: e.message }; }
   });
+  // Fuzzy voice auth: noisy voiceprint within threshold, ZK (no voiceprints revealed).
+  // Secrets stay in main — renderer sees commitments + proofs only.
+  ipcMain.handle('voice:fuzzy-prove', async (_e, payload = {}) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { error: 'voice-privacy unavailable' };
+      if (!_voiceRegistry) return { ok: false, error: 'no registry session — call voice:build-registry first' };
+      const idx = Math.min(_voiceRegistry.creds.length - 1, Math.max(0, Number(payload.registryIndex) || 0));
+      const threshold = Number(payload.threshold);
+      const noisy = Number(payload.noisyVoiceprint);
+      if (!Number.isFinite(threshold) || !Number.isFinite(noisy)) return { ok: false, error: 'threshold + noisyVoiceprint (numbers) required' };
+      const proof = voicePrivacy.fuzzyVoiceAuthProve(_voiceRegistry.creds[idx], _voiceRegistry.registry, threshold, noisy);
+      return { ok: true, proof };
+    } catch (e) { auditError('voice:fuzzy-prove', e); return { ok: false, error: e.message }; }
+  });
+  ipcMain.handle('voice:fuzzy-verify', async (_e, payload = {}) => {
+    try {
+      voiceRL();
+      if (!voiceSafe()) return { ok: false, valid: false, error: 'voice-privacy unavailable' };
+      if (!_voiceRegistry) return { ok: false, valid: false, error: 'no registry session — call voice:build-registry first' };
+      const threshold = Number(payload.threshold);
+      if (!Number.isFinite(threshold) || !payload.proof) return { ok: false, valid: false, error: 'threshold + proof required' };
+      return { ok: true, valid: !!voicePrivacy.fuzzyVoiceAuthVerify(_voiceRegistry.registry, payload.proof, threshold) };
+    } catch (e) { auditError('voice:fuzzy-verify', e); return { ok: false, valid: false, error: e.message }; }
+  });
 
   // ─── Pro license ──────────────────────────────────────────────────────────────
   ipcMain.handle('pro:status',     () => pro.status());

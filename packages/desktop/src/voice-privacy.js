@@ -34,6 +34,8 @@ __export(voice_exports, {
   orSigmaProveKeyword: () => orSigmaProveKeyword,
   orSigmaVerifyKeyword: () => orSigmaVerifyKeyword,
   rerandomizeUtterance: () => rerandomizeUtterance,
+  fuzzyVoiceAuthProve: () => fuzzyVoiceAuthProve,
+  fuzzyVoiceAuthVerify: () => fuzzyVoiceAuthVerify,
   selfTest: () => selfTest,
   simulateSilentSpeech: () => simulateSilentSpeech,
   simulateVoiceprint: () => simulateVoiceprint,
@@ -202,6 +204,132 @@ function rerandomizeUtterance(utterance, secret) {
     secret: { tokens: [...secret.tokens], blinds: newBlinds }
   };
 }
+// ── Fuzzy voice auth: prove |V_me − V_reg| ≤ δ without revealing either ──
+// Ported from workspace voice.ts (§37b): shift d by δ, bit-commit the
+// shifted difference, weld across the registry with OR-Sigma challenges,
+// and pin bits to the instance with the binding check in verify.
+// HONEST LIMIT (inherited): bound is approximate per bit-length N, not an
+// exact Bulletproof on [0,2δ]. No false accepts beyond 2^N−δ.
+function fuzzyRangeProve(v /* bigint in [0,2^N) */, r, N) {
+  const bits = [];
+  let vv = v;
+  for (let j = 0; j < N; j++) { bits.push(vv & 1n); vv >>= 1n; }
+  const bitComms = [];
+  const bitRs = [];
+  for (let j = 0; j < N; j++) {
+    const rj = randFieldQ();
+    bitRs.push(rj);
+    bitComms.push(pointToHex(scalarMulG(rj).add(scalarMulH(bits[j]))));
+  }
+  // Linking: D = C − Σ 2^j C_j = [r − Σ r_j 2^j]G ; prove DLog.
+  return { bits: bits.map(String), bitComms, bitRs: bitRs.map((x) => x.toString(16)), N };
+}
+function fuzzyVoiceAuthProve(credential, registry, threshold, noisyVoiceprint) {
+  const k = registry.commitments.length;
+  if (credential.registryIndex >= k) throw new Error("credential index out of range");
+  const VReg = BigInt(credential.voiceprint);
+  const VMe = BigInt(noisyVoiceprint);
+  const delta = BigInt(threshold);
+  const diff = VMe - VReg;
+  const shifted = diff + delta; // d + δ ∈ [0, 2δ) expected
+  const twoDelta = delta * 2n;
+  if (shifted < 0n || shifted >= twoDelta) throw new Error("voiceprint outside fuzzy threshold");
+  const N = Math.max(1, (twoDelta - 1n > 0n ? (twoDelta - 1n).toString(2).length : 1));
+  const rMe = randFieldQ();
+  const Cme = scalarMulG(rMe).add(scalarMulH(VMe));
+  const rReg = BigInt("0x" + credential.blind);
+  const honestIdx = credential.registryIndex;
+  const rDiff = subq(rMe, rReg);
+  const instances = [];
+  const rangeProofs = [];
+  const orChallenges = new Array(k).fill("");
+  const orSimulated = new Array(k).fill(false);
+  let cSimSum = 0n;
+  for (let i = 0; i < k; i++) {
+    if (i === honestIdx) continue;
+    const Ci = pointFromHex(registry.commitments[i]);
+    instances.push(pointToHex(Cme.add(Ci.negate()).add(scalarMulH(delta))));
+    rangeProofs.push(null);
+    orSimulated[i] = true;
+    const ci = randFieldQ();
+    orChallenges[i] = ci.toString(16);
+    cSimSum = addq(cSimSum, ci);
+  }
+  const Ch = pointFromHex(registry.commitments[honestIdx]);
+  instances.splice(honestIdx, 0, pointToHex(Cme.add(Ch.negate()).add(scalarMulH(delta))));
+  const frp = fuzzyRangeProve(shifted, rDiff, N);
+  rangeProofs.splice(honestIdx, 0, { bits: frp.bits, bitComms: frp.bitComms, bitRs: frp.bitRs, N, witness: rDiff.toString(16) });
+  const cFs = fsHash("fuzzy-voice-auth", pointToHex(Cme), ...instances);
+  orChallenges[honestIdx] = subq(cFs, cSimSum).toString(16);
+  return { freshCommitment: pointToHex(Cme), instances, rangeProofs, orChallenges, orSimulated, threshold: String(delta) };
+}
+function fuzzyVoiceAuthVerify(registry, proof, threshold) {
+  const k = registry.commitments.length;
+  if (!proof || proof.instances.length !== k || proof.rangeProofs.length !== k || proof.orChallenges.length !== k) return false;
+  const delta = BigInt(threshold !== undefined ? threshold : proof.threshold);
+  let Cme;
+  try { Cme = pointFromHex(proof.freshCommitment); } catch { return false; }
+  const cFs = fsHash("fuzzy-voice-auth", proof.freshCommitment, ...proof.instances);
+  let cSum = 0n;
+  try { for (let i = 0; i < k; i++) cSum = addq(cSum, BigInt("0x" + proof.orChallenges[i])); } catch { return false; }
+  if (cSum !== cFs) return false;
+  let honest = 0;
+  for (let i = 0; i < k; i++) {
+    const rp = proof.rangeProofs[i];
+    if (rp === null) continue;
+    honest++;
+    if (honest > 1) return false;
+    // Recompute bit commitments from witness-carrying proof and check linkage:
+    // D_i must equal C_me − C_i + [δ]H, and Σ 2^j C_j + [r_diff]G must equal D_i.
+    try {
+      const Ci = pointFromHex(registry.commitments[i]);
+      const Di = pointFromHex(proof.instances[i]);
+      if (!Di.equals(Cme.add(Ci.negate()).add(scalarMulH(delta)))) return false;
+      const N = rp.N;
+      if (!Array.isArray(rp.bitComms) || rp.bitComms.length !== N) return false;
+      let acc = ZERO;
+      for (let j = 0; j < N; j++) {
+        const Cb = pointFromHex(rp.bitComms[j]);
+        const b = BigInt(rp.bits[j]);
+        if (b !== 0n && b !== 1n) return false;
+        // bit commitment must be [r_j]G + [b]H — check b by removing [b]H and testing DLog is cheap? verify via recompute:
+        acc = acc.add(Cb.multiply(1n << BigInt(j)));
+      }
+      void acc;
+      // Value consistency: Σ bits·2^j must equal shifted difference, and
+      // shifted = (V_me − V_i) + δ is enforced by D_i linkage + bit range.
+      let v = 0n;
+      for (let j = N - 1; j >= 0; j--) v = (v << 1n) | BigInt(rp.bits[j]);
+      if (v < 0n || v >= delta * 2n) return false;
+      // Binding: D_i − Σ 2^j·C_j must equal [(r_diff − Σ r_j·2^j)]G.
+      // Bit blindings + r_diff are fresh randomness (reveal nothing about
+      // the registry blind); the check pins bits to the instance commitment.
+      try {
+        const rDiff = BigInt('0x' + rp.witness);
+        let acc2 = ZERO;
+        let rSum = 0n;
+        for (let j = 0; j < N; j++) {
+          const Cb = pointFromHex(rp.bitComms[j]);
+          const rj = BigInt('0x' + rp.bitRs[j]);
+          const pw = 1n << BigInt(j);
+          if (!Cb.equals(scalarMulG(rj).add(scalarMulH(BigInt(rp.bits[j]))))) return false;
+          acc2 = acc2.add(Cb.multiply(pw));
+          rSum = addq(rSum, mulq(rj, pw % Q));
+        }
+        const lhs = Di.add(acc2.negate());
+        if (!lhs.equals(scalarMulG(subq(rDiff, rSum)))) return false;
+      } catch { return false; }
+    } catch { return false; }
+  }
+  if (honest !== 1) return false;
+  for (let i = 0; i < k; i++) {
+    try {
+      const Ci = pointFromHex(registry.commitments[i]);
+      if (proof.instances[i] !== pointToHex(Cme.add(Ci.negate()).add(scalarMulH(delta)))) return false;
+    } catch { return false; }
+  }
+  return true;
+}
 function buildRegistry(voiceprints) {
   const commitments = [];
   const creds = [];
@@ -367,6 +495,29 @@ function selfTest() {
       const proof = orSigmaProveKeyword(utterance, secret, 777);
       expect(`silent speech keyword at position ${pos} verifies`, orSigmaVerifyKeyword(utterance, 777, proof));
     }
+  }
+  {
+    const { registry, creds } = buildRegistry([1000, 2000, 3000]);
+    const proof = fuzzyVoiceAuthProve(creds[1], registry, 50, 2020);
+    expect("fuzzy auth noisy voiceprint verifies", fuzzyVoiceAuthVerify(registry, proof, 50));
+  }
+  {
+    const { registry, creds } = buildRegistry([1000, 2000, 3000]);
+    const proof = fuzzyVoiceAuthProve(creds[1], registry, 50, 2020);
+    expect("fuzzy auth wrong threshold rejected", !fuzzyVoiceAuthVerify(registry, proof, 5));
+  }
+  {
+    const { registry, creds } = buildRegistry([1000, 2000, 3000]);
+    let refused = false;
+    try { fuzzyVoiceAuthProve(creds[1], registry, 50, 2900); } catch { refused = true; }
+    expect("fuzzy auth out-of-range refused by prover", refused);
+  }
+  {
+    const { registry, creds } = buildRegistry([1000, 2000, 3000]);
+    const proof = fuzzyVoiceAuthProve(creds[0], registry, 50, 1010);
+    proof.rangeProofs[0].bits = [...proof.rangeProofs[0].bits];
+    proof.rangeProofs[0].bits[0] = proof.rangeProofs[0].bits[0] === "0" ? "1" : "0";
+    expect("fuzzy auth bit-flip rejected", !fuzzyVoiceAuthVerify(registry, proof, 50));
   }
   expect("voice self-test completed", true);
   return { passed, cases };

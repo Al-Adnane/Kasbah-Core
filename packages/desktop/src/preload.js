@@ -586,6 +586,8 @@ contextBridge.exposeInMainWorld('kasbah', {
     rerandomizeUtterance:  (body) => ipcRenderer.invoke('voice:rerandomize-utterance', body || {}),
     orSigmaProveKeyword:   (body) => ipcRenderer.invoke('voice:or-sigma-prove-keyword', body || {}),
     orSigmaVerifyKeyword:  (body) => ipcRenderer.invoke('voice:or-sigma-verify-keyword', body || {}),
+    fuzzyProve:            (body) => ipcRenderer.invoke('voice:fuzzy-prove', body || {}),
+    fuzzyVerify:           (body) => ipcRenderer.invoke('voice:fuzzy-verify', body || {}),
   },
   nomos: {
     status:   ()     => ipcRenderer.invoke('nomos:status'),
