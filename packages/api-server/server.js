@@ -4944,6 +4944,22 @@ app.post('/v1/consent/stone/:agentId/away-alert', (req, res) => {
   const { sealed, source } = req.body || {};
   res.json(consentGate.queueAwayAlert(req.params.agentId, sealed, source));
 });
+// ─── Physical products engine: one host engine for Stone/Ring/Band/USB/NFC ───
+const physProducts = require('./src/physical-products.js');
+app.get('/v1/products/physical', (_req, res) => res.json({ ok: true, products: physProducts.PRODUCTS }));
+app.post('/v1/consent/stone/:agentId/device', (req, res) => res.json(physProducts.pairDevice(req.params.agentId, req.body || {})));
+app.get('/v1/consent/stone/:agentId/devices', (req, res) => res.json({ ok: true, devices: physProducts.devicesFor(req.params.agentId) }));
+app.post('/v1/consent/stone/:agentId/device/:deviceId/heartbeat', (req, res) => res.json(physProducts.heartbeat(req.params.agentId, req.params.deviceId, req.body || {})));
+app.post('/v1/consent/stone/:agentId/fanout-alert', (req, res) => {
+  const { source, detail } = req.body || {};
+  if (!source) return res.status(400).json({ error: 'source required' });
+  res.json(physProducts.fanoutAlert(req.params.agentId, source, detail));
+});
+app.post('/v1/consent/attest', (req, res) => {
+  const r = physProducts.acceptAttestation(req.body || {});
+  if (!r.ok) return res.status(403).json(r);
+  res.json(r);
+});
 // Sentinel → Stone: detection modules push alerts; Stone glows + logs.
 // Alert never approves anything — ambient surface only.
 app.post('/v1/consent/stone/:agentId/alert', (req, res) => {
