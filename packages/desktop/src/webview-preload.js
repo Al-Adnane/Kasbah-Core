@@ -31,8 +31,22 @@ function mulberry32(seed) {
   };
 }
 
+// Captcha/challenge pages (Turnstile, hCaptcha, reCAPTCHA) verify the
+// browser by reading canvas/WebGL/navigator signals. Spoofing those values
+// makes their bot-score diverge forever, so the challenge loops on
+// "verifying" and never passes. Skip ALL fingerprint protection on
+// challenge hosts — the user explicitly chose to prove humanity there.
+const CHALLENGE_HOSTS = new Set([
+  'challenges.cloudflare.com',
+  'js.hcaptcha.com', 'newassets.hcaptcha.com',
+  'www.google.com', 'www.gstatic.com', // reCAPTCHA frames
+]);
+function isChallengeHost() {
+  try { return CHALLENGE_HOSTS.has(location.hostname.toLowerCase()); } catch (_) { return false; }
+}
 (function protectFingerprinting() {
   if (!FP_PROTECTION_ENABLED) return;
+  if (isChallengeHost()) return;
   try {
     const origin = location.origin;
     const rng = mulberry32(seedFor(origin));
