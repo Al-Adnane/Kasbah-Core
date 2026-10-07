@@ -23,6 +23,20 @@ function filesOf(t) {
 }
 const findings = [];
 let scanned = 0;
+// Bulletproofing: never print raw secrets into the report. Samples are
+// redacted (keys, tokens, digests masked) — finding + location + reason
+// is the evidence; the secret itself must not travel.
+function redact(s) {
+  return String(s || '')
+    .replace(/sk-(live|test|ant)[-A-Za-z0-9_]+/g, (m) => m.slice(0, 7) + '…' + ' (redacted ' + (m.length - 7) + ' chars)')
+    .replace(/AIza[A-Za-z0-9_-]{35}/g, 'AIza…(redacted)')
+    .replace(/xox[bpas]-[A-Za-z0-9-]+/g, (m) => m.slice(0, 4) + '…(redacted)')
+    .replace(/AKIA[A-Z0-9]{16}/g, 'AKIA…(redacted)')
+    .replace(/(password\s*[:=]\s*)\S+/gi, '$1(redacted)')
+    .replace(/(api[_-]?key\s*[:=]\s*)\S+/gi, '$1(redacted)')
+    .replace(/(bearer\s+)[A-Za-z0-9._-]+/gi, '$1(redacted)')
+    .replace(/-----BEGIN [A-Z ]+-----/g, '-----BEGIN (redacted)-----');
+}
 for (const f of filesOf(target)) {
   const lines = fs.readFileSync(f, 'utf8').split('\n');
   lines.forEach((line, i) => {
@@ -31,7 +45,7 @@ for (const f of filesOf(target)) {
     try {
       const r = detector.classify(line.slice(0, 4000));
       if (r.decision === 'DENY' || r.risk >= 70) {
-        findings.push({ file: path.basename(f), line: i + 1, risk: r.risk, decision: r.decision, reason: r.reason, sample: line.slice(0, 160) });
+        findings.push({ file: path.basename(f), line: i + 1, risk: r.risk, decision: r.decision, reason: r.reason, sample: redact(line.slice(0, 160)) });
       }
     } catch (_) {}
   });
