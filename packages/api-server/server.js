@@ -4906,6 +4906,24 @@ app.get('/v1/consent/stone/:agentId', (req, res) => {
 app.delete('/v1/consent/stone/:agentId', (req, res) => {
   res.json(consentGate.revokeStone(req.params.agentId));
 });
+// Aurora: ambient functions beyond tap. Gestures never approve
+// destructive/exfil/kill — enforced inside gesture().
+app.get('/v1/consent/stone/:agentId/aura', (req, res) => {
+  res.json({ ok: true, aura: consentGate.auraFor(req.params.agentId), presence: consentGate.presenceFor(req.params.agentId), functions: consentGate.STONE_FUNCTIONS });
+});
+app.post('/v1/consent/stone/:agentId/aura', (req, res) => {
+  const { glow, color } = req.body || {};
+  res.json({ ok: true, aura: consentGate.setAura(req.params.agentId, glow, color) });
+});
+app.post('/v1/consent/stone/:agentId/gesture', (req, res) => {
+  res.json(consentGate.gesture(req.params.agentId, req.body?.name, req.body || {}));
+});
+app.post('/v1/consent/stone/:agentId/presence', (req, res) => {
+  res.json({ ok: true, presence: consentGate.presence(req.params.agentId, req.body || {}) });
+});
+app.get('/v1/consent/stone/:agentId/history', (req, res) => {
+  res.json({ ok: true, history: consentGate.tapHistory(req.params.agentId, Number(req.query.limit) || 20) });
+});
 console.log('[consent-gate] mounted — request/pending/tap/deny/audit (5s grace, soft-stone signer)');
 
 // ─── Advisory Suite: removed 2026-07 ──────────────────────────────────────────

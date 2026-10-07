@@ -237,6 +237,7 @@ function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ign
   // Kill-switch guard at request time: cross-agent kill requests are
   // rejected before a tap is even minted — no tap, no replay surface.
   const ks = killSwitchGuard({ requestingAgent: agentId, targetAgent: targetAgent || agentId, action, tool });
+  const tierInfo = assess({ action, tool, args });
   const gate = {
     id, action, tool: tool || null, agentId: String(agentId || 'anonymous'),
     targetAgent: String(targetAgent || agentId || 'anonymous'),
@@ -246,6 +247,7 @@ function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ign
     ignition: !!ignition, coherence: !!coherence, delegationThreshold,
     gateReady: !!ignition && !!coherence && S > delegationThreshold && cert.certified && ks.ok,
     killSwitch: !ks.ok || !!ks.needsLocalTap,
+    tier: tierInfo.tier, tierReasons: tierInfo.reasons, tapRequired: tierInfo.tapRequired,
     createdAt: Date.now(), status: ks.ok ? 'awaiting-tap' : 'denied-killswitch',
   };
   let resolve;
@@ -321,7 +323,92 @@ function revokeStone(agentId = 'anonymous') {
 }
 function stoneStatus(agentId = 'anonymous') {
   const id = String(agentId || 'anonymous');
-  return { agentId: id, stoneId: stoneIdFor(id), signer: 'soft-stone', hardware: false, pendingTaps: [..._pending.values()].filter((p) => String(p.gate.agentId) === id).length };
+  const aura = _aura.get(id) || { glow: 'idle', color: 'soft-white', since: Date.now() };
+  return { agentId: id, stoneId: stoneIdFor(id), signer: 'soft-stone', hardware: false, pendingTaps: [..._pending.values()].filter((p) => String(p.gate.agentId) === id).length, aura, capabilities: STONE_FUNCTIONS };
+}
+// ---- Aurora: ambient functions beyond tap ----
+// The Stone is an ambient presence device, not a button. Aura states drive
+// the LED/haptic language on hardware; on software they are API-visible
+// state the desktop renders. No aura function ever weakens the tap
+// requirement for PHYSICAL_TOUCH — gestures only ever approve READ/SOFT,
+// never destructive/exfil/kill.
+const STONE_FUNCTIONS = [
+  'tap', 'double-tap', 'hold-to-deny', 'presence', 'aura-glow',
+  'find-my-stone', 'duress', 'snooze-soft', 'tap-history',
+];
+const _aura = new Map(); // agentId -> { glow, color, since }
+const _presence = new Map(); // agentId -> { near, rssi, updatedAt }
+const _snooze = new Map(); // agentId -> untilMs (SOFT-tier batch approve)
+function setAura(agentId, glow, color) {
+  const id = String(agentId || 'anonymous');
+  const valid = ['idle', 'awaiting-tap', 'authorized', 'denied', 'duress-silent', 'finding', 'low-batt'];
+  const g = valid.includes(glow) ? glow : 'idle';
+  _aura.set(id, { glow: g, color: color || _auraColor(g), since: Date.now() });
+  _auditLog({ event: 'AURA', agentId: id, glow: g });
+  return _aura.get(id);
+}
+function _auraColor(glow) {
+  return { idle: 'soft-white', 'awaiting-tap': 'pulse-amber', authorized: 'flash-green', denied: 'red', 'duress-silent': 'dark', finding: 'pulse-blue', 'low-batt': 'slow-amber' }[glow] || 'soft-white';
+}
+function auraFor(agentId) {
+  // Derived aura: pending tap overrides everything except duress.
+  const id = String(agentId || 'anonymous');
+  const cur = _aura.get(id);
+  if (cur && (cur.glow === 'duress-silent' || cur.glow === 'finding') && Date.now() - cur.since < 60000) return cur;
+  const pend = [..._pending.values()].some((p) => String(p.gate.agentId) === id);
+  if (pend) return { glow: 'awaiting-tap', color: 'pulse-amber', since: Date.now() };
+  return cur || { glow: 'idle', color: 'soft-white', since: Date.now() };
+}
+// Gestures. double-tap: approve oldest pending READ/SOFT tap only (never
+// destructive/exfil/kill). hold: deny all pending. duress (tap-hold-tap):
+// silently deny + raise silent alarm. find: buzz aura for 60 s.
+function gesture(agentId = 'anonymous', name = '', opts = {}) {
+  const id = String(agentId || 'anonymous');
+  const mine = [..._pending.entries()].filter(([, p]) => String(p.gate.agentId) === id);
+  if (name === 'double-tap') {
+    const soft = mine.find(([, p]) => !p.gate.killSwitch && !p.gate.highConsequence && (p.gate.tier !== 'DESTRUCTIVE' && p.gate.tier !== 'EXFIL' && !/destructive|exfil/i.test((p.gate.tierReasons || []).join(' '))));
+    if (!soft) return { ok: false, reason: 'no soft tap pending (gestures never approve destructive/exfil/kill)' };
+    return { ok: true, approved: tap(soft[0], { agentId: id, approve: true }) };
+  }
+  if (name === 'hold-to-deny') {
+    let n = 0;
+    for (const [tid] of mine) { tap(tid, { agentId: id, approve: false }); n++; }
+    setAura(id, 'denied', 'red');
+    return { ok: true, denied: n };
+  }
+  if (name === 'duress') {
+    for (const [tid] of mine) { tap(tid, { agentId: id, approve: false }); }
+    setAura(id, 'duress-silent', 'dark');
+    _auditLog({ event: 'DURESS', agentId: id, stoneId: stoneIdFor(id), note: 'silent alarm: all pending denied' });
+    return { ok: true, silent: true };
+  }
+  if (name === 'find-my-stone') {
+    setAura(id, 'finding', 'pulse-blue');
+    return { ok: true, aura: _aura.get(id) };
+  }
+  if (name === 'snooze-soft') {
+    // Batch-quiet SOFT-tier requests for 10 min. READ unaffected (already dark).
+    // Never applies to PHYSICAL_TOUCH/dead destructive/kill.
+    _snooze.set(id, Date.now() + 10 * 60 * 1000);
+    _auditLog({ event: 'SNOOZE_SOFT', agentId: id, until: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
+    return { ok: true, untilMs: _snooze.get(id) };
+  }
+  return { ok: false, reason: 'unknown gesture' };
+}
+function snoozed(agentId) {
+  const until = _snooze.get(String(agentId || 'anonymous')) || 0;
+  if (Date.now() > until) { _snooze.delete(String(agentId || 'anonymous')); return false; }
+  return true;
+}
+function presence(agentId = 'anonymous', body = {}) {
+  const id = String(agentId || 'anonymous');
+  _presence.set(id, { near: !!body.near, rssi: Number(body.rssi) || null, updatedAt: Date.now() });
+  return _presence.get(id);
+}
+function presenceFor(agentId) { return _presence.get(String(agentId || 'anonymous')) || { near: false, rssi: null, updatedAt: 0 }; }
+function tapHistory(agentId = 'anonymous', limit = 20) {
+  const id = String(agentId || 'anonymous');
+  return _audit.filter((e) => e.agentId === id || e.actor === id).slice(-limit).reverse();
 }
 function pending() {
   return [..._pending.entries()].map(([id, p]) => ({ id, action: p.gate.action, tool: p.gate.tool, S: p.gate.S, ageMs: Date.now() - p.gate.createdAt, graceMs: GRACE_MS }));
@@ -333,4 +420,5 @@ module.exports = {
   tierTau, fuse, certify, salience, assess, init,
   stoneSign, stoneVerify, canonicalGate, stoneIdFor, killSwitchGuard,
   startTap, requestTap, tap, deny, pending, auditLog, revokeStone, stoneStatus,
+  setAura, auraFor, gesture, snoozed, presence, presenceFor, tapHistory, STONE_FUNCTIONS,
 };
