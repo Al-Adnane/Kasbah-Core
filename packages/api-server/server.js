@@ -4924,6 +4924,13 @@ app.post('/v1/consent/stone/:agentId/presence', (req, res) => {
 app.get('/v1/consent/stone/:agentId/history', (req, res) => {
   res.json({ ok: true, history: consentGate.tapHistory(req.params.agentId, Number(req.query.limit) || 20) });
 });
+// Sentinel → Stone: detection modules push alerts; Stone glows + logs.
+// Alert never approves anything — ambient surface only.
+app.post('/v1/consent/stone/:agentId/alert', (req, res) => {
+  const { source, detail } = req.body || {};
+  if (!source) return res.status(400).json({ error: 'source required', known: Object.keys(consentGate.ALERT_AURA) });
+  res.json(consentGate.sentinelAlert(req.params.agentId, source, detail));
+});
 console.log('[consent-gate] mounted — request/pending/tap/deny/audit (5s grace, soft-stone signer)');
 
 // ─── Advisory Suite: removed 2026-07 ──────────────────────────────────────────

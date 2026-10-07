@@ -406,6 +406,29 @@ function presence(agentId = 'anonymous', body = {}) {
   return _presence.get(id);
 }
 function presenceFor(agentId) { return _presence.get(String(agentId || 'anonymous')) || { near: false, rssi: null, updatedAt: 0 }; }
+// Sentinel alert → aura. Detection modules (mic/camera sentinels,
+// biometric detectors, voice-privacy) push events here; the Stone
+// surfaces them as ambient glow + haptic. Alert never auto-approves
+// anything — it only lights the Stone and logs.
+const ALERT_AURA = {
+  'mic-unapproved': ['denied', 'red'],
+  'mic-recording': ['awaiting-tap', 'pulse-amber'],
+  'camera-unapproved': ['denied', 'red'],
+  'camera-capture': ['awaiting-tap', 'pulse-amber'],
+  'silent-speech-suspected': ['awaiting-tap', 'pulse-amber'],
+  'voice-clone-suspected': ['denied', 'red'],
+  'rppg-suspected': ['awaiting-tap', 'pulse-amber'],
+  'neural-codec-suspected': ['awaiting-tap', 'pulse-amber'],
+  'steganography-suspected': ['awaiting-tap', 'pulse-amber'],
+  'all-clear': ['idle', 'soft-white'],
+};
+function sentinelAlert(agentId = 'anonymous', source = '', detail = {}) {
+  const id = String(agentId || 'anonymous');
+  const [glow, color] = ALERT_AURA[source] || ['awaiting-tap', 'pulse-amber'];
+  setAura(id, glow, color);
+  const row = _auditLog({ event: 'SENTINEL_ALERT', agentId: id, stoneId: stoneIdFor(id), source, glow, detail: detail && typeof detail === 'object' ? detail : { note: String(detail || '') } });
+  return { ok: true, aura: _aura.get(id), audit: row };
+}
 function tapHistory(agentId = 'anonymous', limit = 20) {
   const id = String(agentId || 'anonymous');
   return _audit.filter((e) => e.agentId === id || e.actor === id).slice(-limit).reverse();
@@ -420,5 +443,5 @@ module.exports = {
   tierTau, fuse, certify, salience, assess, init,
   stoneSign, stoneVerify, canonicalGate, stoneIdFor, killSwitchGuard,
   startTap, requestTap, tap, deny, pending, auditLog, revokeStone, stoneStatus,
-  setAura, auraFor, gesture, snoozed, presence, presenceFor, tapHistory, STONE_FUNCTIONS,
+  setAura, auraFor, gesture, snoozed, presence, presenceFor, tapHistory, STONE_FUNCTIONS, sentinelAlert, ALERT_AURA,
 };
