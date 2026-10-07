@@ -335,6 +335,7 @@ function stoneStatus(agentId = 'anonymous') {
 const STONE_FUNCTIONS = [
   'tap', 'double-tap', 'hold-to-deny', 'presence', 'aura-glow',
   'find-my-stone', 'duress', 'snooze-soft', 'tap-history',
+  'wearable-pair', 'away-mode', 'surrounding-sense', 'private-relay',
 ];
 const _aura = new Map(); // agentId -> { glow, color, since }
 const _presence = new Map(); // agentId -> { near, rssi, updatedAt }
@@ -406,6 +407,68 @@ function presence(agentId = 'anonymous', body = {}) {
   return _presence.get(id);
 }
 function presenceFor(agentId) { return _presence.get(String(agentId || 'anonymous')) || { near: false, rssi: null, updatedAt: 0 }; }
+// ---- Wearable (ring / band): away-from-computer Kasbah ----
+// Design contract:
+//  1) Aware of surroundings: the wearable pairs to the Stone and carries
+//     the same sentinel-alert feed (mic/camera/silent-speech/voice-clone/
+//     rppg) as haptic + glow, delivered over BLE — no phone screen needed.
+//  2) Very private: all classification happens on-device (wearable MCU or
+//     paired phone enclave). The relay is a dumb encrypted pipe: phone
+//     forwards opaque sealed boxes, never sees content. No cloud, ever.
+//     Away mode degrades gracefully: urgent alerts queue as sealed boxes
+//     and deliver on reconnect; NOTHING is sent in cleartext.
+// Away = computer BLE lost, wearable still near user. In away mode the
+// wearable becomes the primary surface: it can deny (hold) and duress,
+// but can NEVER approve destructive/exfil/kill — same rule as gestures.
+const _wearables = new Map(); // agentId -> { wearableId, kind, pubkey, pairedAt, lastSeen }
+const _awayQueue = new Map(); // agentId -> [ sealed alert boxes ]
+function pairWearable(agentId = 'anonymous', body = {}) {
+  const id = String(agentId || 'anonymous');
+  const rec = {
+    wearableId: String(body.wearableId || 'wear-' + crypto.randomBytes(4).toString('hex')),
+    kind: /ring|band|fit|watch/i.test(String(body.kind || '')) ? String(body.kind) : 'ring',
+    pubkey: body.pubkey || null, // wearable's public key for sealed boxes
+    pairedAt: Date.now(), lastSeen: Date.now(),
+  };
+  _wearables.set(id, rec);
+  _auditLog({ event: 'WEARABLE_PAIRED', agentId: id, stoneId: stoneIdFor(id), wearableId: rec.wearableId, kind: rec.kind });
+  return { ok: true, ...rec, stoneId: stoneIdFor(id) };
+}
+function wearableFor(agentId) { return _wearables.get(String(agentId || 'anonymous')) || null; }
+function awayMode(agentId = 'anonymous') {
+  // Away = computer presence stale (>60 s) AND wearable recently seen.
+  const id = String(agentId || 'anonymous');
+  const comp = presenceFor(id);
+  const w = _wearables.get(id);
+  const compGone = Date.now() - (comp.updatedAt || 0) > 60000;
+  const wearNear = w && Date.now() - w.lastSeen < 120000;
+  const away = !!(compGone && wearNear);
+  return { away, computerNear: !compGone, wearableNear: !!wearNear, wearable: w || null };
+}
+function wearableHeartbeat(agentId = 'anonymous', body = {}) {
+  const id = String(agentId || 'anonymous');
+  const w = _wearables.get(id);
+  if (!w) return { ok: false, reason: 'no wearable paired' };
+  w.lastSeen = Date.now();
+  if (body.rssi !== undefined) w.rssi = Number(body.rssi);
+  // Flush queued sealed boxes on reconnect.
+  const q = _awayQueue.get(id) || [];
+  _awayQueue.delete(id);
+  return { ok: true, away: awayMode(id).away, flushed: q.length, boxes: q };
+}
+// Queue a sealed alert box for away delivery. The server never sees
+// content: `sealed` is opaque bytes encrypted to the wearable pubkey
+// by the detector. Server stores + forwards only.
+function queueAwayAlert(agentId = 'anonymous', sealed = '', source = '') {
+  const id = String(agentId || 'anonymous');
+  if (!sealed) return { ok: false, reason: 'sealed box required (server never sees content)' };
+  const q = _awayQueue.get(id) || [];
+  if (q.length >= 50) q.shift();
+  q.push({ sealed, source, queuedAt: Date.now() });
+  _awayQueue.set(id, q);
+  _auditLog({ event: 'AWAY_QUEUED', agentId: id, source, bytes: String(sealed).length });
+  return { ok: true, queued: q.length };
+}
 // Sentinel alert → aura. Detection modules (mic/camera sentinels,
 // biometric detectors, voice-privacy) push events here; the Stone
 // surfaces them as ambient glow + haptic. Alert never auto-approves
@@ -444,4 +507,5 @@ module.exports = {
   stoneSign, stoneVerify, canonicalGate, stoneIdFor, killSwitchGuard,
   startTap, requestTap, tap, deny, pending, auditLog, revokeStone, stoneStatus,
   setAura, auraFor, gesture, snoozed, presence, presenceFor, tapHistory, STONE_FUNCTIONS, sentinelAlert, ALERT_AURA,
+  pairWearable, wearableFor, awayMode, wearableHeartbeat, queueAwayAlert,
 };

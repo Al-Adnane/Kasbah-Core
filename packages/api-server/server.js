@@ -4924,6 +4924,21 @@ app.post('/v1/consent/stone/:agentId/presence', (req, res) => {
 app.get('/v1/consent/stone/:agentId/history', (req, res) => {
   res.json({ ok: true, history: consentGate.tapHistory(req.params.agentId, Number(req.query.limit) || 20) });
 });
+// Wearable (ring/band): pair, heartbeat, away status, sealed alert queue.
+// Privacy rule: server stores/forwards opaque sealed boxes only.
+app.post('/v1/consent/stone/:agentId/wearable', (req, res) => {
+  res.json(consentGate.pairWearable(req.params.agentId, req.body || {}));
+});
+app.get('/v1/consent/stone/:agentId/wearable', (req, res) => {
+  res.json({ ok: true, wearable: consentGate.wearableFor(req.params.agentId), away: consentGate.awayMode(req.params.agentId) });
+});
+app.post('/v1/consent/stone/:agentId/wearable/heartbeat', (req, res) => {
+  res.json(consentGate.wearableHeartbeat(req.params.agentId, req.body || {}));
+});
+app.post('/v1/consent/stone/:agentId/away-alert', (req, res) => {
+  const { sealed, source } = req.body || {};
+  res.json(consentGate.queueAwayAlert(req.params.agentId, sealed, source));
+});
 // Sentinel → Stone: detection modules push alerts; Stone glows + logs.
 // Alert never approves anything — ambient surface only.
 app.post('/v1/consent/stone/:agentId/alert', (req, res) => {
