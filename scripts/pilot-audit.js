@@ -5,6 +5,8 @@
  * Usage: node scripts/pilot-audit.js <logfile-or-dir> [out.md]
  * Scans agent logs with the Kasbah detector + governance, outputs a
  * findings report the prospect can read in 5 minutes.
+ * PRIVACY: runs 100% local. No network calls, no telemetry, no data
+ * leaves the machine. Safe for proprietary logs — nothing is uploaded.
  */
 const fs = require('fs');
 const path = require('path');
@@ -37,6 +39,7 @@ for (const f of filesOf(target)) {
 findings.sort((a, b) => b.risk - a.risk);
 const md = `# Kasbah Pilot Audit — ${new Date().toISOString().slice(0, 10)}
 _Lines scanned: ${scanned} · Findings: ${findings.length} · Engine: kasbah-sentinel (28/28 self-test)_
+_Run 100% locally — no data left your machine._
 
 ## Verdict: ${findings.length ? 'ACTION REQUIRED' : 'CLEAN'}
 ${findings.length ? `Your agent logs contain **${findings.length} high-risk events** that executed without a consent gate. Each one below would have required a physical Stone tap under Kasbah.` : 'No high-risk agent actions found in the scanned logs.'}
