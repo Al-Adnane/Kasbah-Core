@@ -204,6 +204,17 @@ class ComplianceReportGenerator:
             if not related:
                 related = filtered[:len(filtered) // len(self.ISO27001_CONTROLS)]
 
+            if not related:
+                # Honest: no evidence maps to this control — report as
+                # not-assessed, never as implemented. Claiming otherwise
+                # fabricates assurance.
+                controls_status[control_id] = {
+                    "name": control_name,
+                    "implementation_status": "not-assessed",
+                    "effectiveness": "unknown",
+                    "evidence_count": 0,
+                }
+                continue
             controls_status[control_id] = {
                 "name": control_name,
                 "implementation_status": "implemented",

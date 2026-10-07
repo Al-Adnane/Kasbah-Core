@@ -1,4 +1,8 @@
-// Adversarial agent runtime skeleton
+// Adversarial agent runtime skeleton — STUB, NOT ENFORCEMENT.
+// trigger() returns a constant { verdict: 'pending' } and performs no
+// governance. Do not route production decisions through this module;
+// use @kasbah/control or the api-server /v1/govern path.
+const STUB_NOTICE = 'mcise agent-runtime is a skeleton: verdicts are always pending';
 class AgentRuntime {
   constructor(audit, ladder) {
     this.audit = audit;

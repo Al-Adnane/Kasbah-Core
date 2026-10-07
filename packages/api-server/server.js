@@ -9040,7 +9040,9 @@ try {
   app.post('/v1/mcise/agents/trigger', async (req, res) => {
     try {
       const result = await agentRuntime.trigger(req.body.agentId, req.body.input);
-      res.json({ ok: true, result });
+      // Honest: mcise agent-runtime is a skeleton — verdicts are always
+      // pending, never governance. Production decisions use /v1/govern.
+      res.json({ ok: true, result, stub: true, notice: 'skeleton runtime: verdict always pending; use /v1/govern for enforcement' });
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 

@@ -70,8 +70,13 @@ class MerkleTree:
         return hash_val == root
 
 
-class DilithiumSigner:
-    """Dilithium lattice-based signatures (SHA-256 fallback)"""
+class HmacSha256Signer:
+    """HMAC-SHA256 message authentication — NOT lattice crypto.
+
+    Previously named DilithiumSigner; renamed because it never implemented
+    Dilithium (no module-lattice arithmetic anywhere in this file). Use the
+    ML-DSA receipts in packages/kasbah-receipts for real post-quantum
+    signatures. Kept wire-compatible (same methods, same dict shapes)."""
     
     def __init__(self, mode: str = 'dilithium2'):
         self.mode = mode
@@ -113,8 +118,11 @@ class DilithiumSigner:
         return len(signature.get('signature', '')) == 64
 
 
-class SPHINCSSigner:
-    """SPHINCS+ hash-based signatures (Merkle fallback)"""
+class MerkleHmacSigner:
+    """Merkle-tree + HMAC authentication — NOT SPHINCS+.
+
+    Previously named SPHINCSSigner; renamed for the same reason as above:
+    no SPHINCS+ construction here, only a Merkle tree over HMAC leaves."""
     
     def __init__(self, mode: str = 'sphincs-sha2-128s-simple'):
         self.mode = mode
@@ -242,3 +250,7 @@ class QuantumSafeLedger:
 
 
 __all__ = ['MerkleTree', 'DilithiumSigner', 'SPHINCSSigner', 'QuantumSafeLedger']
+
+# Back-compat aliases (deprecated — import the honest names instead).
+DilithiumSigner = HmacSha256Signer
+SPHINCSSigner = MerkleHmacSigner

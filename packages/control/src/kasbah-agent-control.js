@@ -109,10 +109,12 @@ class KasbahAgentControl {
       return this._decision('DENY', requestId, { reason: 'toctou_violation', detail: toctouViolation }, toctouSnapshot, start);
     }
 
-    // Map Sentinel risk to decision
+    // Map Sentinel risk to decision. Honor an explicit sentinel DENY even
+    // when numeric risk is low (hard-rule path) — fail-closed.
     const risk = sentinelResult.overallRisk || 0;
     let verdict;
-    if (risk >= 0.7)      verdict = 'DENY';
+    if (sentinelResult.decision === 'DENY') verdict = 'DENY';
+    else if (risk >= 0.7)      verdict = 'DENY';
     else if (risk >= 0.4) verdict = 'WARN';
     else                  verdict = 'ALLOW';
 
@@ -751,4 +753,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = { KasbahAgentControl, PROXY_PORT, LLM_API_PATTERNS };
+module.exports = { KasbahAgentControl, PROXY_PORT, LLM_API_PATTERNS, runAsClaudeCodeHook };
+KasbahAgentControl.runAsClaudeCodeHook = runAsClaudeCodeHook;

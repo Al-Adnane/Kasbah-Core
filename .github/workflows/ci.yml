@@ -1,0 +1,23 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+      - run: npm test
+      - run: node tests/capabilities.test.js
+      - run: node tests/capability-packages.test.js
+      - run: node packages/control/tests/run-tests.js
+      - run: node -e "const d=require('./src/detector.js');const t=d.selfTest();if(t.passed!==t.total)throw new Error(t.passed+'/'+t.total);console.log('detector',t.passed+'/'+t.total)"
+      - run: node bench/detection-scorecard.js

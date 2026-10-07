@@ -251,6 +251,13 @@ class GovernanceEngine {
     const allowed = this.policy.governance.allowed_domains || [];
 
     if (allowed.length === 0) return null; // No whitelist
+    // Unspecified target ('*' / empty) carries no domain claim to verify —
+    // skip (content-based detection still applies). Denying here turned
+    // every target-less check (llm_call, agent_message) into a false DENY.
+    if (!target || target === '*') return null;
+    // Tool/message verbs carry tool names or agent ids in target, not
+    // domains (e.g. target 'Read'). Only URL-like targets get checked.
+    if (!/[.:/]/.test(String(target))) return null;
 
     const domain = this.extractDomain(target);
     const match = allowed.some(d => domain.includes(d) || d.includes(domain));
