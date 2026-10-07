@@ -4929,6 +4929,26 @@ app.post('/v1/consent/stone/:agentId/presence', (req, res) => {
 app.get('/v1/consent/stone/:agentId/history', (req, res) => {
   res.json({ ok: true, history: consentGate.tapHistory(req.params.agentId, Number(req.query.limit) || 20) });
 });
+// ─── Sensor firewall: purpose-registered, time-boxed mic/camera access ───
+const sensorFw = require('./src/sensor-firewall.js');
+app.post('/v1/sensor/register', (req, res) => res.json(sensorFw.register(req.body?.app, req.body?.purposes)));
+app.post('/v1/sensor/request', (req, res) => {
+  const r = sensorFw.request(req.body?.app, req.body?.sensor, req.body?.purpose, req.body?.seconds);
+  if (!r.ok) return res.status(403).json(r);
+  res.json(r);
+});
+app.get('/v1/sensor/check', (req, res) => res.json(sensorFw.check(req.query.app, req.query.sensor)));
+app.post('/v1/sensor/revoke', (req, res) => res.json(sensorFw.revoke(req.body?.app, req.body?.sensor)));
+app.get('/v1/sensor/receipts', (req, res) => res.json({ receipts: sensorFw.receipts(Number(req.query.limit) || 100) }));
+// Micro-TTL execution tickets: tap mints, execution consumes. Single-use,
+// 300 ms TTL, tool+args bound. REPLAY/EXPIRED/TOOL_MISMATCH/MAC_FAIL deny.
+app.post('/v1/consent/ticket/use', (req, res) => {
+  const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
+  const { ticket, tool, args } = req.body || {};
+  const r = consentGate.verifyTicket(actor, ticket, tool || '', args || {});
+  if (!r.ok) return res.status(403).json({ ok: false, ...r });
+  res.json({ ok: true, admitted: true });
+});
 // Wearable (ring/band): pair, heartbeat, away status, sealed alert queue.
 // Privacy rule: server stores/forwards opaque sealed boxes only.
 app.post('/v1/consent/stone/:agentId/wearable', (req, res) => {

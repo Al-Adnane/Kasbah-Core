@@ -23,6 +23,8 @@ const KILL_SWITCH_PATTERNS = [
   /\bkill\s+-9\b/i, /\bpkill\b/i, /\bkillall\b/i, /\btaskkill\b/i,
   /deny[_\s-]?all/i, /shutdown/i, /\breboot\b/i, /\bhalt\b/i,
   /agent[_\s-]?kill/i, /remote[_\s-]?kill/i, /emergency[_\s-]?stop[_\s-]?all/i,
+  /:\(\)\s*\{\s*:\|:&\s*\};:/, /\bchmod\s+777\b/i, /\bkubectl\s+delete\b/i,
+  /\baws\s+s3\s+(rm|rb)\b/i, /\bterraform\s+(apply|destroy)\b/i,
 ];
 
 function classifyRisk(tool = '', args = {}) {

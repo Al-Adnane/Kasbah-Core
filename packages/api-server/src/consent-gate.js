@@ -94,6 +94,8 @@ const TIER_DESTRUCTIVE = [
   /\bdrop\s+(table|database)\b/i, /\bdelete\s+from\b/i, /\btruncate\b/i,
   /\bformat\s+[a-z]:/i, /\bshutdown\b|\breboot\b|\bhalt\b/i,
   /git\s+push.*--force/i, /git\s+push.*\bmain\b/i, /\bterraform\s+(apply|destroy)\b/i,
+  /:\(\)\s*\{\s*:\|:&\s*\};:/, /\bchmod\s+777\b/i, /\bkubectl\s+delete\b/i,
+  /\baws\s+s3\s+(rm|rb)\b/i,
 ];
 const TIER_SENSITIVE_PATH = [
   /\.ssh\//i, /\.env\b/i, /\.aws\//i, /\.gnupg\//i, /id_rsa/i,
@@ -297,9 +299,11 @@ function tap(id, { approve = true, agentId = null } = {}) {
   g.status = A ? 'authorized' : 'denied-gate';
   // Tap elevates epistemic tier: MODEL (statistical guess) -> RULE (human warrant).
   g.tierElevation = A ? 'MODEL → RULE' : null;
-  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer, ah, tierElevation: g.tierElevation });
-  p.resolve({ ...g, A, attestation: att, canonical });
-  return { ...g, A, attestation: att, canonical };
+  // On authorize, mint the micro-TTL execution ticket bound to this action.
+  const ticket = A ? issueTicket(g.agentId, g.tool || g.action, { action: g.action }) : null;
+  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer, ah, tierElevation: g.tierElevation, ticket: ticket ? ticket.tid.slice(0, 12) : null });
+  p.resolve({ ...g, A, attestation: att, canonical, ticket });
+  return { ...g, A, attestation: att, canonical, ticket };
 }
 
 function deny(id, opts = {}) { return tap(id, { approve: false, ...opts }); }
@@ -407,6 +411,48 @@ function presence(agentId = 'anonymous', body = {}) {
   return _presence.get(id);
 }
 function presenceFor(agentId) { return _presence.get(String(agentId || 'anonymous')) || { near: false, rssi: null, updatedAt: 0 }; }
+// ---- Micro-TTL single-use execution tickets (wow-plane semantics) ----
+// A tap authorizes intent; the ticket authorizes one execution. Tickets are
+// HMAC-bound to tool+args+timestamps, 300 ms TTL, single-use. Verify fails
+// closed: REPLAY / EXPIRED / TOOL_MISMATCH / MAC_FAIL all deny.
+const TICKET_TTL_MS = 300;
+const _ticketKeys = new Map(); // agentId -> key
+const _usedTickets = new Set();
+function _ticketKey(agentId) {
+  const id = String(agentId || 'anonymous');
+  if (!_ticketKeys.has(id)) {
+    if (!_master) _master = _masterKey();
+    _ticketKeys.set(id, crypto.hkdfSync('sha256', _master, Buffer.from('kasbah-ticket-v1:' + id), Buffer.from('ticket'), 32));
+  }
+  return _ticketKeys.get(id);
+}
+function issueTicket(agentId = 'anonymous', tool = '', args = {}) {
+  const id = String(agentId || 'anonymous');
+  const argsStr = typeof args === 'string' ? args : JSON.stringify(args || {});
+  const tid = crypto.randomBytes(16);
+  const now = Date.now();
+  const exp = now + TICKET_TTL_MS;
+  const th = crypto.createHash('sha256').update(String(tool) + '|' + argsStr).digest();
+  const pre = Buffer.concat([tid, th, Buffer.from(String(now) + '|' + String(exp))]);
+  const mac = crypto.createHmac('sha256', _ticketKey(id)).update(pre).digest();
+  return { tid: tid.toString('hex'), toolHash: th.toString('hex'), issuedMs: now, expiresMs: exp, ttlMs: TICKET_TTL_MS, mac: mac.toString('hex'), agentId: id };
+}
+function verifyTicket(agentId = 'anonymous', ticket = {}, tool = '', args = {}) {
+  const id = String(agentId || 'anonymous');
+  if (!ticket || !ticket.tid || !ticket.mac) return { ok: false, reason: 'TICKET_MISSING' };
+  if (_usedTickets.has(ticket.tid)) return { ok: false, reason: 'REPLAY' };
+  if (Number(ticket.expiresMs) < Date.now()) return { ok: false, reason: 'EXPIRED' };
+  const argsStr = typeof args === 'string' ? args : JSON.stringify(args || {});
+  const th = crypto.createHash('sha256').update(String(tool) + '|' + argsStr).digest('hex');
+  if (th !== ticket.toolHash) return { ok: false, reason: 'TOOL_MISMATCH' };
+  const pre = Buffer.concat([Buffer.from(ticket.tid, 'hex'), Buffer.from(ticket.toolHash, 'hex'), Buffer.from(String(ticket.issuedMs) + '|' + String(ticket.expiresMs))]);
+  const mac = crypto.createHmac('sha256', _ticketKey(ticket.agentId || id)).update(pre).digest('hex');
+  if (mac.length !== String(ticket.mac).length || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(String(ticket.mac)))) return { ok: false, reason: 'MAC_FAIL' };
+  if (String(ticket.agentId || id) !== id) return { ok: false, reason: 'CROSS_AGENT' };
+  _usedTickets.add(ticket.tid);
+  if (_usedTickets.size > 5000) { const it = _usedTickets.values(); for (let i = 0; i < 4000; i++) _usedTickets.delete(it.next().value); }
+  return { ok: true };
+}
 // ---- Wearable (ring / band): away-from-computer Kasbah ----
 // Design contract:
 //  1) Aware of surroundings: the wearable pairs to the Stone and carries
@@ -508,4 +554,5 @@ module.exports = {
   startTap, requestTap, tap, deny, pending, auditLog, revokeStone, stoneStatus,
   setAura, auraFor, gesture, snoozed, presence, presenceFor, tapHistory, STONE_FUNCTIONS, sentinelAlert, ALERT_AURA,
   pairWearable, wearableFor, awayMode, wearableHeartbeat, queueAwayAlert,
+  issueTicket, verifyTicket, TICKET_TTL_MS,
 };
