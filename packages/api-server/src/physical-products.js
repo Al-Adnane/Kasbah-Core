@@ -19,11 +19,22 @@ const consentGate = require('./consent-gate.js');
 
 const PRODUCTS = {
   'stone-desk':  { transport: ['ble'],       form: 'desk', capabilities: ['tap', 'aura-glow', 'haptic', 'presence'] },
-  'stone-ring':  { transport: ['ble'],       form: 'ring', capabilities: ['tap', 'double-tap', 'hold-to-deny', 'duress', 'aura-glow', 'haptic', 'presence', 'away-mode'] },
-  'stone-band':  { transport: ['ble'],       form: 'band', capabilities: ['tap', 'double-tap', 'hold-to-deny', 'duress', 'aura-glow', 'haptic', 'presence', 'away-mode', 'rppg-guard'] },
+  'stone-pendant': { transport: ['ble'], form: 'pendant', hero: true, weight: '12 g', capabilities: ['tap', 'double-tap', 'hold-to-deny', 'duress', 'aura-glow', 'haptic', 'presence', 'away-mode'] },
+  'stone-ring':  { transport: ['ble'],       form: 'ring', weight: '6 g', capabilities: ['tap', 'double-tap', 'hold-to-deny', 'duress', 'aura-glow', 'haptic', 'presence', 'away-mode'] },
+  'stone-clip':  { transport: ['ble'],       form: 'clip', weight: '9 g', capabilities: ['tap', 'aura-glow', 'haptic', 'presence'] },
+  'stone-band':  { transport: ['ble'],       form: 'wristband', weight: '18 g', capabilities: ['tap', 'double-tap', 'hold-to-deny', 'duress', 'aura-glow', 'haptic', 'presence', 'away-mode', 'rppg-guard'] },
   'stone-usb':   { transport: ['usb-hid'],   form: 'token', capabilities: ['tap', 'presence'] },
   'stone-card':  { transport: ['nfc'],       form: 'card', capabilities: ['tap', 'presence'] },
 };
+// Monotonic counter: SE bumps a counter per signature; host rejects any
+// attestation with counter <= cached (anti-replay beyond nonce binding).
+const _counters = new Map(); // stoneId -> last counter
+function checkCounter(stoneId, counter) {
+  const last = _counters.get(String(stoneId)) ?? -1;
+  if (typeof counter !== 'number' || counter <= last) return { ok: false, reason: 'STALE_COUNTER' };
+  _counters.set(String(stoneId), counter);
+  return { ok: true };
+}
 
 // Transport drivers. Soft (simulator) is live; ble/usb-hid/nfc register
 // real drivers when their native modules are present. Missing driver =
@@ -93,7 +104,9 @@ function fanoutAlert(agentId, source, detail = {}) {
   const devices = devicesFor(agentId).map((d) => ({ deviceId: d.deviceId, productId: d.productId, glow: r.aura.glow }));
   return { ...r, fannedOut: devices.length, devices };
 }
-// Attestation intake from any device: verify + bind to pending tap.
+// Attestation intake from any device: counter + agent checks, then bind.
+// Hardware attestations carry { signature, counter, stoneId }; the SE bumps
+// the counter per signature and the host rejects stale counters.
 function acceptAttestation({ tapId, attestation, agentId }) {
   if (!tapId || !attestation) return { ok: false, reason: 'tapId + attestation required' };
   const pend = consentGate.pending().find((p) => p.id === tapId);
@@ -101,9 +114,21 @@ function acceptAttestation({ tapId, attestation, agentId }) {
   if (String(agentId || '') !== String(pend.agentId || '')) {
     return { ok: false, reason: 'cross-agent attestation denied: remote kill-switch blocked' };
   }
+  if (attestation.signer === 'hw-stone') {
+    if (typeof attestation.counter === 'number') {
+      const cc = checkCounter(attestation.stoneId || pend.stoneId, attestation.counter);
+      if (!cc.ok) return { ok: false, reason: cc.reason };
+    }
+    // Real SE verify happens in consentGate.stoneVerify hw branch once the
+    // provisioned pubkey registry lands; until then the counter + agent
+    // binding is the enforced part and software never forges hw-stone.
+    if (attestation.signer === 'hw-stone' && !attestation.counter && attestation.counter !== 0) {
+      return { ok: false, reason: 'hw attestation requires monotonic counter' };
+    }
+  }
   // Route through the owning tap (which re-verifies the signature itself).
   const r = consentGate.tap(tapId, { agentId: pend.agentId, approve: true });
   return { ok: !r.reason, ...r };
 }
 
-module.exports = { PRODUCTS, registerTransport, transportFor, pairDevice, devicesFor, heartbeat, fanoutAlert, acceptAttestation };
+module.exports = { PRODUCTS, registerTransport, transportFor, pairDevice, devicesFor, heartbeat, fanoutAlert, acceptAttestation, checkCounter };

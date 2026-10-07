@@ -1,4 +1,9 @@
-# Kasbah Consent Stone — Hardware Build Blueprint (v1)
+# Kasbah Consent Stone — Hardware Build Blueprint (v1.1)
+
+> Rev 1.1: adopts the concrete pendant spec (nRF52840, $25 BOM → $99
+> retail, Qi, IP68), four form factors (pendant hero / ring / clip /
+> wristband), monotonic-counter attestations, and the dated build
+> roadmap. Prior rev specified nRF52832/110 mAh — superseded below.
 
 Target: a physical tap-to-sign token that plugs into the existing gate
 with **zero gate changes**. Software today (`signer: soft-stone`);
@@ -12,22 +17,57 @@ grace window (`GRACE_MS = 5000`) is already enforced server-side.
    the secure element, never exportable.
 2. On tap: sign the exact `canonical` string the server built
    (`canonicalGate({id, action, tool, S, n, agree, ah, ts, agentId, stoneId})`)
-   and return `{ signer:'hw-stone', alg:'ed25519', signature: base64url, hardware:true, stoneId, agentId, pubkey }`.
+   and return `{ signer:'hw-stone', alg:'ed25519', signature: base64url, hardware:true, stoneId, agentId, pubkey, counter }`.
+   The SE bumps a **monotonic counter per signature**; the host rejects
+   any attestation with `counter <= cached` (`checkCounter()` in
+   physical-products.js) — anti-replay beyond nonce binding.
 3. Prove physical liveness: signature is only produced within ~2 s of
    a capacitive-touch interrupt. No touch ⇒ no signature, ever.
+   SE sign time ~300 ms; end-to-end (BLE round-trip) < 5 s grace.
 4. Attest over BLE with replay protection (per-request challenge).
 
 Non-goals: no display, no biometrics, no network stack on-device.
 The Stone is a signer, not a computer.
 
-## 2. Bill of materials (per unit, ~$18–28 @100 units)
+## 2. Bill of materials — pendant hero (28 × 32 × 8 mm, 12 g, IP68)
 
-| Part | Spec | Why |
+Concrete costing ($25.00 BOM → $99 retail, ~75% margin):
+
+| Part | Spec | Cost |
 |---|---|---|
-| Secure element | Infineon OPTIGA™ Trust M (I2C) **or** NXP SE050 | True HW keystore, Ed25519/ECDSA, CC EAL6+ |
-| MCU | Nordic nRF52832 (BLE 5, ARM M4) | BLE + I2C master + <5 µA sleep |
-| Touch | Capacitive pad → MCU GPIO interrupt (e.g. AT42QT1012 or nRF capacitive) | Physical-liveness gate |
-| LED + haptics | 1× RGB LED, 1× LRA/ERM driver (DRV2605) | Tap acknowledged / grace-expiry feedback |
+| MCU | Nordic nRF52840 (BLE 5, Cortex-M4F 64 MHz) | $5.20 |
+| Secure element | Infineon OPTIGA Trust M (ECDSA P-256, monotonic counter) | $2.10 |
+| Touch | Capacitive touch controller (proximity + gesture) | $0.85 |
+| Haptic | LRA actuator (touch feedback) | $1.40 |
+| LED | SK6812 RGB ring ×16 (idle/prompt/allow/deny) | $0.90 |
+| Battery | 120 mAh LiPo (~7-day standby, ~200 touches) | $1.80 |
+| Charging | Qi coil (wireless, no port) | $1.20 |
+| Face | Zirconia ceramic, engraved (IP68, scratch-proof) | $3.40 |
+| Rim | Anodized aluminum 6061-T6 | $2.20 |
+| PCB + assembly | 4-layer flex-rigid, SMT + reflow | $3.50 |
+| Strap | Silicone lanyard + clip | $0.85 |
+| Test + provisioning | SE keygen, BLE pairing, QC | $1.60 |
+
+## 2b. Form factors — same SE, same firmware, four ways to wear it
+
+| Form | Weight | Carry | Best for |
+|---|---|---|---|
+| **Pendant (hero)** | 12 g | lanyard / chain | everyday carry, canonical Stone |
+| Ring | 6 g | finger | always-on, lowest-friction touch |
+| Clip | 9 g | lapel / bag | enterprise badge, desk worker |
+| Wristband | 18 g | wrist | active / clinical, biometric-close |
+
+All four are registered in `physical-products.js` PRODUCTS
+(stone-pendant / stone-ring / stone-clip / stone-band).
+
+## 2c. Build roadmap (9 months to first 10k)
+
+| Phase | Window | Items |
+|---|---|---|
+| Prototype | Week 1–4 | nRF52840 dev kit + OPTIGA breakout; BLE handshake + sign/verify; capacitive touch → SE sign; 3D-printed pendant enclosure |
+| Pilot | Month 2–3 | 10 units to one design partner; MCP server; field-test BLE grace; FCC pre-scan |
+| Production | Month 4–9 | Zirconia + rim tooling; SMT line; SE provisioning + QC station; 10k run |
+| Patent + Scale | Month 6–18 | Parent filing; CE/RoHS/REACH; direct + distro channel; enterprise on-prem SDK |
 | Battery | 110 mAh LiPo + MCP73831 charger, USB-C | ~30-day standby |
 | Enclosure | 42 × 42 × 9 mm, anodized Al + stone inlay | "Stone" identity; RF window for BLE |
 | Debug | pogo-pin SWD, locked before ship | No open debug on production units |
