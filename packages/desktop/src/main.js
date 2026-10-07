@@ -499,6 +499,8 @@ function createWindow() {
         }
       };
       ses.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, cb) => {
+        // Shields-down (per-site): bypass ALL filtering for excepted tabs
+        if (_shieldsDownFor(details.webContentsId)) return cb({});
         // Query-strip + bounce-block runs even when tracker toggle is off
         try {
           let s = null; try { s = browserStore.settingsGet(); } catch (_) {}
@@ -510,7 +512,6 @@ function createWindow() {
             try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return cb({ cancel: true }); } catch (_) {}
           }
         } catch (_) {}
-        if (_shieldsDownFor(details.webContentsId)) return cb({});
         if (!_trkOn2) return cb({});
         if (details.resourceType === 'mainFrame') return cb({});
         try {
@@ -634,6 +635,10 @@ function createWindow() {
         }
       };
       ses.webRequest.onBeforeRequest((details, callback) => {
+        // Shields-down bypasses ALL filtering for excepted tabs. NOTE:
+        // keyed on details.webContentsId (the guest), not webContents.id
+        // (the embedder, constant across tabs).
+        if (_shieldsDownFor(details.webContentsId)) return callback({ cancel: false });
         try {
           let s = null; try { s = browserStore.settingsGet(); } catch (_) {}
           if (s && s.queryStrip !== false && details.resourceType === 'mainFrame') {
@@ -643,7 +648,6 @@ function createWindow() {
           if (s && s.bounceBlock !== false && details.resourceType !== 'mainFrame') {
             try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return callback({ cancel: true }); } catch (_) {}
           }
-          if (_shieldsDownFor(webContents.id)) return callback({ cancel: false });
           if (!_trkOn) return callback({ cancel: false });
           let hostname;
           try { hostname = new URL(details.url).hostname; } catch (_) { return callback({ cancel: false }); }
