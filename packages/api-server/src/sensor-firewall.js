@@ -23,7 +23,7 @@ function register(app = '', purposes = []) {
   _purposes.set(a, set);
   return { ok: true, app: a, purposes: [...set] };
 }
-function request(app = '', sensor = '', purpose = '', seconds = 60) {
+function request(app = '', sensor = '', purpose = '', seconds = 60, opts = {}) {
   const a = String(app || '');
   if (!['mic', 'camera'].includes(sensor)) return { ok: false, reason: 'sensor must be mic|camera' };
   const reg = _purposes.get(a);
@@ -31,7 +31,16 @@ function request(app = '', sensor = '', purpose = '', seconds = 60) {
     _receipt({ event: 'SENSOR_DENIED', app: a, sensor, purpose, reason: 'purpose not registered' });
     return { ok: false, reason: 'purpose not registered for app' };
   }
+  // Touch-gated grants: long-lived stream access requires a recent Stone tap
+  // (the consumer wedge). Short grants (<=60 s) stay tapless.
   const secs = Math.min(Math.max(Number(seconds) || 60, 5), 600);
+  if ((opts.touchRequired || secs > 60) && typeof opts.recentTap === 'function') {
+    const t = opts.recentTap(opts.agentId, 5000);
+    if (!t.ok) {
+      _receipt({ event: 'SENSOR_DENIED', app: a, sensor, purpose, reason: 'tap the Stone first' });
+      return { ok: false, reason: 'tap the Stone to authorize ' + a + ' → ' + sensor, touchRequired: true };
+    }
+  }
   const grant = { grantId: 'sg_' + crypto.randomBytes(8).toString('hex'), app: a, sensor, purpose: String(purpose), untilMs: Date.now() + secs * 1000 };
   _grants.set(grant.grantId, grant);
   _receipt({ event: 'SENSOR_GRANTED', ...grant });

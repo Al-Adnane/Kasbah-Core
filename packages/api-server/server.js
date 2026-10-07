@@ -4852,6 +4852,10 @@ app.post('/v1/consent/request', async (req, res) => {
     if (tier.tier === 'SOFT_GATE' && !tier.killSwitch && consentGate.snoozed(actor)) {
       return res.json({ ok: true, snoozed: true, tier: tier.tier, reason: 'soft-tier snoozed (tap stays dark)' });
     }
+    // Lockdown: enterprise kill-switch mode. ESCALATE denies, no tap minted.
+    if (consentGate.lockdown() && tier.tapRequired) {
+      return res.status(403).json({ error: 'lockdown: default-deny active', tier: tier.tier, lockdown: true });
+    }
     let ign = ignition, gov = null;
     if (text && ign === undefined) {
       try {
@@ -4933,13 +4937,30 @@ app.get('/v1/consent/stone/:agentId/history', (req, res) => {
 const sensorFw = require('./src/sensor-firewall.js');
 app.post('/v1/sensor/register', (req, res) => res.json(sensorFw.register(req.body?.app, req.body?.purposes)));
 app.post('/v1/sensor/request', (req, res) => {
-  const r = sensorFw.request(req.body?.app, req.body?.sensor, req.body?.purpose, req.body?.seconds);
+  const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
+  const r = sensorFw.request(req.body?.app, req.body?.sensor, req.body?.purpose, req.body?.seconds, { touchRequired: req.body?.touchRequired, recentTap: (a, w) => consentGate.recentTap(a || actor, w), agentId: actor });
   if (!r.ok) return res.status(403).json(r);
   res.json(r);
 });
 app.get('/v1/sensor/check', (req, res) => res.json(sensorFw.check(req.query.app, req.query.sensor)));
 app.post('/v1/sensor/revoke', (req, res) => res.json(sensorFw.revoke(req.body?.app, req.body?.sensor)));
 app.get('/v1/sensor/receipts', (req, res) => res.json({ receipts: sensorFw.receipts(Number(req.query.limit) || 100) }));
+// Lockdown (default-deny) + independent verify + behavior snapshot.
+app.get('/v1/consent/lockdown', (_req, res) => res.json({ lockdown: consentGate.lockdown() }));
+app.post('/v1/consent/lockdown', (req, res) => {
+  const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || 'unknown');
+  res.json({ ok: true, lockdown: consentGate.setLockdown(req.body?.on, actor) });
+});
+app.post('/v1/consent/verify', (req, res) => res.json(consentGate.verifyIndependent(req.body || {})));
+app.get('/v1/behavior', (req, res) => {
+  const audit = consentGate.auditLog(200);
+  res.json({
+    denies: audit.filter((e) => /DENIED|DISCONNECT_TIMEOUT|FAIL/.test(e.event || '')).slice(0, 50),
+    taps: audit.filter((e) => /TAP_AUTHORIZED/.test(e.event || '')).length,
+    lockdown: consentGate.lockdown(),
+    sensor: sensorFw.receipts(50),
+  });
+});
 // Micro-TTL execution tickets: tap mints, execution consumes. Single-use,
 // 300 ms TTL, tool+args bound. REPLAY/EXPIRED/TOOL_MISMATCH/MAC_FAIL deny.
 app.post('/v1/consent/ticket/use', (req, res) => {

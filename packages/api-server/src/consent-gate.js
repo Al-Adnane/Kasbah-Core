@@ -257,12 +257,12 @@ function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ign
   const timer = setTimeout(() => {
     _pending.delete(id);
     gate.status = 'denied-timeout';
-    _auditLog({ event: 'DISCONNECT_TIMEOUT', id, action, tool });
+    _auditLog({ event: 'DISCONNECT_TIMEOUT', id, action, tool, agentId: gate.agentId, stoneId: gate.stoneId });
     resolve({ ...gate, A: 0, reason: 'grace window elapsed without tap' });
   }, GRACE_MS);
   if (timer.unref) timer.unref();
   _pending.set(id, { gate, timer, resolve });
-  _auditLog({ event: 'TAP_REQUESTED', id, action, tool, S: gate.S });
+  _auditLog({ event: 'TAP_REQUESTED', id, action, tool, S: gate.S, agentId: gate.agentId, stoneId: gate.stoneId });
   return { gate, done };
 }
 
@@ -287,7 +287,7 @@ function tap(id, { approve = true, agentId = null } = {}) {
   _pending.delete(id);
   if (!approve) {
     g.status = 'denied-human';
-    _auditLog({ event: 'TAP_DENIED', id, action: g.action });
+    _auditLog({ event: 'TAP_DENIED', id, action: g.action, agentId: g.agentId, stoneId: g.stoneId });
     p.resolve({ ...g, A: 0, reason: 'human denied' });
     return { ...g, A: 0 };
   }
@@ -301,7 +301,7 @@ function tap(id, { approve = true, agentId = null } = {}) {
   g.tierElevation = A ? 'MODEL → RULE' : null;
   // On authorize, mint the micro-TTL execution ticket bound to this action.
   const ticket = A ? issueTicket(g.agentId, g.tool || g.action, { action: g.action }) : null;
-  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer, ah, tierElevation: g.tierElevation, ticket: ticket ? ticket.tid.slice(0, 12) : null });
+  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer, ah, tierElevation: g.tierElevation, ticket: ticket ? ticket.tid.slice(0, 12) : null, agentId: g.agentId, stoneId: g.stoneId });
   p.resolve({ ...g, A, attestation: att, canonical, ticket });
   return { ...g, A, attestation: att, canonical, ticket };
 }
@@ -411,6 +411,40 @@ function presence(agentId = 'anonymous', body = {}) {
   return _presence.get(id);
 }
 function presenceFor(agentId) { return _presence.get(String(agentId || 'anonymous')) || { near: false, rssi: null, updatedAt: 0 }; }
+// ---- Lockdown (default-deny): enterprise kill-switch mode ----
+// When on, every ESCALATE-tier request denies without minting a tap.
+// READ/ZERO_TOUCH unaffected. Toggle is audit-logged with actor.
+let _lockdown = false;
+function setLockdown(on, actor = 'unknown') {
+  _lockdown = !!on;
+  _auditLog({ event: _lockdown ? 'LOCKDOWN_ON' : 'LOCKDOWN_OFF', actor });
+  return _lockdown;
+}
+function lockdown() { return _lockdown; }
+// Recent-tap check: was there a TAP_AUTHORIZED for this agent within windowMs?
+function recentTap(agentId = 'anonymous', windowMs = 5000) {
+  const id = String(agentId || 'anonymous');
+  const now = Date.now();
+  for (let i = _audit.length - 1; i >= 0; i--) {
+    const e = _audit[i];
+    if (e.event === 'TAP_AUTHORIZED' && (e.agentId === id || e.actor === id)) {
+      const ts = new Date(e.ts).getTime();
+      if (now - ts <= windowMs) return { ok: true, at: e.ts };
+      return { ok: false };
+    }
+  }
+  return { ok: false };
+}
+// Independent attestation verify: any third party posts { canonical,
+// signature, pubkey } and learns valid/invalid without trusting the host.
+function verifyIndependent({ canonical, signature, pubkey } = {}) {
+  if (!canonical || !signature || !pubkey) return { valid: false, reason: 'canonical+signature+pubkey required' };
+  try {
+    const pub = crypto.createPublicKey({ key: Buffer.from(String(pubkey), 'base64'), format: 'der', type: 'spki' });
+    const ok = crypto.verify(null, Buffer.from(String(canonical)), pub, Buffer.from(String(signature), 'base64url'));
+    return { valid: !!ok, signatureOk: !!ok, counterOk: null, detail: ok ? 'signature verifies against supplied pubkey' : 'signature does not verify' };
+  } catch (e) { return { valid: false, reason: e.message }; }
+}
 // ---- Micro-TTL single-use execution tickets (wow-plane semantics) ----
 // A tap authorizes intent; the ticket authorizes one execution. Tickets are
 // HMAC-bound to tool+args+timestamps, 300 ms TTL, single-use. Verify fails
@@ -555,4 +589,5 @@ module.exports = {
   setAura, auraFor, gesture, snoozed, presence, presenceFor, tapHistory, STONE_FUNCTIONS, sentinelAlert, ALERT_AURA,
   pairWearable, wearableFor, awayMode, wearableHeartbeat, queueAwayAlert,
   issueTicket, verifyTicket, TICKET_TTL_MS,
+  setLockdown, lockdown, recentTap, verifyIndependent,
 };
