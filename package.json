@@ -2,7 +2,7 @@
   "name": "kasbah-guard",
   "version": "9.1.0",
   "private": true,
-  "description": "Kasbah \u2014 universal AI gateway: governance, cryptographic receipts, and cost control for every LLM call",
+  "description": "Kasbah — universal AI gateway: governance, cryptographic receipts, and cost control for every LLM call",
   "license": "MIT",
   "scripts": {
     "test": "node tests/integration/runtime.test.js && node packages/api-server/src/intervention.test.js && node packages/api-server/src/ai-trust-grade.test.js && node packages/api-server/src/competitive-parity.test.js && node packages/api-server/src/digest.test.js && node tests/mcp-block-loop.test.js && node tests/enforcer.test.js",
@@ -25,6 +25,7 @@
     "axios": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "stripe": "^23.0.0"
   }
 }
