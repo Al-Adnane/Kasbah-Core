@@ -489,11 +489,12 @@ function createWindow() {
             const cleaned = cleanTrackingUrl(details.url);
             if (cleaned && cleaned.redirect && cleaned.redirect !== details.url) return cb({ redirectURL: cleaned.redirect });
           }
-          if (s && s.bounceBlock !== false) {
+          if (s && s.bounceBlock !== false && details.resourceType !== 'mainFrame') {
             try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return cb({ cancel: true }); } catch (_) {}
           }
         } catch (_) {}
         if (!_trkOn2) return cb({});
+        if (details.resourceType === 'mainFrame') return cb({});
         try {
           const url = new URL(details.url);
           const host = url.hostname.toLowerCase();
@@ -617,13 +618,14 @@ function createWindow() {
             const cleaned = cleanTrackingUrl(details.url);
             if (cleaned && cleaned.redirect && cleaned.redirect !== details.url) return callback({ redirectURL: cleaned.redirect });
           }
-          if (s && s.bounceBlock !== false) {
+          if (s && s.bounceBlock !== false && details.resourceType !== 'mainFrame') {
             try { if (BOUNCE_HOSTS.has(new URL(details.url).hostname.toLowerCase())) return callback({ cancel: true }); } catch (_) {}
           }
           if (!_trkOn) return callback({ cancel: false });
           let hostname;
           try { hostname = new URL(details.url).hostname; } catch (_) { return callback({ cancel: false }); }
           if (!hostname) return callback({ cancel: false });
+          if (details.resourceType === 'mainFrame') return callback({ cancel: false });
           const category = trackerBlocklist.categoryForWithToggles(hostname, _disabledCats);
           if (category) {
             _blockBuf.push({ webContentsId: webContents.id, hostname, category });

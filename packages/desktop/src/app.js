@@ -6097,9 +6097,11 @@ function bwrGo(input) {
     const onDone = () => hideLoading();
     wv.addEventListener('did-finish-load', onDone, { once: true });
     wv.addEventListener('did-stop-loading', onDone, { once: true });
-    wv.addEventListener('did-fail-load', () => {
+    wv.addEventListener('did-fail-load', (e) => {
       hideLoading();
-      toast('Page failed to load — click Reload or try again', 'error', 4000);
+      const code = e?.errorCode ?? e?.error_code ?? '?';
+      console.error('[bv] did-fail-load', JSON.stringify({ code, url: e?.url ?? e?.validatedURL ?? tab?.url ?? '' }));
+      toast(`Page failed to load (code ${code}) — click Reload or try again`, 'error', 5000);
     }, { once: true });
   };
 
@@ -6186,7 +6188,9 @@ function bwrNewTabWith(url) {
     wv.addEventListener('did-fail-load',     (e) => {
       bwrProgressDone();
       // Page crashed / failed to load fallback UI
-      toast('Page failed to load — click Reload or try again', 'error', 5000);
+      const code = e?.errorCode ?? '?';
+      console.error('[bv] did-fail-load', JSON.stringify({ code, url: e?.url ?? tab?.url ?? '' }));
+      toast(`Page failed to load (code ${code}) — click Reload or try again`, 'error', 5000);
       // HTTPS-Only fallback: if we just upgraded this navigation to https://
       // and it failed (the site doesn't actually serve TLS), fall back to the
       // original http:// URL ONCE, with a visible warning — never silently.
