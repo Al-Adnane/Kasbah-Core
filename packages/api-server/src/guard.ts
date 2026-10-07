@@ -89,9 +89,9 @@ export function rateLimit(req: NextRequest, config: LimitConfig): NextResponse |
     return null
   }
 
-  // Refill bucket
-  const tokens = config.max
-  buckets.set(key, { tokens, lastRefill: now })
-  bucket.tokens -= 1
-  return null
+  // Refill bucket (future-proof: no use of possibly-undefined `bucket`)
+  const fresh = { tokens: config.max, lastRefill: now };
+  buckets.set(key, fresh);
+  fresh.tokens -= 1;
+  return null;
 }

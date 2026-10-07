@@ -118,26 +118,110 @@ function assess({ action = '', tool = '', args = {} } = {}) {
   return { tier: 'READ', tapRequired: false, highConsequence: false, reasons: ['read-only: Stone stays dark'] };
 }
 
-// Software Stone keypair (ephemeral unless STONE_SEED set). Hardware Stone
-// replaces sign() with a BLE round-trip; verify() already dispatches on signer.
-const _softKey = crypto.generateKeyPairSync('ed25519');
-function stoneSign(canonical) {
-  const sig = crypto.sign(null, Buffer.from(canonical), _softKey.privateKey);
-  return { signer: 'soft-stone', alg: 'ed25519', signature: sig.toString('base64url'), hardware: false };
+// Software Stone keypair: persistent per dataDir (or STONE_SEED), so
+// signatures verify across restarts. Ephemeral only if neither exists.
+// Hardware Stone replaces sign() with a BLE round-trip; verify() already
+// dispatches on signer. Per-user isolation: stone key = HKDF(master, agentId).
+const _softKeys = new Map(); // agentId -> KeyObject pair
+function _masterKey() {
+  if (process.env.STONE_SEED) {
+    return crypto.createHash('sha256').update('kasbah-stone-seed:' + process.env.STONE_SEED).digest();
+  }
+  if (_dataDir) {
+    const kf = nodePath.join(_dataDir, 'stone-master.key');
+    try {
+      if (fs.existsSync(kf)) return fs.readFileSync(kf);
+    } catch (_) {}
+    try {
+      const raw = crypto.randomBytes(32);
+      fs.writeFileSync(kf, raw, { mode: 0o600 });
+      return raw;
+    } catch (_) {}
+  }
+  return crypto.randomBytes(32); // ephemeral fallback
 }
-function stoneVerify(canonical, att) {
+let _master = null;
+function _agentKeys(agentId = 'anonymous') {
+  const id = String(agentId || 'anonymous');
+  if (_softKeys.has(id)) return _softKeys.get(id);
+  // 1) disk-persisted per-agent key (survives restarts; 0600)
+  if (_dataDir) {
+    try {
+      const kf = nodePath.join(_dataDir, 'stone-' + id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.key.json');
+      if (fs.existsSync(kf)) {
+        const j = JSON.parse(fs.readFileSync(kf, 'utf8'));
+        const rec = {
+          publicKey: crypto.createPublicKey({ key: Buffer.from(j.public, 'base64'), format: 'der', type: 'spki' }),
+          privateKey: crypto.createPrivateKey({ key: Buffer.from(j.private, 'base64'), format: 'der', type: 'pkcs8' }),
+        };
+        _softKeys.set(id, rec);
+        return rec;
+      }
+    } catch (_) {}
+  }
+  if (!_master) _master = _masterKey();
+  const seed = crypto.hkdfSync('sha256', _master, Buffer.from('kasbah-stone-v1:' + id), Buffer.from('ed25519'), 32);
+  let pair;
+  try {
+    pair = crypto.generateKeyPairSync('ed25519', { seed });
+    // Verify the seed was honored (Node may ignore it): re-derive check
+    const pair2 = crypto.generateKeyPairSync('ed25519', { seed });
+    const same = pair.publicKey.export({ format: 'der', type: 'spki' }).equals(
+      pair2.publicKey.export({ format: 'der', type: 'spki' }));
+    if (!same) throw new Error('seed ignored');
+  } catch (_) {
+    pair = crypto.generateKeyPairSync('ed25519'); // random; persist below
+  }
+  const rec = { publicKey: pair.publicKey, privateKey: pair.privateKey };
+  if (_dataDir) {
+    try {
+      const kf = nodePath.join(_dataDir, 'stone-' + id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.key.json');
+      if (!fs.existsSync(kf)) {
+        fs.writeFileSync(kf, JSON.stringify({
+          public: pair.publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
+          private: pair.privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64'),
+        }), { mode: 0o600 });
+      }
+    } catch (_) {}
+  }
+  _softKeys.set(id, rec);
+  return rec;
+}
+function stoneIdFor(agentId = 'anonymous') {
+  return crypto.createHash('sha256').update('kasbah-stone-v1:' + String(agentId || 'anonymous')).digest('hex').slice(0, 16);
+}
+function stoneSign(canonical, agentId = 'anonymous') {
+  const k = _agentKeys(agentId);
+  const sig = crypto.sign(null, Buffer.from(canonical), k.privateKey);
+  return { signer: 'soft-stone', alg: 'ed25519', signature: sig.toString('base64url'), hardware: false, stoneId: stoneIdFor(agentId), agentId: String(agentId || 'anonymous') };
+}
+function stoneVerify(canonical, att, agentId = 'anonymous') {
   if (!att || att.signer === 'soft-stone') {
     try {
-      return crypto.verify(null, Buffer.from(canonical), _softKey.publicKey, Buffer.from(att.signature, 'base64url'));
+      // Cross-agent use rejected: signature must belong to the acting agent.
+      if (att.agentId && att.agentId !== String(agentId || 'anonymous')) return false;
+      const k = _agentKeys(att.agentId || agentId);
+      return crypto.verify(null, Buffer.from(canonical), k.publicKey, Buffer.from(att.signature, 'base64url'));
     } catch (_) { return false; }
   }
   if (att.signer === 'hw-stone') return { pendingHardware: true, reason: 'no secure element attached' };
   return false;
 }
+// Kill-switch guard: a tap for agent A NEVER authorizes agent B or a
+// global kill. Remote kill-switch commands are denied cross-agent.
+const KILL_RE = /\b(kill\s+-9|pkill|killall|taskkill|deny[_\s-]?all|shutdown|reboot|halt|agent[_\s-]?kill|remote[_\s-]?kill|emergency[_\s-]?stop)\b/i;
+function killSwitchGuard({ requestingAgent, targetAgent, action = '', tool = '' } = {}) {
+  const text = [action, tool].join(' ');
+  if (!KILL_RE.test(text)) return { ok: true };
+  if (String(requestingAgent || '') !== String(targetAgent || '')) {
+    return { ok: false, reason: 'cross-agent kill denied: tap is per-agent, remote kill-switch blocked' };
+  }
+  return { ok: true, needsLocalTap: true };
+}
 
 function auditHead() {
   if (!_audit.length) return 'GENESIS';
-  return crypto.createHash('sha256').update(JSON.stringify(_audit[_audit.length - 1])).digest('hex').slice(0, 16);
+  return crypto.createHash('sha256').update(JSON.stringify(_audit[_audit.length - 1])).digest('hex').slice(0, 32);
 }
 
 function canonicalGate(payload) {
@@ -212,6 +296,6 @@ function auditLog(limit = 100) { return _audit.slice(-limit).reverse(); }
 module.exports = {
   TIER_ORDER, TIER_TAU, GRACE_MS,
   tierTau, fuse, certify, salience, assess, init,
-  stoneSign, stoneVerify, canonicalGate,
+  stoneSign, stoneVerify, canonicalGate, stoneIdFor, killSwitchGuard,
   startTap, requestTap, tap, deny, pending, auditLog,
 };
