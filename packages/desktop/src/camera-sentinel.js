@@ -102,6 +102,23 @@ async function _activeRecordingPids() {
 }
 
 // ─── Process name from PID ────────────────────────────────────────────────────
+// NOTE: `ps -o comm=` truncates to 16 chars and lsof's COMMAND column to 9,
+// so neither yields a trustworthy path. Resolve the true executable via
+// lsof's full-path field; fall back to comm= when that fails.
+
+async function _procPath(pid) {
+  return new Promise((resolve) => {
+    execFile('lsof', ['-p', String(pid), '-d', 'txt', '-Fn'], { timeout: 3000 }, (err, stdout) => {
+      if (!err && stdout) {
+        const line = stdout.split('\n').find((l) => l.startsWith('n/'));
+        if (line) return resolve(line.slice(1));
+      }
+      execFile('ps', ['-p', String(pid), '-o', 'comm='], { timeout: 3000 }, (err2, out2) => {
+        resolve(err2 ? '' : out2.trim());
+      });
+    });
+  });
+}
 
 async function _procName(pid) {
   return new Promise((resolve) => {
@@ -121,11 +138,15 @@ async function check() {
   const alerts = [];
 
   for (const { name, pid } of active) {
-    const fullName = name || (await _procName(pid));
+    const fullName = (await _procPath(pid)) || name || (await _procName(pid));
     if (!fullName) continue;
     const base = path.basename(fullName);
 
     if (SYSTEM_AUDIO_PROCS.has(base)) continue;
+    // Apple platform binaries (SIP-protected /System paths) cannot be
+    // trojanized for capture without breaking SIP; their camera handles
+    // (Continuity, FaceTime helpers, NotificationCenter) are not alerts.
+    if (/^\/System\//.test(fullName)) continue;
     const quarantined = isQuarantined(base) || isQuarantined(fullName);
     if (!quarantined && (approved.has(base) || approved.has(fullName))) continue;
 
