@@ -78,7 +78,7 @@ const PLANS = {
     features: [
       '5 governed sessions / month',
       'Budget caps & kill switch',
-      'All 11 detection engines',
+      'Multi-layer detection engine (secrets · PII · injection · exfil · obfuscation)',
       '7-day audit history',
       'MCP server included',
       'Community support'
@@ -116,9 +116,7 @@ const PLANS = {
     features: [
       'Everything in Personal, 5 seats',
       'Child-safe AI chat checks',
-      'One shared vault + individual vaults',
-      'Weekly family safety summary',
-      'Parental alerts on blocks'
+      'Individual vault per family member'
     ],
     targetPersona: 'Households with kids using AI',
     cta: 'Protect family'
@@ -136,10 +134,10 @@ const PLANS = {
       'Unlimited governed sessions',
       'Full ToolGuard enforcement (fail-closed)',
       'Plain English policy editor',
-      'All 11 detection engines',
+      'Multi-layer detection engine (secrets · PII · injection · exfil · obfuscation)',
       'Real-time SSE tool call stream',
       '90-day audit trail',
-      'SDKs: JS, Python, Go, Swift, Kotlin',
+      'SDKs: JS, Python',
       'Webhooks (HMAC signed)',
       'Email support'
     ],
@@ -162,9 +160,8 @@ const PLANS = {
       'Budget alerts (email + Slack)',
       'SOC 2 audit trail export',
       'API access + webhooks (HMAC signed)',
-      'Session replay & timeline',
       'Priority support',
-      'SDKs: JS, Python, Go'
+      'SDKs: JS, Python'
     ],
     targetPersona: 'Engineering teams building with AI agents in production',
     cta: 'Start Team',
@@ -187,9 +184,8 @@ const PLANS = {
       'SOC 2 Type II evidence package',
       'EU AI Act compliance reports (signed)',
       'NIST AI RMF attestation',
-      'ZK governance proofs (Schnorr protocol)',
+      'Signed governance attestations',
       '1-year immutable audit chain',
-      'Custom branding on reports',
       'Dedicated support channel'
     ],
     targetPersona: 'CTOs, CISOs, compliance teams — 82% of enterprises deploy agents, only 44% govern them',
@@ -205,9 +201,9 @@ const PLANS = {
     limits: { daily: 'unlimited', monthly: 'unlimited', teamMembers: 'unlimited', sessions: -1 },
     features: [
       'Unlimited everything',
-      'SSO (Google, GitHub, custom)',
-      'On-premise / air-gap deployment option',
-      'PQ-signed receipts (ML-DSA-65 + SLH-DSA)',
+      'SSO (Google, GitHub)',
+      'On-premise deployment (on request)',
+      'PQ-signed receipts (ML-DSA-65)',
       'Custom detection algorithms',
       'Custom DPA negotiation',
       'Dedicated CSM + solutions engineer',
@@ -229,17 +225,26 @@ const CREDIT_PACKS = {
   scale:    { id: 'credits-200',  priceUsd: 200,  credits: 400_000,   perCredit: 0.0005,   label: 'Scale pack',    badge: null,         desc: 'Teams & pipelines' }
 };
 
-// Stripe price ID resolution
+// ─── Stripe price IDs — ONE table drives both directions (M3/M4) ──────────────
+// Previously priceIdFor read *_DEVELOPER_*/*_TEAM_* while priceToTier read
+// *_STARTER_*/*_PRO_*, so the round-trip disagreed and subscription.updated
+// resolved the tier to null. Personal and Family had no mapping at all.
+const TIER_PRICE_ENV = {
+  personal:  { monthly: 'STRIPE_PRICE_PERSONAL_MONTHLY',  annual: 'STRIPE_PRICE_PERSONAL_ANNUAL' },
+  family:    { monthly: 'STRIPE_PRICE_FAMILY_MONTHLY',    annual: 'STRIPE_PRICE_FAMILY_ANNUAL' },
+  developer: { monthly: 'STRIPE_PRICE_DEVELOPER_MONTHLY', annual: 'STRIPE_PRICE_DEVELOPER_ANNUAL' },
+  team:      { monthly: 'STRIPE_PRICE_TEAM_MONTHLY',      annual: 'STRIPE_PRICE_TEAM_ANNUAL' },
+  business:  { monthly: 'STRIPE_PRICE_BUSINESS_MONTHLY',  annual: 'STRIPE_PRICE_BUSINESS_ANNUAL' },
+};
+const TIER_ALIAS = { starter: 'developer', pro: 'team' }; // legacy names
+function canonicalTier(tier) { return TIER_ALIAS[tier] || tier; }
+
 function priceIdFor(tier, interval) {
-  const env = process.env;
-  if (tier === 'developer') return interval === 'annual' ? env.STRIPE_PRICE_DEVELOPER_ANNUAL  : env.STRIPE_PRICE_DEVELOPER_MONTHLY;
-  if (tier === 'team')      return interval === 'annual' ? env.STRIPE_PRICE_TEAM_ANNUAL       : env.STRIPE_PRICE_TEAM_MONTHLY;
-  if (tier === 'business')  return interval === 'annual' ? env.STRIPE_PRICE_BUSINESS_ANNUAL   : env.STRIPE_PRICE_BUSINESS_MONTHLY;
-  if (tier === 'enterprise') return env.STRIPE_PRICE_ENTERPRISE;
-  // Legacy aliases
-  if (tier === 'starter') return interval === 'annual' ? env.STRIPE_PRICE_DEVELOPER_ANNUAL : env.STRIPE_PRICE_DEVELOPER_MONTHLY;
-  if (tier === 'pro')     return interval === 'annual' ? env.STRIPE_PRICE_TEAM_ANNUAL      : env.STRIPE_PRICE_TEAM_MONTHLY;
-  return null;
+  const t = canonicalTier(String(tier || ''));
+  const key = interval === 'annual' ? 'annual' : 'monthly';
+  if (t === 'enterprise') return process.env.STRIPE_PRICE_ENTERPRISE || null;
+  const map = TIER_PRICE_ENV[t];
+  return map ? (process.env[map[key]] || null) : null;
 }
 
 function creditPackPriceId(packId) {
@@ -251,11 +256,10 @@ function creditPackPriceId(packId) {
 
 function priceToTier(priceId) {
   if (!priceId) return null;
-  const env = process.env;
-  if ([env.STRIPE_PRICE_STARTER_MONTHLY,  env.STRIPE_PRICE_STARTER_ANNUAL].includes(priceId))  return 'starter';
-  if ([env.STRIPE_PRICE_PRO_MONTHLY,      env.STRIPE_PRICE_PRO_ANNUAL].includes(priceId))      return 'pro';
-  if ([env.STRIPE_PRICE_BUSINESS_MONTHLY, env.STRIPE_PRICE_BUSINESS_ANNUAL].includes(priceId)) return 'business';
-  if (priceId === env.STRIPE_PRICE_ENTERPRISE) return 'enterprise';
+  for (const [tier, map] of Object.entries(TIER_PRICE_ENV)) {
+    if (priceId === process.env[map.monthly] || priceId === process.env[map.annual]) return tier;
+  }
+  if (priceId === process.env.STRIPE_PRICE_ENTERPRISE) return 'enterprise';
   return null;
 }
 
@@ -291,8 +295,11 @@ function mount(app, { _apiKeys, updateWorkspace, getWorkspace, getUserById }) {
   // GET /v1/billing/plans — public catalogue (always 200)
   app.get('/v1/billing/plans', (req, res) => {
     const interval = (req.query.interval || 'monthly').toLowerCase();
+    const ssoConfigured = !!(process.env.GOOGLE_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
     const plans = Object.values(PLANS).map(p => ({
       ...p,
+      // M13: don't advertise SSO until OAuth is actually configured (routes 501 otherwise).
+      features: (p.features || []).filter(f => ssoConfigured || !/SSO/.test(f)),
       currentInterval: interval,
       price: interval === 'annual' ? p.priceAnnual : p.priceMonthly,
       stripePriceId: priceIdFor(p.tier, interval)
@@ -312,6 +319,10 @@ function mount(app, { _apiKeys, updateWorkspace, getWorkspace, getUserById }) {
     const { workspaceId, tier, interval = 'monthly', successUrl, cancelUrl, customerEmail } = req.body || {};
 
     if (!workspaceId) return res.status(400).json({ error: 'workspaceId required' });
+    // Ownership: the caller may only start checkout for their own workspace.
+    if (req.workspace && req.workspace.id !== workspaceId && !(req.apiKeyEntry && req.apiKeyEntry.tier === 'admin')) {
+      return res.status(403).json({ error: 'You do not have access to this workspace' });
+    }
     if (!['developer', 'team', 'business', 'enterprise', 'starter', 'pro'].includes(tier)) {
       return res.status(400).json({ error: 'tier must be developer|team|business|enterprise' });
     }
@@ -515,4 +526,4 @@ function mount(app, { _apiKeys, updateWorkspace, getWorkspace, getUserById }) {
   });
 }
 
-module.exports = { mount, verifyWebhookSignature, priceToTier, PLANS, CREDIT_PACKS };
+module.exports = { mount, verifyWebhookSignature, priceToTier, priceIdFor, TIER_PRICE_ENV, PLANS, CREDIT_PACKS };

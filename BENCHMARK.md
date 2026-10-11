@@ -1,23 +1,23 @@
 # Kasbah Detection Benchmark — Results
 
-_Generated: 2026-10-06T06:27:27.885Z_
+_Generated: 2026-10-08T04:05:35.220Z_
 
 **Corpus:** Kasbah Detection Benchmark v1 (1.0.0) · 77 labeled cases
 
 **Methodology:** Each system receives the raw prompt over HTTP (or in-process for baselines) and returns a verdict. The ground-truth label is one of `DENY` / `WARN` / `ALLOW`. For threat detection we treat `DENY|WARN` as the positive class; `ALLOW` as negative. Precision, recall, and F1 are computed against this binary collapse. Latencies are round-trip wall-clock from request send to response parse.
 
-**Reproducing:** `node bench/run.js --api http://localhost:3000`
+**Reproducing:** `node bench/run.js --api http://localhost:8788`
 
 ## Headline
 
 | System | Precision | Recall | F1 | Accuracy | p50 (ms) | p95 (ms) | Errors |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `scan` | 87.0% | 85.1% | 86.0% | 83.1% | 4 | 9 | 0 |
-| `govern` | 59.5% | 93.6% | 72.7% | 57.1% | 1 | 32 | 0 |
+| `scan` | 86.0% | 91.5% | 88.7% | 85.7% | 23 | 93 | 0 |
+| `govern` | 87.8% | 91.5% | 89.6% | 87.0% | 90 | 263 | 0 |
 | `baseline:allow-everything` | 100.0% | 0.0% | 0.0% | 39.0% | 0 | 0 | 0 |
 | `baseline:deny-everything` | 61.0% | 100.0% | 75.8% | 61.0% | 0 | 0 | 0 |
 | `baseline:blocklist` | 100.0% | 31.9% | 48.4% | 58.4% | 0 | 0 | 0 |
-| `baseline:regex-heuristic` | 100.0% | 53.2% | 69.4% | 71.4% | 0 | 0 | 0 |
+| `baseline:regex-heuristic` | 100.0% | 53.2% | 69.4% | 71.4% | 0 | 1 | 0 |
 | `llm-judge:claude-fable-5` | 100.0% | 95.7% | 97.8% | 97.4% | n/a | n/a | 0 |
 
 > Rows prefixed `llm-judge:` are an LLM classifying each prompt directly (recorded snapshots in `bench/llm-judge/`, scored by `bench/score-llm-judge.js`). See **LLM-judge vs. the engine** below for why a higher F1 here does not make the LLM the better production control.
@@ -27,23 +27,23 @@ _Generated: 2026-10-06T06:27:27.885Z_
 | Class | `scan` | `govern` | `baseline:allow-everything` | `baseline:deny-everything` | `baseline:blocklist` | `baseline:regex-heuristic` |
 |---|---:|---:|---:|---:|---:|---:|
 | benign | 0.0% | 0.0% | 100.0% | 0.0% | 100.0% | 100.0% |
-| code-injection | 90.9% | 100.0% | 0.0% | 100.0% | 90.9% | 80.0% |
-| dual-use | 50.0% | 57.1% | 0.0% | 57.1% | 0.0% | 0.0% |
+| code-injection | 80.0% | 100.0% | 0.0% | 100.0% | 90.9% | 80.0% |
+| dual-use | 50.0% | 40.0% | 0.0% | 57.1% | 0.0% | 0.0% |
 | edge-case | 0.0% | 0.0% | 100.0% | 0.0% | 100.0% | 100.0% |
 | exfiltration | 100.0% | 80.0% | 0.0% | 100.0% | 100.0% | 80.0% |
 | jailbreak | 100.0% | 100.0% | 0.0% | 100.0% | 0.0% | 66.7% |
-| obfuscation | 76.9% | 85.7% | 0.0% | 100.0% | 0.0% | 40.0% |
+| obfuscation | 93.3% | 100.0% | 0.0% | 100.0% | 0.0% | 40.0% |
 | pii | 90.9% | 90.9% | 0.0% | 90.9% | 0.0% | 75.0% |
-| prompt-injection | 100.0% | 100.0% | 0.0% | 100.0% | 76.9% | 76.9% |
-| secret | 88.9% | 100.0% | 0.0% | 100.0% | 33.3% | 88.9% |
-| social-engineering | 100.0% | 100.0% | 0.0% | 100.0% | 0.0% | 0.0% |
+| prompt-injection | 100.0% | 93.3% | 0.0% | 100.0% | 76.9% | 76.9% |
+| secret | 100.0% | 100.0% | 0.0% | 100.0% | 33.3% | 88.9% |
+| social-engineering | 100.0% | 80.0% | 0.0% | 100.0% | 0.0% | 0.0% |
 
 ## Confusion matrix (DENY|WARN vs ALLOW)
 
 | System | TP | FP | FN | TN |
 |---|---:|---:|---:|---:|
-| `scan` | 40 | 6 | 7 | 24 |
-| `govern` | 44 | 30 | 3 | 0 |
+| `scan` | 43 | 7 | 4 | 23 |
+| `govern` | 43 | 6 | 4 | 24 |
 | `baseline:allow-everything` | 0 | 0 | 47 | 30 |
 | `baseline:deny-everything` | 47 | 30 | 0 | 0 |
 | `baseline:blocklist` | 15 | 0 | 32 | 30 |
@@ -53,7 +53,7 @@ _Generated: 2026-10-06T06:27:27.885Z_
 
 - **Measures**: ability to flag clearly-malicious input vs. clearly-benign input across 9 threat classes (prompt injection, secret leak, PII, obfuscation, jailbreak, code injection, exfiltration, social engineering, dual-use) plus edge cases.
 - **Does not measure**: false-positive cost in production traffic, semantic precision (e.g. distinguishing security-research questions from attack instructions), or robustness against novel jailbreaks not yet in the corpus.
-- **Limitations**: 71-case corpus is small relative to BIPIA (~10k) or PromptBench (~50k); class balance favors threats over benign 4:3; some labels are subjective (dual-use band).
+- **Limitations**: 77-case corpus is small relative to BIPIA (~10k) or PromptBench (~50k); class balance favors threats over benign 4:3; some labels are subjective (dual-use band).
 - **Honest framing**: scores above are compared against simple in-process baselines (allow-all, deny-all, blocklist, regex). Beating `regex-heuristic` is the floor for claiming non-trivial detection. Beating it by >10 F1 points is meaningful.
 
 ## LLM-judge vs. the engine (read this before quoting the F1)

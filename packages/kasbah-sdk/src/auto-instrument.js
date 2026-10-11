@@ -25,7 +25,7 @@ const crypto  = require('crypto');
 const { CostTracker } = require('./cost-tracker');
 
 const API_KEY    = process.env.KASBAH_API_KEY;
-const API_URL    = (process.env.KASBAH_API_URL || 'https://api.bekasbah.com').replace(/\/$/, '');
+const API_URL    = (process.env.KASBAH_API_URL || 'http://127.0.0.1:8788').replace(/\/$/, '');
 const PASSPORT   = process.env.KASBAH_PASSPORT_ID || null;
 const AUTO_BLOCK = process.env.KASBAH_AUTO_BLOCK === 'true';
 const SILENT     = process.env.KASBAH_SILENT === 'true';

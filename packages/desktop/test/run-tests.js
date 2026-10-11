@@ -612,11 +612,13 @@ async function ta(name, fn) {
     assert.strictEqual(ok.verdict, 'ALLOW');
   });
   await ta('ext-gateway: HTTP health + scan', async () => {
-    const r = await egw.start(18790);
+    // D21: ask the OS for a free port instead of assuming 18790 is unused.
+    const port = await new Promise((res, rej) => { const srv = require('net').createServer(); srv.once('error', rej); srv.listen(0, '127.0.0.1', () => { const p = srv.address().port; srv.close(() => res(p)); }); });
+    const r = await egw.start(port);
     assert.ok(r.ok, JSON.stringify(r));
-    const h = await fetch('http://127.0.0.1:18790/v1/health').then((x) => x.json());
+    const h = await fetch(`http://127.0.0.1:${port}/v1/health`).then((x) => x.json());
     assert.strictEqual(h.ok, true);
-    const s = await fetch('http://127.0.0.1:18790/v1/scan', {
+    const s = await fetch(`http://127.0.0.1:${port}/v1/scan`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ prompt: 'Enable silent-speech EMG capture' }),
     }).then((x) => x.json());

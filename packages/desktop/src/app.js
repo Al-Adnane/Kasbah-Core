@@ -5,7 +5,49 @@
    All API calls go through window.kasbah (Electron contextBridge in preload.js)
    ═══════════════════════════════════════════════════════════════════════════ */
 
+// D10: errors that used to vanish in empty catch blocks land here. Behaviour is
+// unchanged (nothing is thrown), but each one is logged at debug level and kept
+// in a small ring buffer — inspect window.__quietErrors when a card stays blank.
+function __quiet(e) {
+  try {
+    const buf = (window.__quietErrors = window.__quietErrors || []);
+    buf.push({ t: Date.now(), msg: String((e && e.message) || e) });
+    if (buf.length > 200) buf.shift();
+    console.debug('[quiet]', e);
+  } catch (_ignored) { /* logging must never throw */ }
+}
+
 const $   = id => document.getElementById(id);
+
+// D15: many inputs and icon buttons had no accessible name. Derive one from the
+// nearest visible label text (or title/placeholder) so screen readers announce
+// something meaningful. Explicit aria-label / <label> in the markup always wins.
+function applyA11yNames(root) {
+  const scope = root || document;
+  const nameFrom = (el) => {
+    if (el.title) return el.title;
+    if (el.placeholder) return el.placeholder;
+    const wrap = el.closest('label, .field, .form-row, .row, .card, .k-card, section, div');
+    if (wrap) {
+      const lab = wrap.querySelector('label, .lbl, .label, .field-label, .k-label, h3, h4, strong');
+      const txt = lab && lab !== el ? (lab.textContent || '').trim() : '';
+      if (txt && txt.length <= 60) return txt;
+    }
+    const prev = el.previousElementSibling;
+    const ptxt = prev ? (prev.textContent || '').trim() : '';
+    return ptxt && ptxt.length <= 60 ? ptxt : '';
+  };
+  scope.querySelectorAll('input, select, textarea').forEach((el) => {
+    if (el.type === 'hidden' || el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || (el.labels && el.labels.length)) return;
+    const n = nameFrom(el); if (n) el.setAttribute('aria-label', n);
+  });
+  scope.querySelectorAll('button').forEach((el) => {
+    if (el.getAttribute('aria-label') || (el.textContent || '').trim()) return;
+    const n = el.title || nameFrom(el); if (n) el.setAttribute('aria-label', n);
+  });
+}
+document.addEventListener('DOMContentLoaded', () => { try { applyA11yNames(document); } catch (e) { __quiet(e); } });
+
 const _bwrIsElectron = navigator.userAgent.toLowerCase().includes('electron');
 const mk = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 // Full HTML-entity escape — MUST cover both quote characters, not just &<>,
@@ -145,19 +187,26 @@ function playSound(type) {
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
       o.start(t); o.stop(t + 0.14);
     }
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 /* ── Toast ────────────────────────────────────────────────────────────────── */
 function toast(msg, type='', ms=3000) {
+  const host = $('toasts'); if (!host) return;
   const lvl = (type || '').toLowerCase();
   if (lvl === 'error' || lvl === 'bad') playSound('block');
   else if (lvl === 'warn') playSound('warn');
   else if (lvl === 'success' || lvl === 'ok') playSound('success');
+  // De-dupe: refresh the same message instead of stacking duplicates.
+  const dup = Array.from(host.children).find(c => c.dataset.msg === msg);
+  if (dup) { dup.dataset.ts = String(Date.now()); return; }
+  // Keep the stack calm — never more than four at once.
+  while (host.children.length >= 4) host.removeChild(host.firstChild);
   const t = mk('div', 'toast'+(type?' '+type:''), esc(msg));
-  $('toasts').appendChild(t);
-  setTimeout(()=>t.style.opacity='0', ms-300);
-  setTimeout(()=>t.remove(), ms);
+  t.dataset.msg = msg;
+  host.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; }, Math.max(0, ms-300));
+  setTimeout(()=>{ t.remove(); }, ms);
 }
 
 /* ── Count-up animation ───────────────────────────────────────────────────── */
@@ -178,7 +227,34 @@ function countUp(el, target, durationMs=900) {
 }
 
 /* ── Sidebar render ───────────────────────────────────────────────────────── */
+// D2: the sidebar must not claim "AI watch on" while the engine is unreachable.
+function applyEngineState(ready) {
+  if (S.engineReady === ready) return;
+  S.engineReady = ready;
+  renderSidebar();
+}
+function startEngineHealthPoll() {
+  const probe = () => (window.kasbah?.health ? window.kasbah.health() : window.kasbah?.request?.('GET', '/v1/health'));
+  const tick = async () => {
+    try {
+      const r = await probe();
+      const status = r && typeof r === 'object' ? (r.status != null ? r.status : 200) : 0;
+      const bodyStatus = r && r.body ? String(r.body.status || '').toLowerCase() : '';
+      applyEngineState(status !== 503 && status < 500 && bodyStatus !== 'error');
+    } catch (_) { applyEngineState(false); }
+  };
+  tick();
+  setInterval(tick, 5000);
+}
 function renderSidebar() {
+  if (S.engineReady === false) {
+    const dot0 = $('guardDot'); if (dot0) dot0.className = 'status-dot off';
+    const pill0 = $('guardPill'); if (pill0) pill0.className = 'status-bar off';
+    const gl0 = $('guardLabel'); if (gl0) gl0.textContent = 'Engine offline';
+    const gs0 = $('guardSub'); if (gs0) gs0.textContent = 'Local engine not responding — VPN still works';
+    const hb0 = $('homeHeroBadge'); if (hb0) { hb0.className = 'home-hero-badge off'; hb0.innerHTML = '<span class="home-hero-dot"></span> Engine offline'; }
+    return;
+  }
   const on = S.protected;
   const dot = $('guardDot');
   if (dot) { dot.className = 'status-dot' + (on ? '' : ' off'); }
@@ -376,7 +452,11 @@ async function doScan() {
 /* ── Scan result render ───────────────────────────────────────────────────── */
 function renderResult(data, text) {
   const threats   = data.threats||[];
-  const verdict   = data.verdict || (threats.length>0?'DENY':'ALLOW');
+  // Normalize the verdict: governance emits REQUIRE_APPROVAL (risk ≥ 0.70), which
+  // the maps below don't know — without this it rendered as an unknown/allow card.
+  const _rv       = String(data.verdict || (threats.length>0?'WARN':'ALLOW')).toUpperCase();
+  const verdict   = (_rv==='DENY'||_rv==='REQUIRE_APPROVAL'||_rv==='BLOCK'||_rv==='BLOCKED')?'DENY'
+                  : (_rv==='WARN'||_rv==='CAUTION'||threats.length>0)?'WARN':'ALLOW';
   const isBlocked = verdict==='DENY';
   const isWarn    = verdict==='WARN';
   const vpCls     = {ALLOW:'vp-allow',WARN:'vp-warn',DENY:'vp-deny'}[verdict]||'vp-allow';
@@ -699,7 +779,7 @@ function showHomeDashboard() {
   if (sc) { sc.textContent = fmtNum(S.counts.scanned||0); sc.classList.toggle('zero',!S.counts.scanned); }
   if (bl) { bl.textContent = fmtNum(S.counts.blocked||0); bl.classList.toggle('zero',!S.counts.blocked); }
   // Privacy home — do not call dashLoad (dead API / SSE)
-  try { homeRefreshPrivacy(); } catch (_) {}
+  try { homeRefreshPrivacy(); } catch (__e) { __quiet(__e); }
 }
 
 function activityFilter(f, btn) {
@@ -795,7 +875,7 @@ const PAGE_INIT = {
   exitmarket: () => exitMarketRefresh(),
   claims:     () => claimsRefresh(),
   impact:     () => { impactRefresh(); hardenRefresh(); },
-  agentguard: () => agStatus(),
+  agentguard: () => { agStatus(); ssiRefresh(); approverRefresh(); },
   recovery:   () => {},
   deadman:    () => dmStatus(),
   honey:      () => honeyList(),
@@ -820,6 +900,9 @@ function nav(page) {
   $(`nav${cap}`)?.classList.add('active');
   const mainEl = document.getElementById('main');
   if (mainEl) mainEl.classList.toggle('browser-full', page === 'browser');
+  // Fresh page starts at the top.
+  if (mainEl && nav._last !== page) mainEl.scrollTop = 0;
+  nav._last = page;
 
   // Show/hide all WebContentsViews when switching pages.
   if (_bwrIsElectron && _bvProxyMap.size > 0) {
@@ -832,16 +915,14 @@ function nav(page) {
 
   PAGE_INIT[page]?.();
 
-  // Auto-expand the group that contains the active page, if it's collapsed.
-  if (page && !CORE_PAGES.includes(page)) {
-    if (LABS_PAGES.includes(page)) {
-      if (!isLabsVisible()) { try { localStorage.setItem('kasbah.labs.enabled', '1'); } catch(_) {} applyLabsVisibility(); }
-      const labs = $('navLabsList');
-      if (labs && labs.style.display === 'none') toggleLabs(true);
-    } else {
+  // Reveal the active tool's group if collapsed, and keep it in view.
+  const activeItem = $(`nav${cap}`);
+  if (activeItem) {
+    if (activeItem.closest('#navMoreList')) {
       const more = $('navMoreList');
       if (more && more.style.display === 'none') toggleMore(true);
     }
+    try { activeItem.scrollIntoView({ block: 'nearest' }); } catch (__e) { __quiet(__e); }
   }
   onPageChange(page);
 }
@@ -858,7 +939,7 @@ const ALLTOOLS = [
   ['Mic & camera','No app records you without permission.','multimodal'],
   ['Safety test','Attack yourself safely to see defenses work.','redteam'],
   ['What I stopped','Everything Kasbah caught for you.','uservalue'],
-  ['AI helpers','Guardrails for your AI agents.','agentguard'],
+  ['Control tower','See and approve what your AI helpers do.','agentguard'],
   ['AI Protection','Safety gate for coding assistants.','llmproxy'],
   ['Decoy traps','Fake secrets that catch real thieves.','honey'],
   ['Wi-Fi check','Is this network safe? Find out.','wifiguard'],
@@ -890,6 +971,16 @@ const ALLTOOLS = [
   ['Webhooks','Tell your other tools when Kasbah acts.','webhooks'],
   ['Reports','Download proof for auditors.','reports'],
   ['Settings','Sidebar, protection, data.','settings'],
+  ['Trajectory analyzer','Watch an AI agent step by step.','agents'],
+  ['Analytics','Requests Kasbah governed, over time.','analytics'],
+  ['Benchmark','How well Kasbah catches bad prompts.','bench'],
+  ['System basics','Run an OS-level check; verify a receipt.','kos'],
+  ['Deep check','Run every engine on one input.','multiverse'],
+  ['Safety rules','Write and test your own policy.','govlab'],
+  ['Passports','Give an AI helper a signed identity.','passports'],
+  ['Privacy cleanup','Opt out of data brokers.','privacy'],
+  ['Security audit','Check tamper-evident logs; scan files.','secaudit'],
+  ['Kasbah One','The whole product family.','kasbahone'],
 ];
 function renderAllTools(filter) {
   const grid = document.getElementById('toolsGrid'); if (!grid) return;
@@ -912,7 +1003,7 @@ function toolSearch(q) {
     n.style.display = (!query || n.textContent.toLowerCase().includes(query)) ? '' : 'none';
   });
   if (!out) return;
-  const ALL = [['AI helpers','agentguard'],['App safety switch','llmproxy'],['Decoy traps','honey'],['Wi-Fi check','wifiguard'],['Breach check','identity'],['Backups','backup'],['Leak check','leaktest'],['Plan & upgrades','plans'],['My data','settings'],['Every Mac (pairing)','settings'],['Travel mode','settings'],['Check a message','scan'],['Private browser','browser'],['VPN','vpn'],['Passwords','passwords'],['My receipts','proof'],['Weekly summary','digest'],['App connections','mcp'],['Mic & camera','multimodal'],['Safety test','redteam'],['Settings','settings'],['What I stopped','uservalue']];
+  const ALL = [['Control tower','agentguard'],['App safety switch','llmproxy'],['Decoy traps','honey'],['Wi-Fi check','wifiguard'],['Breach check','identity'],['Backups','backup'],['Leak check','leaktest'],['Plan & upgrades','plans'],['My data','settings'],['Every Mac (pairing)','settings'],['Travel mode','settings'],['Check a message','scan'],['Private browser','browser'],['VPN','vpn'],['Passwords','passwords'],['My receipts','proof'],['Weekly summary','digest'],['App connections','mcp'],['Mic & camera','multimodal'],['Safety test','redteam'],['Settings','settings'],['What I stopped','uservalue']];
   if (!query) { out.style.display = 'none'; out.innerHTML = ''; return; }
   const hits = ALL.filter(([label]) => label.toLowerCase().includes(query)).slice(0, 8);
   out.style.display = 'block';
@@ -930,14 +1021,14 @@ function toggleMore(forceOpen) {
   const willOpen = forceOpen === true || list.style.display === 'none';
   list.style.display = willOpen ? 'block' : 'none';
   if (chev) chev.style.transform = willOpen ? 'rotate(90deg)' : 'rotate(0)';
-  try { localStorage.setItem('kasbah.sidebar.moreOpen', willOpen ? '1' : '0'); } catch(_) {}
+  try { localStorage.setItem('kasbah.sidebar.moreOpen', willOpen ? '1' : '0'); } catch (__e) { __quiet(__e); }
 }
 function toggleLabs(forceOpen) {
   const list = $('navLabsList'); const chev = $('navLabsChev'); if (!list) return;
   const willOpen = forceOpen === true || list.style.display === 'none';
   list.style.display = willOpen ? 'block' : 'none';
   if (chev) chev.style.transform = willOpen ? 'rotate(90deg)' : 'rotate(0)';
-  try { localStorage.setItem('kasbah.sidebar.labsOpen', willOpen ? '1' : '0'); } catch(_) {}
+  try { localStorage.setItem('kasbah.sidebar.labsOpen', willOpen ? '1' : '0'); } catch (__e) { __quiet(__e); }
 }
 
 // Real opt-in for the whole Labs group (10 unvalidated pages) — on by default now,
@@ -953,17 +1044,16 @@ function applyLabsVisibility() {
 // Auto-expand Advanced section on first run so new pages are visible
 function ensureAdvancedExpanded() {
   try {
-    // Always expand for now to ensure visibility
-    const list = $('navMoreList');
-    const chev = $('navMoreChev');
-    if (list) list.style.display = 'block';
-    if (chev) chev.style.transform = 'rotate(90deg)';
-    localStorage.setItem('kasbah.sidebar.moreOpen', '1');
-  } catch(_) {}
+    // "More tools" stays collapsed unless the user has opened it before.
+    const open = localStorage.getItem('kasbah.sidebar.moreOpen') === '1';
+    const list = $('navMoreList'); const chev = $('navMoreChev');
+    if (list) list.style.display = open ? 'block' : 'none';
+    if (chev) chev.style.transform = open ? 'rotate(90deg)' : 'rotate(0)';
+  } catch (__e) { __quiet(__e); }
 }
 function toggleLabsVisibility() {
   const next = !isLabsVisible();
-  try { localStorage.setItem('kasbah.labs.enabled', next ? '1' : '0'); } catch(_) {}
+  try { localStorage.setItem('kasbah.labs.enabled', next ? '1' : '0'); } catch (__e) { __quiet(__e); }
   applyLabsVisibility();
   toast(next ? 'Labs enabled — 10 experimental tools now in the sidebar' : 'Labs hidden', 'success');
 }
@@ -972,7 +1062,7 @@ function getPins() {
   try { return JSON.parse(localStorage.getItem('kasbah.sidebar.pins') || '[]'); } catch { return []; }
 }
 function setPins(arr) {
-  try { localStorage.setItem('kasbah.sidebar.pins', JSON.stringify(arr)); } catch(_) {}
+  try { localStorage.setItem('kasbah.sidebar.pins', JSON.stringify(arr)); } catch (__e) { __quiet(__e); }
   renderPinned();
 }
 function togglePin(page) {
@@ -985,8 +1075,7 @@ function togglePin(page) {
 
 // Product pages only — research labs (multiverse, ethics, gov lab, bench…) stay off the pin list.
 const _PINNABLE = [
-  { page:'agentguard', label:'Agent Guard' },
-  { page:'proof',      label:'Proofs' },
+  // 'agentguard' (Control tower) and 'proof' are core navigation now; pinning them would duplicate them.
   { page:'sitrep',     label:'Situation' },
   { page:'exitmarket', label:'Exit Market' },
   { page:'impact',     label:'Impact' },
@@ -1031,7 +1120,7 @@ function renderPinned() {
     if (open) toggleMore(true);
     const labsOpen = localStorage.getItem('kasbah.sidebar.labsOpen') === '1';
     if (labsOpen) toggleLabs(true);
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   applyLabsVisibility();
   ensureAdvancedExpanded();
   renderPinned();
@@ -1045,7 +1134,7 @@ function renderPinned() {
         if (!mainEl0.contains(p)) mainEl0.appendChild(p);
       });
     }
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 })();
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1193,7 +1282,7 @@ async function discoverScan() {
 
 /* ── Total Overwatch ──────────────────────────────────────────────────────── */
 async function activateTotalOverwatch() {
-  if (!confirm('Activate Total Overwatch?\n\nThis will:\n• Install Kasbah MCP into every detected host (Claude Desktop, Code, Cursor)\n• Confirm network proxy is running on :8789\n• Send a native notification\n• Show you the routing snippet and browser extension install\n\nProceed?')) return;
+  if (!(await uiConfirm('Activate Total Overwatch?\n\nThis will:\n• Install Kasbah MCP into every detected host (Claude Desktop, Code, Cursor)\n• Confirm network proxy is running on :8789\n• Send a native notification\n• Show you the routing snippet and browser extension install\n\nProceed?', { okLabel: 'Activate' }))) return;
   try {
     const r = await window.kasbah.api('POST', '/v1/overwatch/activate', {});
     const data = r?.body || {};
@@ -1277,7 +1366,7 @@ async function overwatchLayersRefresh() {
 /* ── Master "Govern Everything" action ────────────────────────────────────── */
 async function governAll() {
   if (!window.__kasbahConfig?.mcpServerPath) { toast('Loading config…','warn',1500); return; }
-  if (!confirm('This installs Kasbah MCP into every detected host (Claude Desktop, Claude Code, Cursor, etc.) and shows you the routing snippet for all provider API calls. Continue?')) return;
+  if (!(await uiConfirm('This installs Kasbah MCP into every detected host (Claude Desktop, Claude Code, Cursor, etc.) and shows you the routing snippet for all provider API calls.', { title: 'Install Kasbah MCP?', okLabel: 'Install' }))) return;
   try {
     const mcpPath = window.__kasbahConfig?.mcpServerPath;
     const r = await window.kasbah.api('POST', '/v1/discover/govern-all', {
@@ -1306,7 +1395,7 @@ async function showRouting() {
     code.textContent = r?.body?.shell || '';
     card.style.display = '';
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 async function discoverLaunch(appName) {
@@ -1338,16 +1427,16 @@ function startOverwatch() {
         // Refresh the discovery panel quietly if it's visible
         if ($('pageConnect')?.classList.contains('active')) discoverScan();
         if ($('pageHome')?.classList.contains('active')) homeRefreshPrivacy();
-      } catch (_) {}
+      } catch (__e) { __quiet(__e); }
     });
     let _owBackoff = 5000;
     _overwatchES.onerror = () => { _overwatchES?.close(); _overwatchES = null; setTimeout(() => { _owBackoff = Math.min(_owBackoff * 2, 60000); startOverwatch(); }, _owBackoff); };
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 async function discoverInstall(configPath) {
   if (!window.__kasbahConfig?.mcpServerPath) { toast('Loading config…','warn',1500); return; }
-  if (!confirm(`Install Kasbah MCP into:\n${configPath}\n\nA backup will be saved first. The host (Claude Desktop, etc.) may need to be restarted.`)) return;
+  if (!(await uiConfirm(`Install Kasbah MCP into:\n${configPath}\n\nA backup will be saved first. The host (Claude Desktop, etc.) may need to be restarted.`, { okLabel: 'Install' }))) return;
   try {
     const mcpPath = window.__kasbahConfig?.mcpServerPath;
     const r = await window.kasbah.api('POST', '/v1/discover/install-mcp', {
@@ -1486,7 +1575,7 @@ async function tierPillRefresh() {
     // Mark "maxed" if >80% used
     const pill = $('tierPill');
     if (pill && lim && isFinite(lim)) pill.classList.toggle('maxed', day/lim >= 0.8);
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1566,7 +1655,7 @@ async function plansCheckout(tier) {
   try {
     const me = await window.kasbah.api('GET', '/v1/me');
     workspaceId = me?.body?.workspaces?.[0]?.id;
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   if (!workspaceId) {
     toast('Sign in first (Settings → Account)','warn',3000);
     nav('account'); return;
@@ -1700,7 +1789,7 @@ async function setRegisterWebhook() {
     await window.kasbah.api('POST', '/v1/webhooks', { url, events, passportId: $('setWhPassport').value.trim()||undefined });
     toast('Webhook registered','success');
     $('setWhUrl').value = '';
-  } catch(e) { toast('Failed: '+e.message,'error'); }
+  } catch(e) { toast("Couldn't finish — "+e.message,'error'); }
 }
 
 function setTsClear() { const el = $('setTsStream'); if(el) el.innerHTML = ''; }
@@ -1779,8 +1868,8 @@ async function prodAnalyze() {
       <div style="display:flex;align-items:flex-start;gap:14px">
         <div style="font-size:26px;line-height:1;color:${color}">${icon}</div>
         <div class="k-flex-1">
-          <div style="font-weight:700;color:var(--ink);font-size:15px">${j.verdict||'—'}</div>
-          <div class="muted" style="font-size:12px;margin-top:2px">${(j.summary||'').slice(0,200)}</div>
+          <div style="font-weight:700;color:var(--ink);font-size:15px">${esc(j.verdict||'—')}</div>
+          <div class="muted" style="font-size:12px;margin-top:2px">${esc((j.summary||'').slice(0,200))}</div>
           <div style="display:flex;gap:20px;margin-top:10px;font-size:11.5px;color:var(--muted)">
             <span>Score: <strong style="color:var(--ink)">${typeof j.score==='number'?j.score.toFixed(3):'—'}</strong></span>
             <span>Latency: <strong style="color:var(--ink)">${esc(j.latencyMs||0)} ms</strong></span>
@@ -2557,14 +2646,27 @@ async function advRun() {
 
 // Shared helpers for the Advanced algorithm explorer
 async function advCall(method, path, body) { const r = await window.kasbah.api(method, path, body); return r.body; }
-function advRender(title, data) { $('advBody').innerHTML = `<pre style="background:var(--bg);border:1px solid var(--border);padding:14px;border-radius:8px;color:var(--ink);font-size:11.5px;font-family:'SF Mono',Monaco,monospace;max-height:380px;overflow:auto;line-height:1.5"><strong>${esc(title)}</strong>\n${esc(typeof data==='string'?data:JSON.stringify(data,null,2))}</pre>`; }
+function advRender(title, data) {
+  // D13: a structured view with an empty state, not a raw JSON blob.
+  let body;
+  if (data != null && typeof data === 'object') {
+    body = Object.entries(data).map(([k, v]) =>
+      `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border-soft)"><span style="min-width:140px;color:var(--subtle)">${esc(k)}</span><span style="color:var(--ink)">${esc(typeof v === 'object' ? JSON.stringify(v) : String(v))}</span></div>`
+    ).join('');
+  } else {
+    body = esc(typeof data === 'string' ? data : String(data == null ? '' : data));
+  }
+  const el = $('advBody');
+  if (el) el.innerHTML = `<div style="font-weight:700;margin-bottom:8px;color:var(--ink)">${esc(title)}</div>` +
+    `<div style="font-size:12px;line-height:1.6">${body || '<span style="color:var(--subtle)">No data</span>'}</div>`;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ACCOUNT & BILLING
    ═══════════════════════════════════════════════════════════════════════════ */
 async function acctInit() {
   // Active key
-  try { const s = await window.kasbah.getState(); $('acctActiveKey').textContent = s.apiKey || '—'; } catch(_){}
+  try { const s = await window.kasbah.getState(); $('acctActiveKey').textContent = s.apiKey || '—'; } catch (__e) { __quiet(__e); }
   // Me
   try {
     const r = await window.kasbah.api('GET','/v1/me');
@@ -2575,7 +2677,7 @@ async function acctInit() {
       $('accountWho').textContent = 'Not signed in. The embedded API key is in use.';
       $('accountWorkspaces').innerHTML = '';
     }
-  } catch(_){}
+  } catch (__e) { __quiet(__e); }
   // Plans
   try {
     const r = await window.kasbah.api('GET','/v1/billing/plans');
@@ -2644,7 +2746,7 @@ async function toggleProtection() {
 /* ── Passports ────────────────────────────────────────────────────────────── */
 async function loadPassports() {
   const grid = $('ppGrid');
-  grid.innerHTML='<div class="tl-empty"><div class="tl-empty-title">Loading…</div></div>';
+  grid.innerHTML = skelRows(3);
   try {
     const r = await window.kasbah.passportList();
     const list = r?.body?.passports||r?.body||[];
@@ -2679,7 +2781,7 @@ async function issuePassport() {
   try {
     const r = await window.kasbah.passportIssue({agentId,capabilities});
     if(r?.status===200||r?.status===201){toast('Passport issued','success');$('ppAgent').value='';$('ppCaps').value='';loadPassports();}
-    else toast('Failed: '+(r?.body?.error||'error'),'error');
+    else toast("Couldn't finish — "+(r?.body?.error||'something went wrong'),'error');
   } catch(e){toast('Issue failed','error');}
 }
 
@@ -2729,7 +2831,7 @@ async function loadAudit() {
 async function loadSettings() {
   renderPinSettings();
   settingsInit().catch(()=>{});
-  try{const v=window.kasbah.version();$('verInfo').textContent=`Kasbah Guard v3.0.0 · Electron ${v.electron||'?'} · Node ${v.node||'?'}`;}catch(_){}
+  try{const v=window.kasbah.version();$('verInfo').textContent=`Kasbah Guard v3.0.0 · Electron ${v.electron||'?'} · Node ${v.node||'?'}`;}catch (__e) { __quiet(__e); }
   try{
     const r=await window.kasbah.api('GET','/v1/rules');
     const d=r?.body||{};
@@ -2775,15 +2877,15 @@ const Ob = {
       window.kasbah.privacy.clipWatch(true);
       window.kasbah.honey.seedDefaults?.();
       window.kasbah.harden.start();
-    } catch (_) {}
-    try { nav('home'); } catch (_) {}
+    } catch (__e) { __quiet(__e); }
+    try { nav('home'); } catch (__e) { __quiet(__e); }
   }
 };
 // wire extra onboarding buttons after DOM ready
 setTimeout(() => {
   const b1 = $('obBtn1b');
   if (b1) b1.onclick = async () => {
-    try { await window.kasbah.llmproxy.start(8796); toast('AI Gate', 'Started on 127.0.0.1:8796', 2500); } catch (_) {}
+    try { await window.kasbah.llmproxy.start(8796); toast('AI Gate', 'Started on 127.0.0.1:8796', 2500); } catch (__e) { __quiet(__e); }
     Ob.next();
   };
   const g = $('obBtn2');
@@ -2806,7 +2908,7 @@ setTimeout(() => {
     try {
       const r = await window.kasbah.travel.set(true);
       toast('Travel mode', r.ok ? 'On — VPN auto-connects, kill switch enforced' : 'Could not enable', 3000);
-    } catch (_) {}
+    } catch (__e) { __quiet(__e); }
     Ob.next();
   };
 }, 500);
@@ -2827,28 +2929,28 @@ function showShell() {
       const d=r?.body||{};
       S.counts.scanned = d.totalRequests||d.scanned||0;
       S.counts.blocked = d.verdicts?.DENY||d.threatsDetected||0;
-    }catch(_){}
+    }catch (__e) { __quiet(__e); }
 
     // Health / uptime
     let psi=null, uptimeSec=null;
     try{
       const h=await window.kasbah.health();
       uptimeSec=h?.body?.uptime_s;
-    }catch(_){}
+    }catch (__e) { __quiet(__e); }
 
     // Integrity PSI
     try{
       const i=await window.kasbah.integrity();
       psi=i?.body?.psi;
-    }catch(_){}
+    }catch (__e) { __quiet(__e); }
 
     renderStats(S.counts.scanned, S.counts.blocked, psi, uptimeSec);
-    try { homeRefreshPrivacy(); } catch (_) {}
+    try { homeRefreshPrivacy(); } catch (__e) { __quiet(__e); }
     initScanEngineChips();
     tierPillRefresh();
     setInterval(tierPillRefresh, 30000);
     startOverwatch();
-    setInterval(() => { if ($('pageHome')?.classList.contains('active')) { try { homeRefreshPrivacy(); } catch (_) {} } }, 60000);
+    setInterval(() => { if ($('pageHome')?.classList.contains('active')) { try { homeRefreshPrivacy(); } catch (__e) { __quiet(__e); } } }, 60000);
 
     // Pre-load audit history into feed
     try{
@@ -2871,12 +2973,120 @@ function showShell() {
   })();
 }
 
-/* ── Wire everything ──────────────────────────────────────────────────────── */
+/* ── In-app dialogs — Electron has no window.prompt/confirm/alert ────────── */
+function _uiDialog(opts) {
+  opts = opts || {};
+  return new Promise((resolve) => {
+    const prev = document.activeElement;
+    const wrap = document.createElement('div');
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);padding:24px';
+    const card = document.createElement('form');
+    card.style.cssText = 'background:var(--card,#fff);border:1px solid var(--border,#e5e5e3);border-radius:14px;padding:20px 22px;max-width:460px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.28)';
+    if (opts.title) {
+      const h = document.createElement('div');
+      h.textContent = opts.title;
+      h.style.cssText = 'font-size:15px;font-weight:700;color:var(--ink,#151517);margin-bottom:6px';
+      card.append(h);
+    }
+    if (opts.message) {
+      const p = document.createElement('div');
+      p.textContent = opts.message;
+      p.style.cssText = 'font-size:13px;line-height:1.55;color:var(--ink2,#3a3a3d);white-space:pre-line;margin-bottom:12px';
+      card.append(p);
+    }
+    let input = null;
+    if (opts.input) {
+      input = document.createElement('input');
+      input.className = 'form-input';
+      input.style.cssText = 'width:100%';
+      input.type = opts.input.password ? 'password' : 'text';
+      input.value = opts.input.value == null ? '' : String(opts.input.value);
+      if (opts.input.placeholder) input.placeholder = opts.input.placeholder;
+      if (opts.input.readonly) input.readOnly = true;
+      card.append(input);
+    }
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:16px';
+    const ok = document.createElement('button');
+    ok.type = 'submit'; ok.className = 'k-btn ' + (opts.danger ? 'k-btn--danger' : 'k-btn--primary'); ok.textContent = opts.okLabel || 'OK';
+    if (opts.cancelLabel !== null) {
+      const cancel = document.createElement('button');
+      cancel.type = 'button'; cancel.className = 'k-btn'; cancel.textContent = opts.cancelLabel || 'Cancel';
+      cancel.addEventListener('click', () => done(null));
+      row.append(cancel);
+    }
+    row.append(ok);
+    card.append(row); wrap.append(card); document.body.append(wrap);
+    const focusables = () => Array.from(card.querySelectorAll('button,input,select,textarea,[tabindex]')).filter(e => !e.disabled && e.offsetParent !== null);
+    const first = input || ok;
+    try { first.focus(); if (input) input.select(); } catch (__e) { __quiet(__e); }
+    const done = (v) => {
+      wrap.remove();
+      document.removeEventListener('keydown', onKey, true);
+      if (prev && typeof prev.focus === 'function') { try { prev.focus(); } catch (__e) { __quiet(__e); } }
+      resolve(v);
+    };
+    // Escape closes; Tab is trapped inside the dialog.
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(null); return; }
+      if (e.key === 'Tab') {
+        const f = focusables(); if (!f.length) return;
+        const i = f.indexOf(document.activeElement);
+        if (e.shiftKey) { if (i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } }
+        else if (i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    wrap.addEventListener('mousedown', (e) => { if (e.target === wrap) done(null); });
+    card.addEventListener('submit', (e) => { e.preventDefault(); done(input ? input.value : true); });
+  });
+}
+function uiPrompt(message, defaultValue, opts) {
+  opts = opts || {};
+  return _uiDialog({ message, input: { value: defaultValue, password: opts.password, readonly: opts.readonly }, okLabel: opts.okLabel || 'Continue', cancelLabel: 'Cancel' });
+}
+function uiConfirm(message, opts) {
+  opts = opts || {};
+  return _uiDialog({ title: opts.title, message, okLabel: opts.okLabel || 'Confirm', cancelLabel: opts.cancelLabel || 'Cancel', danger: opts.danger }).then(v => v === true);
+}
+function uiAlert(message, opts) {
+  opts = opts || {};
+  return _uiDialog({ title: opts.title, message, okLabel: opts.okLabel || 'Got it', cancelLabel: null }).then(() => undefined);
+}
+/* Placeholder rows while a list/tile loads — beats a bare "Loading…". */
+function skelRows(n, kind) {
+  n = n || 3;
+  let s = '<div style="padding:4px 0">';
+  for (let i = 0; i < n; i++) s += '<div class="skel ' + (kind === 'tile' ? 'skel-tile' : 'skel-row') + '" style="width:' + (92 - i * 9) + '%"></div>';
+  return s + '</div>';
+}
+/* One shared "working…" state for buttons. */
+async function withBusy(btn, fn, busyLabel) {
+  if (!btn || btn.dataset.busy === '1') return;
+  const html = btn.innerHTML, wasDisabled = btn.disabled;
+  btn.dataset.busy = '1'; btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+  btn.innerHTML = '<span class="k-spin"></span>' + esc((busyLabel || btn.textContent || 'Working').trim());
+  try { return await fn(); }
+  finally { btn.innerHTML = html; btn.disabled = wasDisabled; btn.removeAttribute('aria-busy'); delete btn.dataset.busy; }
+}
 function wireAll() {
   // Nav
   document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
+    el.setAttribute('role','button');
+    el.setAttribute('tabindex','0');
     el.addEventListener('click',()=>nav(el.dataset.page));
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); nav(el.dataset.page); } });
   });
+
+  // Modals: Escape closes, clicking the backdrop closes, focus returns.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const ns = $('newSessionModal');
+    if (ns && ns.classList.contains('show')) { e.preventDefault(); closeNewSession(); }
+  });
+  $('newSessionModal')?.addEventListener('mousedown', (e) => { if (e.target && e.target.id === 'newSessionModal') closeNewSession(); });
 
   // Scan
   $('scanBtn')?.addEventListener('click',doScan);
@@ -2887,7 +3097,7 @@ function wireAll() {
   // Home inline scan
   $('homeScanBtn')?.addEventListener('click',homeScan);
   $('homeScanInput')?.addEventListener('keydown',e=>{
-    if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();homeScan();}
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();homeScan();}
   });
   addRipple($('homeScanBtn'));
 
@@ -2947,9 +3157,9 @@ function wireAll() {
     window.kasbah.vpn.onAutoReconnected?.((d)=>{
       window.__vpnConnected = true;
       window.__vpnLastLoc = d?.location;
-      try { vpnSetConnectedUI(true); } catch (_) {}
+      try { vpnSetConnectedUI(true); } catch (__e) { __quiet(__e); }
       toast('VPN reconnected', `Back on ${esc(d?.name || d?.location || 'exit')}`, 3500);
-      try { homeRefresh(); } catch (_) {}
+      try { homeRefresh(); } catch (__e) { __quiet(__e); }
     });
   }
 
@@ -2968,7 +3178,7 @@ function wireAll() {
       $('stBlocked').textContent=fmtNum(bl);
       $('ftScanned').textContent=fmtNum(sc);
       $('ftBlocked').textContent=fmtNum(bl);
-    }catch(_){}
+    }catch (__e) { __quiet(__e); }
   },45000);
 
   // Quick demo test — sends governed request and shows live result
@@ -3009,7 +3219,7 @@ function wireAll() {
       const models=d.distinctModels||0;
       $('ftTokens').textContent=fmtNum(tokens)+' ('+models+' models)';
       $('ftCost').textContent='$'+cost.toFixed(4);
-    }catch(_){}
+    }catch (__e) { __quiet(__e); }
   }
   loadCostData();
   setInterval(loadCostData,30000);
@@ -3137,7 +3347,7 @@ async function registerWebhook() {
     if (r?.body?.ok) {
       toast('Webhook registered. Signing secret shown once — copy it now.');
       if (r.body.webhook?.signingSecret) {
-        prompt('Signing secret (copy now — not shown again):', r.body.webhook.signingSecret);
+        await uiPrompt('Signing secret — copy it now, it will not be shown again:', r.body.webhook.signingSecret, { okLabel: 'Done', readonly: true });
       }
       $('whUrl').value = '';
       $('whPassport').value = '';
@@ -3165,7 +3375,7 @@ async function loadPassportSelect() {
       list.map(p => `<option value="${esc(p.passportId)}">${esc(p.agentId)} — ${esc(p.passportId)}</option>`).join('');
     // Auto-select the first real passport so "Download" works out of the box.
     if (list.length >= 1) sel.value = list[0].passportId;
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 /* ── Compliance checklist: live controls + the step to pass each one ── */
@@ -3370,18 +3580,18 @@ function tsPause() {
 
 /* ── Hook page navigation to load data ───────────────────────────────────── */
 const PAGE_CHANGE = {
-  plans:      () => { try { earnRefresh(); } catch (_) {} },
+  plans:      () => { try { earnRefresh(); } catch (__e) { __quiet(__e); } },
   analytics:  () => loadAnalytics(_analyticsHours),
   webhooks:   () => loadWebhooks(),
   compliance: () => loadPassportSelect(),
   vpn:        () => vpnRefresh(),
-  products:   () => { try { prodInit(); } catch (_) {} },
-  system:     () => { try { sysRefresh(); } catch (_) {} },
-  bench:      () => { try { benchLoadLast(); } catch (_) {} },
-  alltools:   () => { try { renderAllTools(''); const si = document.getElementById('toolsSearch'); if (si) si.value = ''; } catch (_) {} },
-  usage:      () => { try { usageLoad(); } catch (_) {} },
-  account:    () => { try { acctInit(); } catch (_) {} },
-  advanced:   () => { try { advInit(); } catch (_) {} },
+  products:   () => { try { prodInit(); } catch (__e) { __quiet(__e); } },
+  system:     () => { try { sysRefresh(); } catch (__e) { __quiet(__e); } },
+  bench:      () => { try { benchLoadLast(); } catch (__e) { __quiet(__e); } },
+  alltools:   () => { try { renderAllTools(''); const si = document.getElementById('toolsSearch'); if (si) si.value = ''; } catch (__e) { __quiet(__e); } },
+  usage:      () => { try { usageLoad(); } catch (__e) { __quiet(__e); } },
+  account:    () => { try { acctInit(); } catch (__e) { __quiet(__e); } },
+  advanced:   () => { try { advInit(); } catch (__e) { __quiet(__e); } },
 };
 function onPageChange(page) {
   // Special-cased (not table-driven): leaving the threat page must tear down
@@ -3417,7 +3627,7 @@ async function overseerLoad() {
       $('ovsrStatus').style.background = mon ? 'var(--amber-bg)' : 'var(--green-bg)';
     }
     _ovsrLoaded = true;
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 async function overseerSave() {
   if (!_ovsrLoaded) return;   // ignore programmatic population
@@ -3487,10 +3697,10 @@ async function dashLoad() {
     S.counts.scanned = st.totalRequests||0;
     S.counts.blocked = st.threatsDetected||st.verdicts?.DENY||0;
     updateDashHero();
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   try {
     let agents = [];
-    try { agents = (await window.kasbah.agentRegistry.list()) || []; } catch (_) {}
+    try { agents = (await window.kasbah.agentRegistry.list()) || []; } catch (__e) { __quiet(__e); }
     let n = agents.length;
     try {
       const r = await Promise.race([
@@ -3498,20 +3708,20 @@ async function dashLoad() {
         new Promise((res) => setTimeout(() => res(null), 1200)),
       ]);
       n = Math.max(n, (r?.body?.sessions || []).length);
-    } catch (_) {}
+    } catch (__e) { __quiet(__e); }
     const d = $('dsAgents'); if(d){d.textContent = fmtNum(n);d.classList.toggle('zero',!n);}
     const badge = $('agentsBadge');
     if (badge) {
       badge.textContent = n;
       badge.style.display = n ? '' : 'none';
     }
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   try {
     const r = await window.kasbah.api('GET', '/v1/gateway/audit/by-provider');
     const providers = r?.body?.providers || [];
     const total = providers.reduce((s,p)=>s+(p.totalCalls||0),0);
     const d = $('dsGateway'); if(d){d.textContent = fmtNum(total);d.classList.toggle('zero',!total);}
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   // Live system discovery summary on dashboard
   try {
     const r = await window.kasbah.api('GET', '/v1/discover');
@@ -3549,7 +3759,7 @@ async function dashLoad() {
           ${recs > 0 ? `<a data-hc="${_h((event, el) => { nav('connect') })}" style="color:var(--red);cursor:pointer;font-weight:600">Govern ${recs} more →</a>` : 'Everything detected is governed.'}
         </div>`;
     }
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   // Render recent feed from local history
   const feed = $('dashFeed');
   if (feed && S.history && S.history.length) {
@@ -3594,7 +3804,12 @@ async function homeScan() {
       data = r?.body || {};
     }
     const threats = data.threats || [];
-    const verdict = data.verdict || (threats.length > 0 ? 'DENY' : 'ALLOW');
+    // Governance returns REQUIRE_APPROVAL at risk ≥ 0.70 (never DENY). The earlier
+    // code only knew DENY/WARN, so its strongest signal rendered as "Safe" — map it
+    // back to a block so the hero never under-reports. Any listed threat ⇒ at least WARN.
+    const _rv = String(data.verdict || (threats.length ? 'WARN' : 'ALLOW')).toUpperCase();
+    const verdict = (_rv === 'DENY' || _rv === 'REQUIRE_APPROVAL' || _rv === 'BLOCK' || _rv === 'BLOCKED') ? 'DENY'
+                  : (_rv === 'WARN' || _rv === 'CAUTION' || threats.length > 0) ? 'WARN' : 'ALLOW';
     if (verdict === 'DENY') KSound.deny(); else if (verdict === 'WARN') KSound.warn(); else KSound.allow();
 
     // Show result inline on home page
@@ -3611,7 +3826,7 @@ async function homeScan() {
           <div style="width:36px;height:36px;border-radius:10px;background:${color}12;display:flex;align-items:center;justify-content:center;flex-shrink:0">${verdict==='ALLOW'?safeIcon:dangerIcon}</div>
           <div class="k-flex-1">
             <div style="font-size:15px;font-weight:700;color:${color};letter-spacing:-.2px">${word}</div>
-            <div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5">${threats.length ? esc(threats.slice(0,3).map(t => typeof t === 'string' ? t : t.type || t.name || t).join(' · ')) : 'No threats detected — content looks clean'}</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5">${threats.length ? esc(threats.slice(0,3).map(t => typeof t === 'string' ? t : t.type || t.name || t).join(' · ')) : (verdict === 'ALLOW' ? 'No threats detected — content looks clean' : esc(data.reason || 'Flagged — review before you send'))}</div>
           </div>
           <button class="tl-btn" data-hc="${_h((event, el) => { nav('scan') })}" style="white-space:nowrap">Details →</button>
         </div>
@@ -3632,10 +3847,17 @@ async function homeScan() {
 
 /* ── New Session Modal ─────────────────────────────────────────────────────── */
 function openNewSession() {
-  $('newSessionModal')?.classList.add('show');
+  const m = $('newSessionModal'); if (!m) return;
+  nav._focusReturn = document.activeElement;
+  m.classList.add('show');
+  const first = m.querySelector('input,select,textarea,button');
+  if (first) setTimeout(() => { try { first.focus(); } catch (__e) { __quiet(__e); } }, 30);
 }
 function closeNewSession() {
-  $('newSessionModal')?.classList.remove('show');
+  const m = $('newSessionModal'); if (!m) return;
+  m.classList.remove('show');
+  const back = nav._focusReturn;
+  if (back && typeof back.focus === 'function') { try { back.focus(); } catch (__e) { __quiet(__e); } }
 }
 
 // Range sliders live update
@@ -3733,7 +3955,7 @@ async function killSession(sessionId, e) {
     await window.kasbah.api('DELETE', `/v1/agents/${sessionId}`, { reason: 'user_kill' });
     toast('Session stopped', '');
     refreshActiveSessions();
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 async function refreshActiveSessions() {
@@ -3810,7 +4032,7 @@ async function refreshActiveSessions() {
         </div>
       </div>`;
     }).join('');
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 async function refreshSessionReceipts() {
@@ -3828,7 +4050,7 @@ async function refreshSessionReceipts() {
       $('dsAgents').textContent = sessions.length;
       $('dsAgents').classList.toggle('zero', false);
     }
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 /* ── SSE Live Tool Feed ──────────────────────────────────────────────────── */
@@ -3836,17 +4058,17 @@ let _sseBackoff = 3000;
 let _sseRetryTimer = null;
 function startSSEStream() {
   if (_sseRetryTimer) { clearTimeout(_sseRetryTimer); _sseRetryTimer = null; }
-  if (window._sseStream) { try { window._sseStream.close(); } catch(_) {} }
+  if (window._sseStream) { try { window._sseStream.close(); } catch (__e) { __quiet(__e); } }
   const es = new EventSource('http://127.0.0.1:8788/v1/agents/stream');
   es.onopen = () => { _sseBackoff = 3000; };
   es.onmessage = (e) => {
     try {
       const evt = JSON.parse(e.data);
       handleSSEEvent(evt);
-    } catch(_) {}
+    } catch (__e) { __quiet(__e); }
   };
   es.onerror = () => {
-    try { es.close(); } catch(_) {}
+    try { es.close(); } catch (__e) { __quiet(__e); }
     // Exponential back-off with 60 s cap — avoids the constant 3 s retry
     // loop that was burning renderer CPU when the server is unreachable.
     _sseRetryTimer = setTimeout(startSSEStream, _sseBackoff);
@@ -4193,7 +4415,7 @@ async function toggleMcpTool(el, serverId, toolName) {
     toast(`Tool ${isActive ? 'blocked' : 'unblocked'}`, isActive ? 'warn' : 'success');
   } catch (e) {
     el.classList.toggle('active'); // revert
-    toast('Failed: ' + e.message, 'error');
+    toast("Couldn't finish — " + e.message, 'error');
   }
 }
 async function scanMcp() {
@@ -4480,7 +4702,7 @@ async function refreshCameraSentinel() {
 }
 
 async function approveMicApp() {
-  const name = prompt('App name to approve for microphone access (e.g. Zoom, QuickTime):');
+  const name = await uiPrompt('App name to approve for microphone access (e.g. Zoom, QuickTime):');
   if (!name) return;
   try {
     await window.kasbah.mic.approve(name.trim());
@@ -4490,7 +4712,7 @@ async function approveMicApp() {
 }
 
 async function approveCameraApp() {
-  const name = prompt('App name to approve for camera access (e.g. Zoom, FaceTime):');
+  const name = await uiPrompt('App name to approve for camera access (e.g. Zoom, FaceTime):');
   if (!name) return;
   try {
     await window.kasbah.camera.approve(name.trim());
@@ -4503,8 +4725,8 @@ async function renderApprovedApps() {
   const el = $('mmApprovedApps');
   if (!el) return;
   let micApps = [], camApps = [];
-  try { micApps = (await window.kasbah.mic.listApproved()) || []; } catch (_) {}
-  try { camApps = (await window.kasbah.camera.listApproved()) || []; } catch (_) {}
+  try { micApps = (await window.kasbah.mic.listApproved()) || []; } catch (__e) { __quiet(__e); }
+  try { camApps = (await window.kasbah.camera.listApproved()) || []; } catch (__e) { __quiet(__e); }
   const rows = [];
   micApps.forEach(a => rows.push({ app: a, dev: 'mic' }));
   camApps.forEach(a => rows.push({ app: a, dev: 'camera' }));
@@ -4527,8 +4749,8 @@ function initBiometricWatch() {
   if (_bioWatchWired) { refreshMicSentinel(); refreshCameraSentinel(); return; }
   _bioWatchWired = true;
   // Live alerts pushed from the main-process sentinels
-  try { window.kasbah.on('mic:alert', (result) => { _renderSentinelStatus('mmMic', result, 'MIC-HARVEST'); }); } catch (_) {}
-  try { window.kasbah.on('camera:alert', (result) => { _renderSentinelStatus('mmCam', result, 'FACE-DETECT'); }); } catch (_) {}
+  try { window.kasbah.on('mic:alert', (result) => { _renderSentinelStatus('mmMic', result, 'MIC-HARVEST'); }); } catch (__e) { __quiet(__e); }
+  try { window.kasbah.on('camera:alert', (result) => { _renderSentinelStatus('mmCam', result, 'FACE-DETECT'); }); } catch (__e) { __quiet(__e); }
   refreshMicSentinel();
   refreshCameraSentinel();
   refreshEnforceStatus();
@@ -4624,7 +4846,7 @@ async function startRppgScan() {
     if (status) status.textContent = 'Done — camera released';
     stopRppgStream();
   } catch (e) {
-    if (status) status.textContent = 'Failed: ' + e.message;
+    if (status) status.textContent = "Couldn't finish — " + e.message;
     toast('rPPG failed: ' + e.message, 'error');
     stopRppgStream();
   }
@@ -4641,7 +4863,7 @@ async function toggleEnforceMode(el) {
     if (tier) tier.textContent = on ? 'Tier 3 — ENFORCING: ' + (r?.action || '') : 'Tier 1 — observe & alert';
     toast(on ? 'ENFORCE mode ON — confirmed alerts will trigger the selected action' : 'ENFORCE mode OFF — alert-only', on ? 'warn' : 'success');
     renderEnforceLog();
-  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+  } catch (e) { toast("Couldn't finish — " + e.message, 'error'); }
 }
 
 async function setEnforceAction(action) {
@@ -4652,7 +4874,7 @@ async function setEnforceAction(action) {
     if (tier && r?.enforce) tier.textContent = 'Tier 3 — ENFORCING: ' + action;
     toast('Enforcement action set: ' + action, 'success');
     renderEnforceLog();
-  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+  } catch (e) { toast("Couldn't finish — " + e.message, 'error'); }
 }
 
 async function refreshEnforceStatus() {
@@ -4662,7 +4884,7 @@ async function refreshEnforceStatus() {
     const tier = $('mmEnforceTier');
     if (tog && r) tog.classList.toggle('on', !!r.enforce);
     if (tier && r) tier.textContent = r.enforce ? 'Tier 3 — ENFORCING: ' + r.action : 'Tier 1 — observe & alert';
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 async function renderEnforceLog() {
@@ -4685,7 +4907,7 @@ async function loadDigest() {
   if (!wrap) return;
   
   wrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading digest…</div>';
-  if (summaryWrap) summaryWrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading…</div>';
+  if (summaryWrap) summaryWrap.innerHTML = skelRows(3, 'tile');
   if (trustGradeEl) trustGradeEl.style.display = 'none';
   
   try {
@@ -4793,7 +5015,7 @@ function copyDigestSlack() {
     } else {
       toast('Slack format not available', 'warn');
     }
-  }).catch(e => toast('Failed: ' + e.message, 'error'));
+  }).catch(e => toast("Couldn't finish — " + e.message, 'error'));
 }
 function generateEmailDigest() {
   const period = $('digestPeriod')?.value || 'week';
@@ -4806,7 +5028,7 @@ function generateEmailDigest() {
     } else {
       toast('Email format not available', 'warn');
     }
-  }).catch(e => toast('Failed: ' + e.message, 'error'));
+  }).catch(e => toast("Couldn't finish — " + e.message, 'error'));
 }
 // Enhanced MCP Inventory
 async function refreshMcpInventory() {
@@ -4817,7 +5039,7 @@ async function refreshMcpInventory() {
   
   if (!wrap) return;
   wrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading MCP inventory…</div>';
-  if (statsWrap) statsWrap.innerHTML = '<div class="muted" style="padding:16px;text-align:center">Loading…</div>';
+  if (statsWrap) statsWrap.innerHTML = skelRows(2, 'tile');
   if (badge) {
     badge.className = 'status-badge idle';
     badge.querySelector('.status-dot').style.background = 'var(--muted)';
@@ -4906,7 +5128,7 @@ async function refreshMcpInventory() {
                 <strong>${esc(p.id || 'Unnamed')}</strong>
                 <span class="muted" style="font-size:11px">${esc(p.description || 'No description')}</span>
               </div>
-              <div class="muted" style="font-size:11px">Rules: ${(p.rules || []).length} • Teams: ${(p.teams || []).length}</div>
+              <div class="muted" style="font-size:11px">Rules: ${Array.isArray(p.rules) ? p.rules.length : Object.keys(p.rules || {}).length} • Teams: ${Array.isArray(p.teams) ? p.teams.length : Object.keys(p.teams || {}).length}</div>
             </div>
           `).join('');
         }
@@ -5008,7 +5230,7 @@ function redteamInit() {
         score.style.color = (last.detectionRate || 0) >= 80 ? 'var(--green)' : (last.detectionRate || 0) >= 50 ? 'var(--amber)' : 'var(--red)';
       }
     }
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 function renderRedteamHistory() {
@@ -5035,10 +5257,10 @@ function renderRedteamHistory() {
   }).join('');
 }
 
-function showRedteamRunDetails(el, index) {
+async function showRedteamRunDetails(el, index) {
   const run = _rtHistory[_rtHistory.length - 1 - index];
   if (!run) return;
-  alert(`Red-Team Run Details:\n\nTime: ${run.timestamp}\nTotal Cases: ${run.totalCases}\nCaught: ${run.caught}\nMissed: ${run.missed}\nWarnings: ${run.warnings}\nBenign: ${run.benign}\nDetection Rate: ${run.detectionRate?.toFixed(1)}%\nDuration: ${run.duration}ms\n\nCategories:\n${JSON.stringify(run.byCategory, null, 2)}`);
+  await uiAlert(`Red-Team Run Details:\n\nTime: ${run.timestamp}\nTotal Cases: ${run.totalCases}\nCaught: ${run.caught}\nMissed: ${run.missed}\nWarnings: ${run.warnings}\nBenign: ${run.benign}\nDetection Rate: ${run.detectionRate?.toFixed(1)}%\nDuration: ${run.duration}ms\n\nCategories:\n${JSON.stringify(run.byCategory, null, 2)}`);
 }
 async function runRedteamSuite() {
   const btn = $('rtRunBtn');
@@ -5209,7 +5431,7 @@ async function runRedteamSuite() {
     exportBtn.disabled = false;
     toast(`Red-team suite complete: ${passPct}% detection`, passPct >= 80 ? 'success' : 'warn');
   } catch (e) {
-    status.textContent = 'Failed: ' + e.message;
+    status.textContent = "Couldn't finish — " + e.message;
     if (results) results.innerHTML = `<div style="padding:14px;color:#ef4444;font-size:12px">Failed: ${esc(e.message)}</div>`;
     btn.disabled = false; btn.textContent = 'Run Suite Now';
     toast('Red-team run failed: ' + e.message, 'error');
@@ -5253,7 +5475,7 @@ async function bioNeuralFingerprint() {
     try {
       const r = await window.kasbah.bio.neuralFingerprint({ samples, opts:{} });
       if (r.ok || r.error) return forShow('bioFpResult', r, r.ok);
-    } catch(_) {}
+    } catch (__e) { __quiet(__e); }
     // Fallback to API stub
     const r = await window.kasbah.api('POST', '/v1/biometric/neural-fingerprint', { pixels:samples, width:8, height:8 });
     forShow('bioFpResult', r.body || {}, true);
@@ -5265,7 +5487,7 @@ async function bioRppg() {
     try {
       const r = await window.kasbah.bio.rppg({ frames:videoFrames, frameRate:30 });
       return forShow('bioRppgResult', r, !!r.ok);
-    } catch(_) {}
+    } catch (__e) { __quiet(__e); }
     const r = await window.kasbah.api('POST', '/v1/biometric/rppg', { videoFrames, frameRate:30 });
     forShow('bioRppgResult', r.body || {}, true);
   } catch(e) { forShow('bioRppgResult', {error:e.message}, false); }
@@ -5276,7 +5498,7 @@ async function bioVoiceClone() {
     try {
       const r = await window.kasbah.bio.voiceClone({ samples:audioData, opts:{sampleRate:16000} });
       return forShow('bioVcResult', r, !!r.ok);
-    } catch(_) {}
+    } catch (__e) { __quiet(__e); }
     const r = await window.kasbah.api('POST', '/v1/biometric/voice-clone', { audioData, sampleRate:16000 });
     forShow('bioVcResult', r.body || {}, true);
   } catch(e) { forShow('bioVcResult', {error:e.message}, false); }
@@ -5287,7 +5509,7 @@ async function bioNeuralCodec() {
     try {
       const r = await window.kasbah.bio.neuralCodec({ samples:audioData, opts:{sampleRate:16000} });
       return forShow('bioNcResult', r, !!r.ok);
-    } catch(_) {}
+    } catch (__e) { __quiet(__e); }
     const r = await window.kasbah.api('POST', '/v1/biometric/neural-codec', { audioData });
     forShow('bioNcResult', r.body || {}, true);
   } catch(e) { forShow('bioNcResult', {error:e.message}, false); }
@@ -5468,7 +5690,7 @@ async function agentsLoad() {
         new Promise((res) => setTimeout(() => res(null), 1500)),
       ]);
       sessions = r?.body?.sessions || [];
-    } catch (_) {}
+    } catch (__e) { __quiet(__e); }
 
     const rows = [];
     for (const a of agents) {
@@ -5710,7 +5932,7 @@ async function reportsLoad() {
         capabilities: ['audit', 'compliance']
       });
     }
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   loadPassportSelect();
   auditLoad();
   renderActivityPage();
@@ -5773,7 +5995,7 @@ const KSound = (() => {
       g.gain.linearRampToValueAtTime(vol, t + 0.01);
       g.gain.exponentialRampToValueAtTime(0.001, t + dur);
       o.start(t); o.stop(t + dur + 0.01);
-    } catch(_) {}
+    } catch (__e) { __quiet(__e); }
   }
   return {
     allow()  { tone(880, 'sine',  .18, .07); tone(1320, 'sine', .22, .05, .12); },
@@ -5801,8 +6023,10 @@ function addRipple(el) {
 
 document.addEventListener('DOMContentLoaded',async()=>{
   wireAll();
+  // D2: keep the "AI watch" badge honest — poll engine health.
+  try { startEngineHealthPoll(); } catch (__e) { __quiet(__e); }
   // Product focus: land on VPN (the one surface that solves a daily pain).
-  try { nav('home'); } catch (_) {}
+  try { nav('home'); } catch (__e) { __quiet(__e); }
   // Attach ripple to primary action buttons
   document.querySelectorAll('.scan-btn,.ob-btn,.k-btn.primary,.frm-actions .k-btn').forEach(addRipple);
 
@@ -5835,12 +6059,12 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // Poll health up to 12s
   let ready=false;
   for(let i=0;i<24&&!ready;i++){
-    try{const r=await window.kasbah.health();if(r?.body?.status==='ok')ready=true;}catch(_){}
+    try{const r=await window.kasbah.health();if(r?.body?.status==='ok')ready=true;}catch (__e) { __quiet(__e); }
     if(!ready)await new Promise(r=>setTimeout(r,500));
   }
   if(!ready)$('lsStatus').textContent='Engine slow — proceeding…';
 
-  try{const st=await window.kasbah.getState();if(st?.isProtected!=null)S.protected=st.isProtected;}catch(_){}
+  try{const st=await window.kasbah.getState();if(st?.isProtected!=null)S.protected=st.isProtected;}catch (__e) { __quiet(__e); }
   S.apiReady=ready;
   startSSEStream();
 
@@ -5964,7 +6188,7 @@ const _bwrHttpsExempt = new Set();
 // not duplicate the enforcement decision.
 let BWR_BLOCKLIST_CATEGORIES = {};
 async function bwrLoadBlocklist() {
-  try { BWR_BLOCKLIST_CATEGORIES = (await window.kasbah.trackerBlocklist?.()) || {}; } catch (_) {}
+  try { BWR_BLOCKLIST_CATEGORIES = (await window.kasbah.trackerBlocklist?.()) || {}; } catch (__e) { __quiet(__e); }
 }
 function _bwrBlockCategory(hostname) {
   for (const [cat, domains] of Object.entries(BWR_BLOCKLIST_CATEGORIES)) {
@@ -6100,7 +6324,7 @@ function bwrGo(input) {
     wv.addEventListener('did-fail-load', (e) => {
       hideLoading();
       const code = e?.errorCode ?? e?.error_code ?? '?';
-      console.error('[bv] did-fail-load', JSON.stringify({ code, url: e?.url ?? e?.validatedURL ?? tab?.url ?? '' }));
+      console.error('[bv] did-fail-load', JSON.stringify({ code, url: e?.url ?? e?.validatedURL ?? '' }));
       toast(`Page failed to load (code ${code}) — click Reload or try again`, 'error', 5000);
     }, { once: true });
   };
@@ -6219,7 +6443,7 @@ function bwrNewTabWith(url) {
           const r = await window.kasbah.api('GET', `/v1/breach/check-password?hash5=${hash5}`);
           const hit = (r?.body?.suffixes || []).find(s => s.suffix === hashSuffix);
           if (hit) bwrMiniToast(`⚠ This password was seen in ${hit.count.toLocaleString()} known data breaches`);
-        } catch (_) {}
+        } catch (__e) { __quiet(__e); }
       }
     });
   }
@@ -6320,7 +6544,7 @@ async function bwrOnPageLoad(wv, tab) {
     pageText = await wv.executeJavaScript(
       `(document.body && document.body.innerText.slice(0,4000)) || ''`
     );
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 
   _bwr._lastPageText = pageText;
   if (!pageText.trim()) { bwrShieldOk('Page loaded — nothing to scan.'); return; }
@@ -6368,7 +6592,7 @@ async function bwrOnPageLoad(wv, tab) {
 
     // Real sub-resource tracker blocks for this tab (from main's session.webRequest).
     let wcId = null;
-    try { wcId = wv.getWebContentsId?.(); } catch (_) {}
+    try { wcId = wv.getWebContentsId?.(); } catch (__e) { __quiet(__e); }
     const blockedOnThisTab = wcId != null ? (_bwrBlocksByWcId.get(wcId) || 0) : 0;
     if (blockedOnThisTab > 0) {
       threats.push({ level: 'info', label: `${blockedOnThisTab} tracker/ad request(s) blocked`, detail: '' });
@@ -6448,7 +6672,7 @@ function bwrOnWillNavigate(e, wv, tab) {
       wv.src = httpsUrl;
       return;
     }
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
   bwrShieldPending();
 }
 
@@ -6688,7 +6912,7 @@ async function bwrRenderShieldToggle(content) {
   try {
     const st = await window.kasbah.browserSettings.get();
     down = (st.shieldExceptions || []).map(h => String(h).toLowerCase()).includes(host);
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
   const row = document.createElement('div');
   row.id = 'bwrShieldToggleRow';
   row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px';
@@ -6711,7 +6935,7 @@ async function bwrToggleShields() {
     const nowDown = i < 0;
     toast(nowDown ? `Shields DOWN for ${host} — reloading` : `Shields UP for ${host} — reloading`, 'info');
     const tab = _bwr.activeTab;
-    if (tab?.webview) { try { tab.webview.reload(); } catch (_) {} }
+    if (tab?.webview) { try { tab.webview.reload(); } catch (__e) { __quiet(__e); } }
     bwrRenderToolPanel('shield');
   } catch (e) { toast('Toggle failed: ' + e.message, 'error'); }
 }
@@ -6866,7 +7090,7 @@ function bwrRenderMenu(content) {
 }
 
 async function bwrRenderHistory(content) {
-  content.innerHTML = '<div class="muted" style="font-size:12px">Loading…</div>';
+  content.innerHTML = skelRows(3);
   const list = await window.kasbah.browserHistory.list(200);
   const render = (items) => `
     <div style="display:flex;gap:6px;margin-bottom:10px">
@@ -6901,10 +7125,10 @@ async function bwrHistoryFilter(query) {
     </div>`).join('') : '<div class="muted" style="font-size:12px;padding:8px 0">No matches.</div>';
 }
 async function bwrHistoryDeleteOne(id) { await window.kasbah.browserHistory.delete(id); bwrRenderHistory(document.getElementById('bwrPanelContent')); }
-async function bwrHistoryClearAll() { if (!confirm('Clear all browsing history?')) return; await window.kasbah.browserHistory.clear(); bwrRenderHistory(document.getElementById('bwrPanelContent')); }
+async function bwrHistoryClearAll() { if (!(await uiConfirm('Clear all browsing history?', { title: 'Clear history?', okLabel: 'Clear', danger: true }))) return; await window.kasbah.browserHistory.clear(); bwrRenderHistory(document.getElementById('bwrPanelContent')); }
 
 async function bwrRenderBookmarks(content) {
-  content.innerHTML = '<div class="muted" style="font-size:12px">Loading…</div>';
+  content.innerHTML = skelRows(3);
   const list = await window.kasbah.browserBookmarks.list();
   content.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:2px">
@@ -6947,7 +7171,7 @@ function _bwrFormatBytes(n) {
   return n.toFixed(i ? 1 : 0) + ' ' + u[i];
 }
 async function bwrRenderDownloads(content) {
-  content.innerHTML = '<div class="muted" style="font-size:12px">Loading…</div>';
+  content.innerHTML = skelRows(3);
   const list = await window.kasbah.browserDownloads.list();
   content.innerHTML = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
@@ -7019,7 +7243,7 @@ function bwrUpdateBlockChip() {
   const cnt  = document.getElementById('bwrBlockCount');
   if (!chip || !cnt) return;
   let wcId = null;
-  try { wcId = _bwr.activeTab?.webview?.getWebContentsId?.(); } catch (_) {}
+  try { wcId = _bwr.activeTab?.webview?.getWebContentsId?.(); } catch (__e) { __quiet(__e); }
   const count = wcId != null ? (_bwrBlocksByWcId.get(wcId) || 0) : 0;
   chip.style.display = count > 0 ? '' : 'none';
   cnt.textContent = count;
@@ -7115,7 +7339,7 @@ function wfToggleAutoVpn(on) { wfAutoVpnEnabled = on; }
    ═══════════════════════════════════════════════════════════════════════════ */
 let pwEntries = [];
 async function pwLoad() {
-  $('pwList').innerHTML = '<div class="muted" style="padding:12px;font-size:13px">Loading…</div>';
+  $('pwList').innerHTML = skelRows(3);
   try { pwEntries = await window.kasbah.vault.list(); pwRender(); }
   catch(e) { $('pwList').innerHTML = '<div style="color:var(--red);padding:12px;font-size:13px">' + esc(e.message) + '</div>'; }
 }
@@ -7244,9 +7468,9 @@ async function bkDelete(file) { await window.kasbah.backup.delete(file); bkRefre
 async function bkRestore(file) {
   const res = await window.kasbah.backup.decrypt(file);
   if (res.ok) {
-    showToast('Restored to ' + res.restoredTo);
+    toast('Restored to ' + res.restoredTo, 'success');
   } else if (res.error !== 'Cancelled') {
-    showToast('Restore failed: ' + res.error, 'error');
+    toast('Restore failed: ' + res.error, 'error');
   }
 }
 
@@ -7272,7 +7496,7 @@ const PC_BROKERS = [
 ];
 const PC_DONE_KEY = 'kg_privacy_done';
 function pcGetDone() { try { return JSON.parse(localStorage.getItem(PC_DONE_KEY)||'[]'); } catch { return []; } }
-function pcSetDone(arr) { try { localStorage.setItem(PC_DONE_KEY, JSON.stringify(arr)); } catch {} }
+function pcSetDone(arr) { try { localStorage.setItem(PC_DONE_KEY, JSON.stringify(arr)); } catch (__e) { __quiet(__e); } }
 function pcRender() {
   const done = pcGetDone();
   $('pcDone').textContent = done.length;
@@ -7440,7 +7664,7 @@ async function vpnAiLaneStart() {
   catch (e) { $('vpnAiOut').textContent = 'error: ' + e.message; }
 }
 async function vpnAiLaneStop() {
-  try { await window.kasbah.vpn.aiLaneStop(); vpnRefresh(); } catch (_) {}
+  try { await window.kasbah.vpn.aiLaneStop(); vpnRefresh(); } catch (__e) { __quiet(__e); }
 }
 
 async function vpnVerifyReceipts() {
@@ -7466,9 +7690,9 @@ const VPN_COMING_SOON = [
 function vpnSetConnectedUI(on) {
   const was = window.__vpnConnected;
   window.__vpnConnected = !!on;
-  if (on && !was) { try { homeOrchestrateOnConnect(); } catch (_) {} }
-  try { homeRefresh(); } catch (_) {}
-  try { homeRefreshPrivacy(); } catch (_) {}
+  if (on && !was) { try { homeOrchestrateOnConnect(); } catch (__e) { __quiet(__e); } }
+  try { homeRefresh(); } catch (__e) { __quiet(__e); }
+  try { homeRefreshPrivacy(); } catch (__e) { __quiet(__e); }
   $('vpnConnDot').style.background = on ? 'var(--green)' : '#6b7280';
   $('vpnConnState').textContent = on ? 'Protected · Singapore' : 'Not protected';
   $('vpnConnectBtn').style.display = on ? 'none' : '';
@@ -7546,7 +7770,7 @@ async function vpnLoadLocations() {
     } else {
       el.innerHTML = `<span class="muted">DPI bypass: no exits configured for WSS:443 yet</span>`;
     }
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 async function vpnConnect() {
@@ -7556,7 +7780,7 @@ async function vpnConnect() {
     try {
       const locs = await window.kasbah.vpn.locations();
       if (locs && locs.length) { vpnSelectedLocation = locs[0].id; vpnRenderLocationGrid(locs); }
-    } catch (_) {}
+    } catch (__e) { __quiet(__e); }
   }
   const locationId = vpnSelectedLocation;
   if (!locationId) { msg.innerHTML = '<span style="color:var(--red)">No location selected — add a real server first.</span>'; return; }
@@ -7640,7 +7864,7 @@ async function homeRunCheckup() {
   if (out) out.innerHTML = '<span class="muted">Running…</span>';
   let egress = null;
   if (window.__vpnConnected) {
-    try { egress = await window.kasbah.vpn.checkEgress(); } catch (_) {}
+    try { egress = await window.kasbah.vpn.checkEgress(); } catch (__e) { __quiet(__e); }
   }
   try {
     const r = await window.kasbah.privacy.checkup({ egress });
@@ -7657,7 +7881,7 @@ async function homeRunCheckup() {
 let __clipWatch = false;
 async function toggleClipWatch() {
   __clipWatch = !__clipWatch;
-  try { await window.kasbah.privacy.clipWatch(__clipWatch); } catch (_) {}
+  try { await window.kasbah.privacy.clipWatch(__clipWatch); } catch (__e) { __quiet(__e); }
   const b = $('clipWatchBtn');
   if (b) b.textContent = 'Clipboard watch: ' + (__clipWatch ? 'ON' : 'off');
 }
@@ -7676,7 +7900,7 @@ async function proActivateFromInput() {
   } catch (e) { if (msg) msg.innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`; }
 }
 async function proDeactivate() {
-  try { await window.kasbah.pro.deactivate(); } catch (_) {}
+  try { await window.kasbah.pro.deactivate(); } catch (__e) { __quiet(__e); }
   const msg = $('proActivateMsg');
   if (msg) msg.innerHTML = '<span class="muted">License removed.</span>';
   await proRefreshStatus();
@@ -7688,7 +7912,7 @@ async function proRefreshStatus() {
     if (el) el.textContent = s.isPro ? `Pro · ${s.codeHint || 'active'}` : 'Free — Singapore only';
     const tier = $('tierPillTier');
     if (tier) tier.textContent = s.isPro ? 'Pro' : 'Free';
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 function proActivatePrompt() { nav('plans'); setTimeout(()=>$('proCodeInput')?.focus(), 200); }
 
@@ -7699,10 +7923,10 @@ async function earnRefresh() {
     const b = r?.body || {};
     if ($('earnBalance')) $('earnBalance').textContent = `${b.balance ?? '—'} credits`;
     if ($('earnCode')) $('earnCode').textContent = b.code || '—';
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 async function earnCopy() {
-  try { await navigator.clipboard.writeText($('earnCode')?.textContent || ''); toast('Invite code copied — friend gets +500, you get +500', 'ok', 3000); } catch (_) {}
+  try { await navigator.clipboard.writeText($('earnCode')?.textContent || ''); toast('Invite code copied — friend gets +500, you get +500', 'ok', 3000); } catch (__e) { __quiet(__e); }
 }
 async function earnRedeem() {
   const code = ($('earnRedeemInput')?.value || '').trim();
@@ -7759,15 +7983,15 @@ async function bwrShowVpnBadge() {
 let __safeMode = false;
 async function toggleSafeMode() {
   __safeMode = !__safeMode;
-  try { await window.kasbah.privacyExtra.safeMode(__safeMode); } catch (_) {}
+  try { await window.kasbah.privacyExtra.safeMode(__safeMode); } catch (__e) { __quiet(__e); }
   if (__safeMode) {
-    try { await window.kasbah.privacy.clipWatch(true); } catch (_) {}
+    try { await window.kasbah.privacy.clipWatch(true); } catch (__e) { __quiet(__e); }
     __clipWatch = true;
     const c = $('clipWatchBtn'); if (c) c.textContent = 'Clipboard watch: ON';
     const b = $('safeModeBtn'); if (b) b.textContent = 'Safe mode: ON';
     toast('Safe mode', 'Clipboard watch on. Connect VPN for full protection.', 3000);
   } else {
-    try { await window.kasbah.privacyExtra.safeMode(false); } catch (_) {}
+    try { await window.kasbah.privacyExtra.safeMode(false); } catch (__e) { __quiet(__e); }
     const b = $('safeModeBtn'); if (b) b.textContent = 'Safe mode';
   }
 }
@@ -7814,7 +8038,7 @@ async function pwStrengthLive() {
     const s = await window.kasbah.privacy.pwScore(pw);
     const color = s.label==='excellent'||s.label==='strong' ? 'var(--green)' : s.label==='fair' ? 'var(--amber,#b8860b)' : 'var(--red)';
     if ($('pwStrength')) $('pwStrength').innerHTML = `<span style="color:${color};font-weight:600">${s.label}</span> · ~${s.bits} bits · ${s.length} chars`;
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 async function pwExport() {
   try {
@@ -7922,12 +8146,11 @@ async function homeRefresh() {
   const icon = $('homeStatusIcon');
   const title = $('homeStatusTitle');
   const sub = $('homeStatusSub');
-  if (title) title.textContent = connected ? 'You are protected' : 'You are not protected yet';
+  if (title) title.textContent = connected ? "You're protected" : "Let's get you protected";
   if (icon) icon.textContent = '';
-  if (sub) sub.textContent = connected
-    ? 'Your traffic and pastes are watched on this Mac. Everything stays local.'
-    : 'Turn on the VPN below, or check a message — protection starts in one click.';
-  try { wireHomeSeatbelt(); } catch (_) {}
+  if (sub) sub.textContent = "Privacy for everyone — use any AI, leak nothing, and prove it. "
+    + (connected ? "You're covered on this Mac right now." : "Start with one tap, or check something below.");
+  try { wireHomeSeatbelt(); } catch (__e) { __quiet(__e); }
   // Quiet cards — never show raw "undefined"; show honest placeholders.
   try {
     const m = await window.kasbah.exitMarket.list();
@@ -7961,7 +8184,7 @@ async function homeRefresh() {
       }
     }
   } catch (_) { if ($('homeSitrep')) $('homeSitrep').textContent = connected ? 'Protected' : 'Not protected'; }
-  try { homeRefreshPrivacy(); } catch (_) {}
+  try { homeRefreshPrivacy(); } catch (__e) { __quiet(__e); }
 }
 
 async function homeRefreshPrivacy() {
@@ -7973,7 +8196,7 @@ async function homeRefreshPrivacy() {
     if (title) title.textContent = connected ? 'You are protected' : 'Kasbah Privacy';
     if ($('homeVpnState')) $('homeVpnState').textContent = connected ? 'Connected' : 'Not connected';
     if ($('homeVpnExit')) $('homeVpnExit').textContent = connected ? 'Singapore / Tokyo · PQ WireGuard' : 'Free Asia exits available';
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
   try {
     if (window.__vpnConnected) {
       const r = await window.kasbah.vpn.checkEgress();
@@ -7985,7 +8208,7 @@ async function homeRefreshPrivacy() {
       if ($('homeEgressIp')) $('homeEgressIp').textContent = 'Yangon / ISP';
       if ($('homeEgressLoc')) $('homeEgressLoc').textContent = 'Connect VPN to change your IP';
     }
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 
@@ -7994,7 +8217,7 @@ async function popMint() {
   try {
     let egress = null, loc = null;
     if (window.__vpnConnected) {
-      try { egress = await window.kasbah.vpn.checkEgress(); } catch (_) {}
+      try { egress = await window.kasbah.vpn.checkEgress(); } catch (__e) { __quiet(__e); }
       loc = window.__vpnLastLoc || 'sin';
     }
     const e = await window.kasbah.pop.mint({
@@ -8006,6 +8229,92 @@ async function popMint() {
     popRefresh();
   } catch (e) { if ($('popMsg')) $('popMsg').innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`; }
 }
+/* ── Your approval (human-bound consent) ───────────────────────────────────
+   Read-only: shows whether this Mac is registered as the approver and the last
+   few decisions. Approving happens in a native dialog owned by the main
+   process, never from this page. */
+let _approverTimer = null;
+async function approverRefresh() {
+  const chip = $('approverChip'), list = $('approverList');
+  if (!chip || !window.kasbah?.approver) return;
+  try {
+    const st = await window.kasbah.approver.status();
+    chip.textContent = st.registered ? 'on · this Mac approves' : (st.error ? 'off' : 'starting…');
+    if (!st.registered && st.error) {
+      list.textContent = /already exists|registered approver/i.test(st.error)
+        ? 'Another approver is already registered with the engine, so this Mac cannot approve.'
+        : 'Not active: ' + st.error;
+    } else if (!st.decisions || !st.decisions.length) {
+      list.textContent = 'No requests yet.';
+    } else {
+      list.textContent = '';
+      for (const d of st.decisions) {
+        const row = document.createElement('div');
+        row.style.cssText = 'padding:5px 0;border-bottom:1px solid var(--border)';
+        const when = String(d.at || '').slice(11, 19);
+        row.textContent = `${when} · ${d.outcome} · ${d.action}${d.tool ? ' (' + d.tool + ')' : ''}${d.why ? ' — ' + d.why : ''}`;
+        list.appendChild(row);
+      }
+    }
+  } catch (e) { chip.textContent = 'off'; __quiet(e); }
+  if (!_approverTimer) _approverTimer = setInterval(() => { if ($('pageAgentguard')?.classList.contains('active')) approverRefresh(); }, 4000);
+}
+
+/* ── Admission gate (SSI) ──────────────────────────────────────────────────
+   One card on the AI helpers page. Three buttons exercise the gate; the result
+   is a single plain sentence. Everything else stays in the engine. */
+const SSI_REASONS = {
+  ADMIT: 'Admitted. Every hard rule held, a one-time permit was issued and used, and the audit entry was written first.',
+  DENY_RIGHTS: 'Refused. A hard rule was below its floor, and nothing else can make up for that.',
+  DENY_TYPE: 'Refused. The request did not carry a valid proof of its state.',
+  DENY_COMPOSITE: 'Refused. The combined confidence was too low.',
+  DENY_TICKET_EXPIRED: 'Refused. The one-time permit had expired.',
+  DENY_TICKET_EPOCH: 'Refused. The permit came from an older key period.',
+  DENY_TICKET_MAC: 'Refused. The permit was altered.',
+  DENY_TICKET_SCOPE: 'Refused. The permit was issued for a different action.',
+  DENY_STALE_STATE: 'Refused. The state changed after the permit was issued.',
+  DENY_REPLAY: 'Refused. That permit was already used.',
+  DENY_REPLAY_RETRYABLE: 'Refused. That permit was already used; ask for a new one.',
+  DENY_AUDIT: 'Refused. The audit entry could not be written, so nothing ran.',
+  DENY_BUDGET_TIMEOUT: 'Refused. The check took too long.',
+  DENY_THERMO: 'Refused. The signals showed information leaking.',
+  DENY_INNER_SPEECH: 'Refused. The consent phrase did not match.',
+};
+function ssiShow(text, tone) {
+  const el = $('ssiResult'); if (!el) return;
+  el.textContent = text;
+  el.style.color = tone === 'ok' ? 'var(--green, #2e9e6b)' : tone === 'no' ? 'var(--accent, #bf3811)' : '';
+}
+async function ssiRefresh() {
+  const chip = $('ssiChip'); if (!chip || !window.kasbah?.ssi) return;
+  try {
+    const st = await window.kasbah.ssi.status();
+    const t = st && st.selfTest;
+    chip.textContent = st && st.ok && t ? `ready · ${t.passed}/${t.total} checks` : 'unavailable';
+  } catch (e) { chip.textContent = 'unavailable'; __quiet(e); }
+}
+async function ssiAdmit(kind) {
+  if (!window.kasbah?.ssi) { ssiShow('The admission gate is not available in this build.', 'no'); return; }
+  ssiShow('Checking…');
+  try {
+    let r;
+    if (kind === 'rights')       r = await window.kasbah.ssi.admit({ rights: [0, 0.8, 0.5, 1] });
+    else if (kind === 'consent') r = await window.kasbah.ssi.engineAdmit({ consent: false });
+    else                         r = await window.kasbah.ssi.admit({});
+    if (!r || r.ok !== true) {
+      const why = String((r && r.error) || 'no answer');
+      ssiShow(/python|not found|ENOENT/i.test(why) ? 'The admission engine needs Python 3 on this Mac.'
+        : /unreachable|API key|timeout/i.test(why) ? 'The local engine did not answer. Check that it is running.'
+        : 'The gate could not run: ' + why, 'no');
+      return;
+    }
+    const code = r.admitted ? 'ADMIT' : String(r.deny || '').toUpperCase();
+    const text = kind === 'consent' && !r.admitted ? 'Refused. Consent was missing, and consent is a hard rule.'
+      : SSI_REASONS[code] || (r.admitted ? SSI_REASONS.ADMIT : 'Refused (' + code + ').');
+    ssiShow(text, r.admitted ? 'ok' : 'no');
+  } catch (e) { ssiShow('The gate could not run: ' + e.message, 'no'); }
+}
+
 async function popRefresh() {
   try {
     const list = await window.kasbah.pop.list();
@@ -8356,7 +8665,7 @@ async function dmStatus() {
 async function commitCreate() {
   try {
     let egress = null;
-    if (window.__vpnConnected) { try { egress = await window.kasbah.vpn.checkEgress(); } catch (_) {} }
+    if (window.__vpnConnected) { try { egress = await window.kasbah.vpn.checkEgress(); } catch (__e) { __quiet(__e); } }
     const r = await window.kasbah.commit.create({
       egressIp: egress?.ip, location: window.__vpnLastLoc || 'sin', colo: egress?.colo,
       claim: window.__vpnConnected ? 'PROTECTED' : 'EXPOSED',
@@ -8376,14 +8685,14 @@ async function merkleBatch() {
   try {
     const r = await window.kasbah.pop.export();
     if (!r.ok) throw new Error('export proofs first');
-    const b = await window.kasbah.merkle.batchProofs(r.file);
+    const b = await window.kasbah.merkleBatch.batchProofs(r.file);
     if ($('popMsg')) $('popMsg').innerHTML = `<span style="color:var(--green)">Merkle root ${esc(b.root.slice(0,16))}… · ${b.count} · ${esc(b.file)}</span>`;
   } catch (e) { if ($('popMsg')) $('popMsg').innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`; }
 }
 async function fsaList() {
   try {
     const l = await window.kasbah.fsaudit.list(30);
-    if ($('fsaList')) $('fsaList').innerHTML = l.map(e=>`<div>#${e.epoch} ${esc(e.type)} ${esc((e.ts||'').slice(11,19))}</div>`).join('') || 'empty';
+    if ($('fsaList')) $('fsaList').innerHTML = l.map(e=>`<div>#${e.epoch} ${esc(e.type || e.event || e.action || 'event')} ${esc((typeof e.ts === 'number' ? new Date(e.ts).toISOString() : String(e.ts || '')).slice(11,19))}</div>`).join('') || 'empty';
   } catch (e) { if ($('fsaList')) $('fsaList').textContent = e.message; }
 }
 async function fsaVerify() {
@@ -8569,7 +8878,7 @@ async function aigovRefresh() {
         ? `Gate: on · ${pr.aiGov?.mode || p.mode || '—'}`
         : 'Gate: off';
     }
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
   try {
     const lock = await window.kasbah.aigov.agentLock();
     const pol = lock.policy || {};
@@ -8580,7 +8889,7 @@ async function aigovRefresh() {
         : (pol.requireVpn ? 'Unlocked · VPN required' : 'VPN not required');
     }
     if ($('agVpnToggle')) $('agVpnToggle').textContent = pol.requireVpn ? 'Require VPN: on' : 'Require VPN: off';
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
   try {
     const sh = await window.kasbah.aigov.shadow();
     const hosts = sh.hosts || [];
@@ -8589,7 +8898,7 @@ async function aigovRefresh() {
         ? hosts.slice(0, 8).map((h) => `<div>${h.host} <span class="muted">· ${h.count} visit${h.count===1?'':'s'}</span></div>`).join('')
         : '<span class="muted">No AI sites in Kasbah Browser history yet.</span>';
     }
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
 }
 async function aigovSetMode(mode) {
   await window.kasbah.aigov.policySet({ mode });
@@ -8645,12 +8954,12 @@ async function settingsInit() {
     const li = await window.kasbah.appSettings.getLoginItem();
     const tog = $('togLoginItem');
     if (tog) tog.classList.toggle('on', !!(li && li.openAtLogin));
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
   try {
     const t = await window.kasbah.travel.status();
     const tt = $('togTravel');
     if (tt) tt.classList.toggle('on', !!(t && t.on));
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 async function toggleTravel(el) {
@@ -8659,7 +8968,7 @@ async function toggleTravel(el) {
     const r = await window.kasbah.travel.set(on);
     if (r && r.ok) { el.classList.toggle('on', on); toast('Travel mode', on ? 'On — VPN auto-connects everywhere' : 'Off', 2500); }
     else { toast('Travel mode', (r && r.error) || 'Could not change', 2500); }
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 // ── My data: see it, take it, delete it ──────────────────────────────────
@@ -8682,21 +8991,21 @@ async function myDataExport() {
   try {
     const r = await window.kasbah.data.export();
     toast('My data', r.ok ? 'Saved to Downloads' : ('Failed: ' + (r.error || '')), 3000);
-  } catch(_) {}
+  } catch(e) { toast('Export failed: ' + (e.message || e), 'error', 3000); }
 }
 async function myDataErase() {
-  if (!confirm('Delete browsing history, downloads list, and recent activity on this Mac? Your vault and receipts log are kept.')) return;
-  if (!confirm('Really delete? This cannot be undone.')) return;
+  if (!(await uiConfirm('Delete browsing history, downloads list, and recent activity on this Mac? Your vault and receipts log are kept.', { title: 'Delete my data?', okLabel: 'Delete', danger: true }))) return;
+  if (!(await uiConfirm('This cannot be undone.', { title: 'Really delete?', okLabel: 'Delete permanently', danger: true }))) return;
   try {
     const r = await window.kasbah.data.erase();
     toast('My data', r.ok ? 'Deleted: ' + (r.cleared || []).join(', ') + '. Kept vault + log.' : 'Failed', 3000);
     myDataRefresh();
-  } catch(_) {}
+  } catch (__e) { __quiet(__e); }
 }
 
 // ── Pair another Mac (no cloud) ───────────────────────────────────────────
 async function _pairPassword() {
-  const pw = prompt('Pairing password (8+ characters). Use the SAME password on the other Mac.');
+  const pw = await uiPrompt('Pairing password (8+ characters). Use the SAME password on the other Mac.', '', { password: true });
   return pw || '';
 }
 async function pairExport() {
@@ -8706,13 +9015,13 @@ async function pairExport() {
   try {
     const r = await window.kasbah.device.exportPair(pw);
     if (out) out.textContent = r.ok
-      ? `Saved ${r.file} (${r.vaultEntries} passwords inside${r.vaultEntries ? '' : ' — unlock your vault first to include passwords'}). Carry it to your other Mac yourself.`
+      ? `Saved ${r.file} (${r.vaultEntries} passwords inside${r.vaultEntries ? '' : ' — no saved passwords yet'}). Carry it to your other Mac yourself.`
       : ('Failed: ' + (r.error || ''));
   } catch(_) { if (out) out.textContent = 'Failed.'; }
 }
 async function pairImport() {
   const out = $('pairOut');
-  const file = prompt('Pairing file name in Downloads (e.g. kasbah-pair-123.kpair):');
+  const file = await uiPrompt('Pairing file name in Downloads (e.g. kasbah-pair-123.kpair):');
   if (!file) return;
   const pw = await _pairPassword();
   if (!pw) return;
@@ -8812,11 +9121,11 @@ async function hardenReset() { await window.kasbah.harden.reset(); hardenRefresh
 // ── Silent recipe orchestration ──────────────────────────────────────────────
 // Runs behind the scenes whenever Connect or Check fires.
 async function _silentOrchestrate() {
-  try { await window.kasbah.privacy.clipWatch(true); } catch (_) {}
-  try { await window.kasbah.honey.seedDefaults?.(); } catch (_) {}
-  try { await window.kasbah.agentRegistry.list(); } catch (_) {} // wake registry
-  try { await window.kasbah.harden.status(); } catch (_) {}
-  try { await window.kasbah.impactCard.bump('scans', 0); } catch (_) {}
+  try { await window.kasbah.privacy.clipWatch(true); } catch (__e) { __quiet(__e); }
+  try { await window.kasbah.honey.seedDefaults?.(); } catch (__e) { __quiet(__e); }
+  try { await window.kasbah.agentRegistry.list(); } catch (__e) { __quiet(__e); } // wake registry
+  try { await window.kasbah.harden.status(); } catch (__e) { __quiet(__e); }
+  try { await window.kasbah.impactCard.bump('scans', 0); } catch (__e) { __quiet(__e); }
 }
 
 async function homePrimary() {
@@ -8825,9 +9134,9 @@ async function homePrimary() {
   if (window.__vpnConnected) {
     // Disconnect
     if (btn) { btn.disabled = true; btn.textContent = 'Disconnecting…'; }
-    try { await window.kasbah.vpn.disconnect(); } catch (_) {}
+    try { await window.kasbah.vpn.disconnect(); } catch (__e) { __quiet(__e); }
     window.__vpnConnected = false;
-    try { vpnSetConnectedUI(false); } catch (_) {}
+    try { vpnSetConnectedUI(false); } catch (__e) { __quiet(__e); }
     if (btn) { btn.disabled = false; btn.textContent = 'Connect VPN'; }
     homeRefresh();
     return;
@@ -8842,7 +9151,7 @@ async function homePrimary() {
     try {
       const best = await window.kasbah.net.bestExit();
       if (best.ok && best.best) locationId = best.best;
-    } catch (_) {}
+    } catch (__e) { __quiet(__e); }
     if (!locationId) { nav('vpn'); if (btn) { btn.disabled = false; btn.textContent = 'Connect VPN'; } return; }
     if (btn) btn.textContent = 'Connecting…';
     const r = await window.kasbah.vpn.connect(locationId);
@@ -8853,7 +9162,7 @@ async function homePrimary() {
     }
     window.__vpnConnected = true;
     window.__vpnLastLoc = locationId;
-    try { vpnSetConnectedUI(true); } catch (_) {}
+    try { vpnSetConnectedUI(true); } catch (__e) { __quiet(__e); }
     if (btn) { btn.disabled = false; btn.textContent = 'Disconnect VPN'; }
     if (out) out.innerHTML = `<span style="color:var(--green)">✓ Connected to ${esc(r.name||locationId)} — tunnel active</span>`;
     // Silent recipes: clipboard watch + honeytokens + impact
@@ -8861,7 +9170,7 @@ async function homePrimary() {
     // Auto-create commit proof to record this moment
     try {
       await window.kasbah.commit.create({ location: locationId, claim: 'PROTECTED' });
-    } catch (_) {}
+    } catch (__e) { __quiet(__e); }
     homeRefresh();
   } catch (e) {
     if (out) out.innerHTML = `<span style="color:var(--red)">${esc(e.message)}</span>`;
@@ -8877,15 +9186,15 @@ async function homeCheckNow() {
   try {
     // Run checkup (also bumps scans via IPC handler)
     const c = await window.kasbah.privacy.checkup({});
-    try { await window.kasbah.impactCard.bump('scans', 1); } catch (_) {}
+    try { await window.kasbah.impactCard.bump('scans', 1); } catch (__e) { __quiet(__e); }
     // Mark claim ledger checked after a successful local check
     try {
       const claims = await window.kasbah.claims.list();
       for (const cl of (claims || []).slice(0, 3)) {
         if (cl.id) await window.kasbah.claims.check(cl.id);
       }
-    } catch (_) {}
-    try { _silentOrchestrate(); } catch (_) {}
+    } catch (__e) { __quiet(__e); }
+    try { _silentOrchestrate(); } catch (__e) { __quiet(__e); }
     const isGood = c.verdict === 'GOOD';
     const label = isGood ? '✓ You look safe.'
       : c.verdict === 'NEEDS_WORK' ? '⚠ A few things to improve.'
@@ -8894,8 +9203,8 @@ async function homeCheckNow() {
 
     // Gather extra context silently
     let honeyCount = 0, secretsBlocked = 0;
-    try { const hlist = await window.kasbah.honey.list(); honeyCount = hlist.length; } catch (_) {}
-    try { const snap = await window.kasbah.impactCard.snapshot(); secretsBlocked = snap.secretsBlocked || 0; } catch (_) {}
+    try { const hlist = await window.kasbah.honey.list(); honeyCount = hlist.length; } catch (__e) { __quiet(__e); }
+    try { const snap = await window.kasbah.impactCard.snapshot(); secretsBlocked = snap.secretsBlocked || 0; } catch (__e) { __quiet(__e); }
 
     let html = `<div style="font-weight:700;color:${color}">${esc(label)}</div>`;
     html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:12px">`;
@@ -8914,7 +9223,7 @@ async function homeCheckNow() {
     _silentOrchestrate();
     // Silent: create commit proof if VPN connected
     if (window.__vpnConnected) {
-      try { await window.kasbah.commit.create({ location: window.__vpnLastLoc||'', claim: 'PROTECTED' }); } catch (_) {}
+      try { await window.kasbah.commit.create({ location: window.__vpnLastLoc||'', claim: 'PROTECTED' }); } catch (__e) { __quiet(__e); }
     }
   } catch (e) {
     if (out) out.textContent = e.message;
@@ -8929,7 +9238,7 @@ async function homeCrisisToggle() {
     __crisis = !__crisis;
     const s = await window.kasbah.sitrep.crisis(__crisis);
     __crisis = !!s.on;
-  } catch (_) {}
+  } catch (__e) { __quiet(__e); }
   const thumb = $('homeCrisisThumb');
   const label = $('homeCrisisLabel');
   const toggle = $('homeCrisisToggle');
@@ -8944,7 +9253,7 @@ async function homeCrisisToggle() {
   // ── Seatbelt product layer: digest + trust grade + tier ───────────────────
   // Extracted into wireHomeSeatbelt() and called from homeRefresh so the
   // trust chip shows real data on first paint, never "undefined".
-  try { wireHomeSeatbelt(); } catch (_) {}
+  try { wireHomeSeatbelt(); } catch (__e) { __quiet(__e); }
 
 function wireHomeSeatbelt() {
   window.kasbah.api('GET', '/v1/intervention/digest').then((d) => {
@@ -8981,7 +9290,7 @@ async function auditExportCsv() {
   } catch (e) { toast('Export', e.message, 2000); }
 }
 async function auditWebhook() {
-  const url = prompt('SIEM HTTPS webhook URL (Splunk / Datadog)');
+  const url = await uiPrompt('SIEM HTTPS webhook URL (Splunk / Datadog)');
   if (!url) return;
   try {
     const r = await window.kasbah.fsaudit.webhook({ url });
@@ -9044,8 +9353,8 @@ async function kasbahSafeCall(fn, args=[], retries=2) {
 setInterval(async ()=>{
   try{
     const r = await window.kasbah.api('GET','/v1/status').catch(()=>null);
-    const dot = $('sysDot'); if(dot){ dot.style.background = r?.ok ? '#22c55e' : '#ef4444'; }
-  }catch{}
+    const dot = $('sysDot'); if(dot){ dot.style.background = (r && r.status === 200) ? '#22c55e' : '#ef4444'; }
+  }catch (__e) { __quiet(__e); }
 }, 10000);
 
 
@@ -9072,7 +9381,7 @@ async function userValueInit() {
         <div class="settings-card"><div style="font-weight:600;margin-bottom:6px">Leak Guard</div><div class="muted">On-device PII scan score for test: ${(pii*100).toFixed(0)}%</div></div>
       </div>
     `;
-  } catch(e) {}
+  } catch (__e) { __quiet(__e); }
 }
 const origSetTab = typeof setTab === 'function' ? setTab : null;
 if (origSetTab) {
@@ -9088,6 +9397,18 @@ async function copyDigest() {
     toast('Digest copied — paste into Slack/email', 'ok', 2500);
   } catch (_) { toast('Digest copy failed', 'error', 2000); }
 }
+
+// D9: privacy alerts raised by the main process. These listeners existed on the
+// bridge but nothing subscribed, so the alerts never reached the user.
+try {
+  const P = window.kasbah?.privacy;
+  if (P) {
+    P.onClipSecret?.((d) => { if (d && d.found) toast('A secret is on your clipboard — clear it before pasting into AI', 'warn', 6000); });
+    P.onEgressAlert?.((d) => toast('Sensitive data is about to leave this Mac: ' + String(d?.label || 'flagged content'), 'warn', 6000));
+    P.onHoneytokenHit?.(() => toast('Decoy trap triggered — one of your honeytokens was used', 'error', 8000));
+    P.onSessionBurned?.(() => toast('Session burned — keys rotated', 'warn', 5000));
+  }
+} catch (e) { console.warn('[alerts] could not subscribe to privacy alerts', e); }
 
 // Protection score pushes from main (VPN/agent/egress/governance aggregate).
 if (window.kasbah?.on) {
@@ -9116,7 +9437,7 @@ if (window.kasbah?.on) {
       } else {
         toast(`Paste scanned — no threats found (risk ${Number(j.risk_score ?? 0).toFixed(2)})`, 'success', 2500);
       }
-    } catch (_) { /* scan unavailable — paste proceeds unscanned */ }
+    } catch (_) { toast('Could not scan that paste — it was not checked.', 'warn', 4000); }
     finally { _pasteScanInFlight = false; }
   });
 }

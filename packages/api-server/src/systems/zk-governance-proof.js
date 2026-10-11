@@ -136,7 +136,10 @@ class GovernanceAttestation {
     const statement = {
       v: 'gov-attest-1',
       keyId: this.keyId,
-      satisfied: true,
+      // A13: reflect the real evaluation — never a blanket true. A DENY means not
+      // all rules held, so this must be false there. Named both ways for compat.
+      satisfied: evaluation.results.every((r) => r.satisfied),
+      allRulesSatisfied: evaluation.results.every((r) => r.satisfied),
       ruleCount: evaluation.ruleCount,
       rulesSatisfied: evaluation.results.filter(r => r.satisfied).length,
       ruleIds: evaluation.results.map(r => r.id),

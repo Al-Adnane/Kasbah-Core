@@ -126,7 +126,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   ipcMain.handle('privacy:mm-profile',  () => privacy.myanmarNetworkProfile());
 
   ipcMain.handle('privacy:dns-leak', async () => {
-    const engineResult = await privacy.dnsLeakCheck().catch((e) => ({ error: e.message }));
+    const engineResult = await Promise.resolve().then(() => privacy.dnsLeakCheck()).catch((e) => ({ error: e.message }));
     const dohResult    = await dohResolver.dnsLeakCheck().catch((e) => ({ error: e.message, dohWorking: false }));
     return { engine: engineResult, doh: dohResult, ok: dohResult.dohWorking !== false };
   });
@@ -389,6 +389,12 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   });
 
   // ─── Pro license ──────────────────────────────────────────────────────────────
+  // M1: one entitlement gate for every paid feature. Today it reads the Pro
+  // licence; the API tier (signed token) becomes the source of truth once
+  // packaged (M6/M7). Call entitled('<feature>') at the top of a paid handler.
+  function entitled(feature) {
+    try { return !!(pro && pro.has && pro.has(feature)); } catch (_) { return false; }
+  }
   ipcMain.handle('pro:status',     () => pro.status());
   ipcMain.handle('pro:activate',   (_e, code) => pro.activate(V.code(code)));
   ipcMain.handle('pro:deactivate', () => pro.deactivate());
@@ -1095,7 +1101,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     try { assertOrigin(e); rateLimit('vc:issue', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
     if (vcExport.error) return { ok: false, error: vcExport.error };
     try {
-      const isPro = !pro.error && pro.has && pro.has('vc_export');
+      const isPro = entitled('vc_export');
       if (!isPro) {
         const n = (vcExport.listIssued(50) || []).length;
         if (n >= 3) {
@@ -1113,7 +1119,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
   });
   ipcMain.handle('vc:export-file', (_e, body = {}) => {
     if (vcExport.error) return { ok: false, error: vcExport.error };
-    const isPro = !pro.error && pro.has && pro.has('vc_export');
+    const isPro = entitled('vc_export');
     if (!isPro) {
       return { ok: false, requiresPro: true, feature: 'vc_export',
         error: 'File export of compliance credentials is a Pro feature.' };
@@ -1137,7 +1143,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     try { assertOrigin(e); rateLimit('vc:issue', { maxPerSecond: 5 }); } catch (err) { return { ok: false, error: err.message }; }
     if (vcExport.error) return { ok: false, error: vcExport.error };
     try {
-      const isPro = !pro.error && pro.has && pro.has('vc_export');
+      const isPro = entitled('vc_export');
       if (!isPro) {
         const n = (vcExport.listIssued(50) || []).length;
         if (n >= 3) {
@@ -1473,14 +1479,8 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     return { ok: true, openAtLogin: !!on };
   });
 
-  // ─── Pro: founder self-issue ──────────────────────────────────────────────────
-  ipcMain.handle('pro:issue-self', () => {
-    // Always available in dev; in prod requires KASBAH_ALLOW_ISSUE=1.
-    if (process.env.NODE_ENV !== 'development' && process.env.KASBAH_ALLOW_ISSUE !== '1') {
-      return { ok: false, error: 'Set KASBAH_ALLOW_ISSUE=1 to self-issue a code.' };
-    }
-    try { return { ok: true, ...pro.issueCode() }; } catch (e) { return { ok: false, error: e.message }; }
-  });
+  // D19: the 'pro:issue-self' handler was unreachable from the bridge and minted
+  // licence codes in development mode; removed. Use 'pro:issue' (KASBAH_ALLOW_ISSUE=1).
 
   // ─── Receipt verify CLI command ───────────────────────────────────────────────
   ipcMain.handle('receipt:verify-cmd', (_e, file) => {
@@ -1935,7 +1935,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
       const req = http.request({
         host: '127.0.0.1', port: process.env.KASBAH_API_PORT || 8788,
         path: apiPath, method,
-        headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(data) },
+        headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(data), ...(process.env.KASBAH_API_KEY ? { 'x-api-key': process.env.KASBAH_API_KEY } : {}) },
       }, (res) => {
         let out = '';
         res.on('data', (c) => { out += c; });

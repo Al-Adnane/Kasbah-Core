@@ -11,7 +11,7 @@
  *   detectCore   — normalized alias: detectCore(text) → { decision, risk, ... }
  *   detectFull   — full engine object (all exports) for advanced use
  */
-const engine = require('../../../../detector.js');
+const engine = require('../../../../src/detector.js');
 
 module.exports = {
   // Normalized single-function interface for frontier.js

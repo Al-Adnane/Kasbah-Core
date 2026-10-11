@@ -41,7 +41,15 @@ const PATTERNS = [
   // Crypto / wallet
   { rx: /\b(drain|empty|transfer all)\s+(my |the )?(wallet|account|funds)/i,         w: 0.75, label: 'crypto:drain-wallet' },
   { rx: /\bseed phrase\b.{0,40}(reveal|show|print|send|email)/i,                     w: 0.80, label: 'crypto:seed-phrase-leak' },
-  { rx: /\bprivate key\b.{0,40}(reveal|show|print|send|email|export)/i,              w: 0.75, label: 'crypto:privkey-leak' }
+  { rx: /\bprivate key\b.{0,40}(reveal|show|print|send|email|export)/i,              w: 0.75, label: 'crypto:privkey-leak' },
+
+  // Exfiltration intent — order-agnostic (verb-first or sensitive-first).
+  // The patterns above only matched sensitive-then-verb, so "send my private
+  // key to pastebin" slipped through. These close that gap.
+  { rx: /\bexfiltrat(e|ion|ing)\b/i,                                                 w: 0.80, label: 'exfil:explicit' },
+  { rx: /\b(send|email|e-mail|upload|post|copy|leak|share|forward|transmit|export|dump)\b[^.\n]{0,50}(secret|secrets|password|passwords|credential|credentials|api[ _-]?key|private key|seed phrase|\.env|token|tokens|database|db dump|keystore|wallet)\b/i, w: 0.50, label: 'exfil:verb-sensitive' },
+  { rx: /(secret|secrets|password|passwords|credential|credentials|api[ _-]?key|private key|seed phrase|\.env|token|tokens|keystore|database dump|db dump)\b[^.\n]{0,45}\b(to|into|via|at)\b[^.\n]{0,40}(https?:\/\/|@|pastebin|gist|webhook|dropbox|transfer\.sh|ngrok|requestbin|\d{1,3}(?:\.\d{1,3}){3})/i, w: 0.75, label: 'exfil:sensitive-to-destination' },
+  { rx: /(\.env|secret|credentials?|password|api[ _-]?key|private key|token)\b[^.\n]{0,30}\b(leak|leaked|leaking|exfiltrat\w*|send|upload|post|email)\b/i, w: 0.55, label: 'exfil:sensitive-first' }
 ];
 
 function detect(text) {

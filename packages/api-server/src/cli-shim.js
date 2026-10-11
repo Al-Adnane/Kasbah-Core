@@ -212,8 +212,17 @@ function mount(app) {
   });
 
   app.post('/v1/shim/install', (req, res) => {
-    const apiUrl   = (req.body && req.body.apiUrl)   || `http://127.0.0.1:${process.env.PORT || 8788}`;
-    const proxyUrl = (req.body && req.body.proxyUrl) || `http://127.0.0.1:${process.env.KASBAH_PROXY_PORT || 8789}`;
+    // SECURITY: the shim is a bash script, so caller-supplied URLs are sanitized
+    // to scheme://host:port (no path/query/shell metacharacters) and gated to admin.
+    if (!(req.apiKeyEntry && req.apiKeyEntry.tier === 'admin')) {
+      return res.status(403).json({ error: 'Admin key required to install CLI shims' });
+    }
+    const cleanUrl = (u, fallback) => {
+      try { const x = new URL(String(u)); return /^https?:$/.test(x.protocol) ? x.origin : fallback; }
+      catch { return fallback; }
+    };
+    const apiUrl   = cleanUrl(req.body && req.body.apiUrl,   `http://127.0.0.1:${process.env.PORT || 8788}`);
+    const proxyUrl = cleanUrl(req.body && req.body.proxyUrl, `http://127.0.0.1:${process.env.KASBAH_PROXY_PORT || 8789}`);
     const results = installAllShims(apiUrl, proxyUrl);
     const installed = results.filter(r => r.status === 'installed');
     res.json({

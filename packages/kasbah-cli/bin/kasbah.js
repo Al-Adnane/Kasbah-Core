@@ -67,11 +67,14 @@ for (let i = 0; i < argv.length; i++) {
   } else positional.push(a);
 }
 
-// Default to the live hosted gateway so `npx @yobekasbah/cli scan "..."` works
-// out of the box for a stranger with zero setup — that's the whole point of
-// the one-command mechanic. Point at a local dev server with --api or
-// KASBAH_API_URL (e.g. running `node packages/api-server/server.js`).
-const API_BASE = flags.api || process.env.KASBAH_API_URL || 'https://kasbah-api.fly.dev';
+// Default to the LOCAL engine: `kasbah scan "..."` must not send your text off
+// the machine unless you ask. Pass --api <url>, set KASBAH_API_URL, or pass
+// --cloud to use the hosted gateway.
+const CLOUD_API = 'https://kasbah-api.fly.dev';
+const API_BASE = flags.api || process.env.KASBAH_API_URL || (flags.cloud ? CLOUD_API : 'http://127.0.0.1:8788');
+if (!flags.quiet && !/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])/.test(API_BASE)) {
+  console.error(`· remote gateway ${API_BASE} — your text leaves this machine`);
+}
 const EMIT_JSON = !!flags.json;
 const QUIET     = !!flags.quiet;
 
@@ -731,7 +734,7 @@ Supported clouds: aws, gcp, azure
 
   // Cost tracking
   if (cmd === 'dashboard') {
-    const { CostTracker } = require('../kasbah-sdk/src/cost-tracker');
+    const { CostTracker } = require('../../kasbah-sdk/src/cost-tracker');
     const tracker = new CostTracker();
 
     if (sub === 'daily' || !sub) {
@@ -752,7 +755,7 @@ Supported clouds: aws, gcp, azure
   }
 
   if (cmd === 'status') {
-    const { CostTracker } = require('../kasbah-sdk/src/cost-tracker');
+    const { CostTracker } = require('../../kasbah-sdk/src/cost-tracker');
     const tracker = new CostTracker();
     const stats = tracker.getAllTimeStats();
     const today = tracker.getDailyReport();

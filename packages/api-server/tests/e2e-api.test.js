@@ -169,13 +169,20 @@ describe('E2E: Core API Endpoints', () => {
       expect(res.body).toHaveProperty('policy');
     });
 
-    it('should update policy', async () => {
+    it('should refuse a policy update from the auto-elevated local identity', async () => {
+      // Policy is a security control: a keyless loopback request must not rewrite it.
       const res = await request(app)
         .put('/v1/policy')
         .send({ riskThreshold: 0.5 })
-        .expect(200);
+        .expect(403);
 
-      expect(res.body).toHaveProperty('updated', true);
+      expect(res.body).toHaveProperty('code', 'POLICY_AUTH_REQUIRED');
+    });
+
+    it('should refuse an unauthenticated policy reload and active-policy change', async () => {
+      await request(app).post('/v1/policy/reload').expect(403);
+      await request(app).put('/v1/policy/active').send({ defaultAction: 'allow' }).expect(403);
+      await request(app).put('/v1/overseer/policy').send({}).expect(403);
     });
   });
 

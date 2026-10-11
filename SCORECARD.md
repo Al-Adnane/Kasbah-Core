@@ -1,6 +1,6 @@
 # Kasbah Detection Coverage Scorecard
 
-_Generated: 2026-10-06T23:48:40.425Z_
+_Generated: 2026-10-08T04:02:15.860Z_
 
 Corpus: `bench/corpus/detection-scorecard-v1.json` (v1.0.0) — 34 secret-leak cases, 23 multilingual-pii cases.
 
@@ -100,5 +100,6 @@ Checked-in baseline (`BASELINE` in `bench/detection-scorecard.js`): secret-leak 
 
 - **Measures**: precision/recall/F1 of the two live regex/checksum detectors against a hand-labeled corpus of real-shaped credentials/PII (positives) and realistic false-positive traps (negatives: example.com domains, git SHAs, UUIDs, invoice/order numbers, version strings, checksummed-invalid lookalikes).
 - **Does not measure**: performance on adversarial obfuscation (e.g. base64-wrapped secrets, zero-width characters), real production traffic distribution, or detectors other than these two (secret-leak, multilingual-pii).
-- **Known false positives already captured in the corpus** (PII-NEG-001/002/003/007/010/012): the multilingual-pii `PHONE_INTL` and `DOB_ISO` patterns currently match digit runs inside UUIDs, invoice numbers, order-date references, product SKUs, and failed-checksum card/IBAN lookalikes. These are included as failing negatives so the scorecard is honest about current limitations rather than hiding them.
+- **False-positive traps in the corpus** (PII-NEG-001/002/003/007/010/012): digit runs inside UUIDs, invoice numbers, order-date references, product SKUs and failed-checksum card/IBAN lookalikes. Earlier versions of the multilingual-pii `PHONE_INTL` and `DOB_ISO` patterns matched these; they are kept as negatives so a regression shows up in the tables above. Any that fail in this run are listed under "False positives (this run)".
+- **One case per category**: each category score is a single pass/fail, so 100% means "no regression on this case", not a measured detection rate.
 - **Corpus size**: 57 total labeled cases (34 secret-leak, 23 multilingual-pii). Small relative to production traffic — treat this as a floor/regression check, not a claim of exhaustive coverage.

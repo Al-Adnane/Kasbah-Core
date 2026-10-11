@@ -8,7 +8,8 @@ async function main() {
     console.log('detected:', r && r.detected);
     console.log('WASM kernel: PASS');
   } else {
-    console.log('WASM kernel: UNAVAILABLE (graceful degradation OK)');
+    console.log('WASM kernel: SKIPPED — pkg/ is not built (run `npm run build` with wasm-pack).');
+    if (process.env.KASBAH_REQUIRE_WASM === '1') { console.error('KASBAH_REQUIRE_WASM=1 but the kernel is unavailable'); process.exit(1); }
   }
 }
 main().catch(console.error);

@@ -57,6 +57,8 @@ const KASBAH_API  = (process.env.KASBAH_API || process.env.KASBAH_API_URL || 'ht
 const AGENT       = process.env.KASBAH_AGENT || process.env.KASBAH_PASSPORT_ID || 'mcp-agent';
 const API_KEY     = process.env.KASBAH_API_KEY || null;
 const VERIFY_BASE = (process.env.KASBAH_VERIFY_BASE || 'https://kasbah-api.fly.dev/demo/verify').replace(/\/+$/, '');
+// Who is asking. Approvals are bound to this id, so two agents cannot approve for each other.
+const AGENT_ID = String(process.env.KASBAH_AGENT || 'mcp-agent').slice(0, 80);
 
 const MCP_VERSION = '2024-11-05';
 const SERVER_INFO = { name: 'kasbah', version: require('../package.json').version };
@@ -304,10 +306,12 @@ const TOOLS = [
   {
     name: 'kasbah_consent',
     description:
-      'Request human tap approval for a sensitive tool call (Consent Stone protocol). ' +
-      'Holds execution until the Stone is tapped (5s grace window), then returns ' +
-      'the conjunctive gate outcome A with fusion score, BFT certification, and ' +
-      'a signed attestation. Use before shell_execute, file_write, network_post, db_mutate.',
+      'Ask the human to approve a sensitive tool call. Read-only actions are allowed ' +
+      'without asking. For anything that writes, deletes, sends or runs commands, this ' +
+      'holds until the person answers in a system dialog on their machine (about a minute), ' +
+      'then returns the outcome. Proceed ONLY when the outcome is TAP_AUTHORIZED. ' +
+      'Call it before shell_execute, file_write, network_post, db_mutate and similar tools, ' +
+      'and pass the real arguments in `args` so the person sees exactly what will run.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -656,35 +660,49 @@ async function handleComplianceReport(args) {
 
 async function handleConsent(args) {
   const { action, tool, text, scalars, n, agree, coherence, waitMs } = args || {};
+  const toolArgs = (args && typeof args.args === 'object' && args.args) || {};
   if (!action) throw new Error('action is required');
-  // Selective ignition: READ-tier actions auto-allow, Stone stays dark.
-  // Only WRITE+ tiers hold for a tap — this is what prevents prompt fatigue.
-  const assessRes = await httpJson('POST', KASBAH_API + '/v1/consent/assess', { action, tool });
+  // Read-only actions are allowed without asking — this is what prevents prompt fatigue.
+  const assessRes = await httpJson('POST', KASBAH_API + '/v1/consent/assess', { action, tool, args: toolArgs });
   const tier = assessRes.body || {};
+  if (assessRes.status !== 200) {
+    // Cannot reach the gate, or it refused: fail closed.
+    return textResult({ id: null, outcome: 'UNAVAILABLE', guidance: 'The approval gate could not be reached — DO NOT execute.' });
+  }
   if (!tier.tapRequired) {
-    return textResult({ id: null, tier: tier.tier, tapRequired: false, outcome: 'auto-allowed (read-only)', guidance: 'Proceed. The Stone stays dark for reads.' });
+    return textResult({ id: null, tier: tier.tier, tapRequired: false, outcome: 'auto-allowed (read-only)', guidance: 'Proceed. Read-only actions do not need approval.' });
   }
   const req = await httpJson('POST', KASBAH_API + '/v1/consent/request', {
-    action, tool, text, scalars: scalars || [], n: n || 0, agree: agree || 0,
-    coherence: !!coherence,
+    action, tool, text, args: toolArgs, scalars: scalars || [], n: n || 0, agree: agree || 0,
+    coherence: !!coherence, agentId: AGENT_ID,
   });
   const gate = req.body || {};
-  if (!gate.id) throw new Error('consent request failed: ' + JSON.stringify(gate).slice(0, 200));
-  const deadline = Date.now() + Math.min(Number(waitMs) || 8000, 30000);
+  if (!gate.id) {
+    return textResult({ id: null, outcome: 'REFUSED', reason: gate.error || 'request refused', guidance: 'The approval gate refused the request — DO NOT execute.' });
+  }
+  if (gate.gateReady === false) {
+    return textResult({ id: gate.id, outcome: 'NOT_APPROVABLE', reason: gate.notReadyReason || gate.status || 'the gate cannot approve this request', guidance: 'No approval is possible for this request — DO NOT execute.' });
+  }
+  // Wait as long as the person has to answer (the gate reports its own window).
+  const window = Math.min(Number(waitMs) || Number(gate.graceMs) || 8000, 120000);
+  const deadline = Date.now() + window + 1500;
   for (;;) {
     const st = await httpJson('GET', KASBAH_API + '/v1/consent/pending', null);
+    if (st.status !== 200) break;
     const still = (st.body?.pending || []).some((p) => p.id === gate.id);
     if (!still) break;
     if (Date.now() > deadline) break;
     await new Promise((r) => setTimeout(r, 500));
   }
-  const audit = await httpJson('GET', KASBAH_API + '/v1/consent/audit?limit=5', null);
-  const mine = (audit.body?.audit || []).find((e) => e.id === gate.id && (e.event === 'TAP_AUTHORIZED' || e.event === 'TAP_DENIED' || e.event === 'DISCONNECT_TIMEOUT'));
+  const audit = await httpJson('GET', KASBAH_API + '/v1/consent/audit?limit=50', null);
+  const FINAL = ['TAP_AUTHORIZED', 'TAP_DENIED', 'DISCONNECT_TIMEOUT', 'TAP_GATE_FAIL'];
+  const mine = (audit.body?.audit || []).find((e) => e.id === gate.id && FINAL.includes(e.event));
+  const ok = !!mine && mine.event === 'TAP_AUTHORIZED' && (gate.approverRequired ? mine.humanBound === true : true);
   return textResult({
-    id: gate.id, S: gate.S, veto: gate.veto, certified: gate.certified,
-    gateReady: gate.gateReady,
-    outcome: mine ? mine.event : 'pending (tap within 5s grace window)',
-    guidance: mine && mine.event === 'TAP_AUTHORIZED' ? 'Human tapped — proceed.' : 'No tap authorization — DO NOT execute.',
+    id: gate.id, tier: gate.consequenceTier || gate.tier, mode: gate.mode,
+    outcome: mine ? mine.event : 'NO_ANSWER',
+    humanBound: mine ? mine.humanBound === true : false,
+    guidance: ok ? 'Approved by the human — proceed with exactly this action and these arguments.' : 'Not approved — DO NOT execute.',
   });
 }
 

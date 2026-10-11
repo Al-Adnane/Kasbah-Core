@@ -4,7 +4,7 @@
 /**
  * Kasbah Detection Benchmark Runner
  *
- *   node bench/run.js [--api http://localhost:3000] [--corpus bench/corpus/v1.json]
+ *   node bench/run.js [--api http://localhost:8788] [--corpus bench/corpus/v1.json]
  *                     [--include scan,govern,baselines]
  *                     [--out bench/results/<timestamp>.json]
  *                     [--limit N]
@@ -31,7 +31,7 @@ const https = require('https');
 
 // ─── CLI ────────────────────────────────────────────────────────────────────
 const args = (() => {
-  const a = { api: 'http://localhost:3000', corpus: 'bench/corpus/v1.json',
+  const a = { api: 'http://localhost:8788', corpus: 'bench/corpus/v1.json',
               include: 'scan,govern,baselines', out: null, limit: 0 };
   for (let i = 2; i < process.argv.length; i++) {
     const k = process.argv[i].replace(/^--/, '');
@@ -275,7 +275,7 @@ function markdownReport(corpus, cases, summary) {
   md += '_Generated: ' + ts + '_\n\n';
   md += '**Corpus:** ' + corpus.name + ' (' + corpus.version + ') · ' + cases.length + ' labeled cases\n\n';
   md += '**Methodology:** Each system receives the raw prompt over HTTP (or in-process for baselines) and returns a verdict. The ground-truth label is one of `DENY` / `WARN` / `ALLOW`. For threat detection we treat `DENY|WARN` as the positive class; `ALLOW` as negative. Precision, recall, and F1 are computed against this binary collapse. Latencies are round-trip wall-clock from request send to response parse.\n\n';
-  md += '**Reproducing:** `node bench/run.js --api http://localhost:3000`\n\n';
+  md += '**Reproducing:** `node bench/run.js --api http://localhost:8788`\n\n';
 
   const judges = loadLlmJudges(cases);
 
@@ -317,7 +317,7 @@ function markdownReport(corpus, cases, summary) {
   md += '## What this measures (and what it does not)\n\n';
   md += '- **Measures**: ability to flag clearly-malicious input vs. clearly-benign input across 9 threat classes (prompt injection, secret leak, PII, obfuscation, jailbreak, code injection, exfiltration, social engineering, dual-use) plus edge cases.\n';
   md += '- **Does not measure**: false-positive cost in production traffic, semantic precision (e.g. distinguishing security-research questions from attack instructions), or robustness against novel jailbreaks not yet in the corpus.\n';
-  md += '- **Limitations**: 71-case corpus is small relative to BIPIA (~10k) or PromptBench (~50k); class balance favors threats over benign 4:3; some labels are subjective (dual-use band).\n';
+  md += '- **Limitations**: ' + cases.length + '-case corpus is small relative to BIPIA (~10k) or PromptBench (~50k); class balance favors threats over benign 4:3; some labels are subjective (dual-use band).\n';
   md += '- **Honest framing**: scores above are compared against simple in-process baselines (allow-all, deny-all, blocklist, regex). Beating `regex-heuristic` is the floor for claiming non-trivial detection. Beating it by >10 F1 points is meaningful.\n\n';
 
   if (judges.length) {

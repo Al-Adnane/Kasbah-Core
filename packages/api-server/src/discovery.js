@@ -838,6 +838,7 @@ function mount(app) {
 
   // ── Launch a detected AI app (e.g. start Ollama)
   app.post('/v1/discover/launch-app', (req, res) => {
+    if (!(req.apiKeyEntry && req.apiKeyEntry.tier === 'admin')) return res.status(403).json({ error: 'Admin key required to launch apps' });
     const { appName, appPath } = req.body || {};
     if (!appName && !appPath) return res.status(400).json({ error: 'appName or appPath required' });
     try {
@@ -852,6 +853,7 @@ function mount(app) {
 
   // ── Kill a process by PID (rogue agent control)
   app.post('/v1/discover/kill-process', (req, res) => {
+    if (!(req.apiKeyEntry && req.apiKeyEntry.tier === 'admin')) return res.status(403).json({ error: 'Admin key required to kill processes' });
     const { pid, signal = 'SIGTERM' } = req.body || {};
     const num = parseInt(pid, 10);
     if (!num || num < 100) return res.status(400).json({ error: 'valid pid required' });
@@ -923,9 +925,13 @@ function mount(app) {
 
   // One-click install: add the Kasbah MCP block to a discovered host
   app.post('/v1/discover/install-mcp', (req, res) => {
+    if (!(req.apiKeyEntry && req.apiKeyEntry.tier === 'admin')) return res.status(403).json({ error: 'Admin key required to install MCP config' });
     const { configPath, mcpServerPath, apiUrl } = req.body || {};
     if (!configPath || !mcpServerPath) {
       return res.status(400).json({ error: 'configPath and mcpServerPath required' });
+    }
+    if (!fs.existsSync(mcpServerPath)) {
+      return res.status(400).json({ error: 'mcpServerPath does not exist', mcpServerPath });
     }
     if (!fs.existsSync(configPath)) {
       return res.status(404).json({ error: 'configPath does not exist', configPath });

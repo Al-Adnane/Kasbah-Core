@@ -103,7 +103,14 @@ function redactionOn() { return privacy().level !== 'off' && privacy().redactPII
 // ── HTTP control surface ───────────────────────────────────────────────────────
 function mount(app) {
   app.get('/v1/overseer/policy', (_req, res) => res.json(getPolicy()));
-  app.put('/v1/overseer/policy', (req, res) => res.json({ ok: true, policy: setPolicy(req.body || {}) }));
+  app.put('/v1/overseer/policy', (req, res) => {
+    // N2: the overseer policy is a security control — same admin check as PUT /v1/policy.
+    const k = req.apiKeyEntry;
+    if (!k || k.tier !== 'admin' || (k.dev && process.env.KASBAH_ALLOW_LOCAL_POLICY !== '1')) {
+      return res.status(403).json({ error: 'Admin key required to change the overseer policy', code: 'POLICY_AUTH_REQUIRED' });
+    }
+    res.json({ ok: true, policy: setPolicy(req.body || {}) });
+  });
   app.get('/v1/overseer/status', (_req, res) => {
     const p = getPolicy();
     res.json({

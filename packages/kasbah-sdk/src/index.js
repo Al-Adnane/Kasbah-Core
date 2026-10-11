@@ -46,7 +46,8 @@ class Kasbah {
    */
   constructor(opts = {}) {
     this.apiKey    = opts.apiKey   || 'kg_desktop_builtin';
-    this.baseUrl   = (opts.baseUrl || 'https://api.bekasbah.com').replace(/\/$/, '');
+    // S3: default to the local engine; set baseUrl / KASBAH_API_URL for a gateway.
+    this.baseUrl   = (opts.baseUrl || process.env.KASBAH_API_URL || 'http://127.0.0.1:8788').replace(/\/$/, '');
     this.timeout   = opts.timeout  || 10_000;
     this.autoRetry = opts.autoRetry !== false;
     this._passportId = opts.passportId || null;

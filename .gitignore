@@ -98,3 +98,7 @@ packages/api-server/models/
 # macOS "copy 2" duplicate artifacts — never commit these
 * 2.*
 * 2/
+
+# Tool scratch dirs
+.mimosa/
+.mimocode/

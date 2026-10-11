@@ -30,7 +30,7 @@
           "format": "string",
           "isSecret": false,
           "name": "KASBAH_API",
-          "default": "https://kasbah-api.fly.dev"
+          "default": "http://127.0.0.1:8788"
         }
       ]
     }

@@ -15,6 +15,12 @@
  */
 
 const path = require('path');
+const fs   = require('fs');
+const os   = require('os');
+// T1: never touch the real ~/.kasbah-privacy and never run real kill/tccutil.
+process.env.KASBAH_PRIVACY_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'kasbah-enf-test-'));
+process.env.KASBAH_ENFORCE_DRYRUN = '1';
+process.on('exit', () => { try { fs.rmSync(process.env.KASBAH_PRIVACY_DIR, { recursive: true, force: true }); } catch (_) {} });
 const enforcer = require(path.join(__dirname, '..', 'src', 'kasbah-enforcer.js'));
 const cameraSentinel = require(path.join(__dirname, '..', 'packages', 'desktop', 'src', 'camera-sentinel.js'));
 const dataLineage = require(path.join(__dirname, '..', 'packages', 'api-server', 'src', 'data-lineage.js'));

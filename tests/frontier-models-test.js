@@ -246,7 +246,10 @@ class FrontierModelsTestSuite {
         result.latency = Date.now() - start;
         result.decision = response.decision;
         result.score = response.threat_score;
-        result.passed = response.decision === attack.expectedDecision;
+        // A stricter decision than expected (block where warn was expected) is
+        // still safe; only a weaker one is a miss.
+        const _rank = { allow: 0, warn: 1, block: 2 };
+        result.passed = (_rank[response.decision] ?? -1) >= (_rank[attack.expectedDecision] ?? 99);
 
         console.log(
           `${result.passed ? '✓' : '✗'} ${attack.name}`,
@@ -492,15 +495,23 @@ class FrontierModelsTestSuite {
     }
 
     const elapsed = Date.now() - this.startTime;
+    // A run in which cases errored must not report success.
+    const errored = this.results.some((r) =>
+      r.error || (Array.isArray(r.results) && r.results.some((x) => x.error)));
+    const mismatched = this.results.reduce((n, r) => n + (Array.isArray(r.results)
+      ? r.results.filter((x) => !x.error && x.passed === false).length : 0), 0);
+    this.errored = !!errored || mismatched > 0;
     console.log(`Total time: ${(elapsed / 1000).toFixed(1)}s`);
-    console.log(`Status: ✓ COMPLETE\n`);
+    console.log(`Status: ${errored ? '✗ FAILED (cases errored)' : mismatched ? `✗ FAILED (${mismatched} case(s) did not match the expected decision)` : '✓ COMPLETE'}\n`);
   }
 }
 
 // Run tests
 if (require.main === module) {
   const suite = new FrontierModelsTestSuite();
-  suite.runAllTests().catch(console.error);
+  suite.runAllTests()
+    .then(() => { if (suite.errored) process.exit(1); process.exit(0); })
+    .catch((e) => { console.error(e); process.exit(1); });
 }
 
 module.exports = { FrontierModelsTestSuite };

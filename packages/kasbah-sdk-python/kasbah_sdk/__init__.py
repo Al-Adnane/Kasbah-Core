@@ -34,7 +34,9 @@ from typing import Any, Dict, List, Optional
 
 __version__ = "0.1.0"
 
-DEFAULT_API_URL = "https://api.bekasbah.com"
+# Default to the LOCAL engine so a bare SDK call does not send the prompt off the
+# machine. Point at a hosted gateway with api_url= or KASBAH_API_URL (S3).
+DEFAULT_API_URL = "http://127.0.0.1:8788"
 
 
 class KasbahBlockedError(Exception):
@@ -57,6 +59,7 @@ class Kasbah:
         auto_block: bool = False,
         timeout: float = 5.0,
         silent: bool = False,
+        fail_open: Optional[bool] = None,
     ):
         self.api_key = api_key or os.environ.get("KASBAH_API_KEY")
         self.api_url = (api_url or os.environ.get("KASBAH_API_URL") or DEFAULT_API_URL).rstrip("/")
@@ -64,14 +67,19 @@ class Kasbah:
         self.auto_block = auto_block or os.environ.get("KASBAH_AUTO_BLOCK") == "true"
         self.timeout = timeout
         self.silent = silent or os.environ.get("KASBAH_SILENT") == "true"
+        self.fail_open = fail_open if fail_open is not None else (os.environ.get("KASBAH_FAIL_OPEN") == "true")
 
     # ── Core HTTP call ──────────────────────────────────────────────────────
 
     def govern(self, prompt: str, **meta: Any) -> Dict[str, Any]:
         """
         Send `prompt` to POST {api_url}/v1/govern and return the parsed
-        JSON response. Fails open (returns ALLOW) on any network error or
-        timeout, matching the Node auto-instrument SDK's behavior.
+        JSON response.
+
+        Fails CLOSED by default: if the engine cannot be reached this returns
+        {"verdict": "DENY"} rather than silently allowing the call, matching
+        the fail-closed enforcement the plans advertise. Pass fail_open=True
+        or set KASBAH_FAIL_OPEN=true to opt out explicitly.
         """
         body = {
             "prompt": str(prompt)[:4000],
@@ -98,11 +106,18 @@ class Kasbah:
             try:
                 return json.loads(e.read().decode("utf-8"))
             except Exception:
-                return {"verdict": "ALLOW", "riskScore": 0, "error": str(e)}
+                return self._transport_error(e)
         except Exception as e:
-            if not self.silent:
-                print(f"[kasbah] govern() call failed, failing open: {e}")
-            return {"verdict": "ALLOW", "riskScore": 0, "error": str(e)}
+            return self._transport_error(e)
+
+    def _transport_error(self, err: Exception) -> Dict[str, Any]:
+        """No usable answer from the engine. Fail CLOSED unless the caller
+        explicitly opted into fail-open."""
+        if not self.silent:
+            print(f"[kasbah] govern() could not reach the engine at {self.api_url}: {err}")
+        if self.fail_open:
+            return {"verdict": "ALLOW", "riskScore": 0.0, "error": str(err), "failClosed": False}
+        return {"verdict": "DENY", "riskScore": 1.0, "error": str(err), "failClosed": True}
 
     # Verdicts that mean "do not let this call proceed" when auto_block is on.
     # DENY is the obvious case; REQUIRE_APPROVAL is the live /v1/govern

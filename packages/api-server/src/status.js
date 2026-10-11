@@ -116,7 +116,7 @@ function mount(app, { frontier, _apiKeys, productsRegistry }) {
       uptime:    Math.floor((Date.now() - STARTED_AT) / 1000),
       version: '9.1.0',
       // Fields read by the Settings page UI
-      algorithms: 66,
+      algorithms: (() => { try { const r = require('./algorithms-router.js').REGISTRY; return Array.isArray(r) ? r.length : Object.keys(r || {}).length; } catch (_) { return 0; } })(),
       products: 11,
       memory: {
         heapUsedMB: +(mem.heapUsed / 1024 / 1024).toFixed(1),

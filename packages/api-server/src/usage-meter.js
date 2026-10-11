@@ -34,6 +34,8 @@ try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (_) {}
 // falls back to free, so a paying customer would silently get free quota.
 const TIER_LIMITS = {
   free:       { daily: 50,         monthly: 500,        label: 'Free' },
+  personal:   { daily: 500,        monthly: 10_000,     label: 'Personal' },
+  family:     { daily: 2_000,      monthly: 40_000,     label: 'Family' },
   developer:  { daily: 2_000,      monthly: 20_000,     label: 'Developer' },
   team:       { daily: 10_000,     monthly: 100_000,    label: 'Team' },
   business:   { daily: 50_000,     monthly: 1_000_000,  label: 'Business' },

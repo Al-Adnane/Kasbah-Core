@@ -4,15 +4,21 @@
   "private": true,
   "description": "Kasbah — universal AI gateway: governance, cryptographic receipts, and cost control for every LLM call",
   "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "node tests/integration/runtime.test.js && node packages/api-server/src/intervention.test.js && node packages/api-server/src/ai-trust-grade.test.js && node packages/api-server/src/competitive-parity.test.js && node packages/api-server/src/digest.test.js && node tests/mcp-block-loop.test.js && node tests/enforcer.test.js",
-    "lint": "echo \"no linter configured\"",
+    "lint": "node scripts/lint.js",
+    "test:all": "node tests/integration/runtime.test.js && node tests/ssi.test.js && node tests/consent-attested.test.js && node tests/consent-approver.test.js && node tests/capabilities.test.js && node tests/capability-packages.test.js && node tests/mcp-block-loop.test.js && node tests/enforcer.test.js && node packages/kasbah-receipts/test.js && node packages/kasbah-vpn/test.js && node packages/kasbah-mcp/test.js && node packages/kasbah-sdk/src/test.js && node packages/agent-cost-watch/src/test.js && node packages/control/tests/run-tests.js && node packages/kasbah-vpn/test-obfs.js && node packages/api-server/src/billing.test.js && node packages/api-server/src/intervention.test.js && node packages/api-server/src/ai-trust-grade.test.js && node packages/api-server/src/competitive-parity.test.js && node packages/api-server/src/digest.test.js && node tests/silent-speech-test.js && node tests/test-qf-integration.js && node packages/desktop/test/run-tests.js && node packages/desktop/test/smoke.js && npm --prefix packages/api-server test --silent",
     "bench": "node bench/run.js --api http://localhost:8788",
     "start": "node packages/api-server/server.js",
     "bench:detection": "node bench/detection-scorecard.js",
     "bench:injection": "python3 bench/injection-classifier/benchmark.py",
     "train:injection": "python3 bench/injection-classifier/train.py",
     "bench:injection:js": "node bench/injection-classifier/benchmark-js.js",
+    "test:consent": "node tests/consent-attested.test.js && node tests/consent-approver.test.js",
+    "test:ssi": "node tests/ssi.test.js",
     "test:capabilities": "node tests/capabilities.test.js",
     "test:intervention": "node packages/api-server/src/intervention.test.js",
     "test:trust": "node packages/api-server/src/ai-trust-grade.test.js",

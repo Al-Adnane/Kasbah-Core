@@ -33,9 +33,17 @@ const os        = require('os');
 const path      = require('path');
 const { execFile } = require('child_process');
 
-const SETTINGS_DIR  = path.join(os.homedir(), '.kasbah-privacy');
+const SETTINGS_DIR  = process.env.KASBAH_PRIVACY_DIR || path.join(os.homedir(), '.kasbah-privacy');
 const STATE_FILE    = path.join(SETTINGS_DIR, 'enforcer-state.json');
 const ACTIONS_LOG   = path.join(SETTINGS_DIR, 'enforcer-actions.log');
+
+// Injectable command runner (T1): tests set KASBAH_ENFORCE_DRYRUN=1 so no real
+// kill/tccutil is ever executed, and KASBAH_PRIVACY_DIR so state stays in a temp dir.
+const DRYRUN = process.env.KASBAH_ENFORCE_DRYRUN === '1';
+function _run(cmd, args, opts, cb) {
+  if (DRYRUN) { setImmediate(() => cb(null, '')); return; }
+  execFile(cmd, args, opts, cb);
+}
 
 const SELF_PROCS = new Set([
   'Kasbah Guard', 'Kasbah Guard Helper', 'Electron', 'electron',
@@ -74,7 +82,7 @@ function _logAction(entry) {
 function _terminate(pid, name, reason) {
   return new Promise((resolve) => {
     if (SELF_PROCS.has(name) || pid <= 1) { resolve({ ok: false, reason: 'protected process' }); return; }
-    execFile('kill', ['-15', String(pid)], { timeout: 5000 }, (err) => {
+    _run('kill', ['-15', String(pid)], { timeout: 5000 }, (err) => {
       const entry = { ts: new Date().toISOString(), action: 'terminate', target: name, pid, reason, ok: !err };
       _logAction(entry);
       resolve({ ok: !err, reason: err ? err.message : `SIGTERM sent to ${name} (pid ${pid})` });
@@ -87,7 +95,7 @@ function _tccReset(device, bundleId, name, reason) {
     const service = TCC_SERVICE_BY_DEVICE[device];
     if (!service) { resolve({ ok: false, reason: 'unknown device' }); return; }
     // tccutil reset <service> <bundle-id> — revokes the permission
-    execFile('tccutil', ['reset', service, bundleId], { timeout: 8000 }, (err, stdout) => {
+    _run('tccutil', ['reset', service, bundleId], { timeout: 8000 }, (err, stdout) => {
       const entry = { ts: new Date().toISOString(), action: 'tcc-reset', device, target: name, bundleId, reason, ok: !err, output: (stdout || '').trim().slice(0, 200) };
       _logAction(entry);
       resolve({ ok: !err, reason: err ? `tccutil failed for ${bundleId}` : `${service} permission reset for ${bundleId}` });

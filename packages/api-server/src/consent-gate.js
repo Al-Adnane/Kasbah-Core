@@ -73,6 +73,8 @@ const nodePath = require('path');
 
 function init({ dataDir } = {}) {
   _dataDir = dataDir || null;
+  _approvers.clear(); _approversLoaded = false; _registryCorrupt = false; // reload the registry from the new location
+  _lockdownLoaded = false; _lockdown = false;
   if (_dataDir) { try { fs.mkdirSync(_dataDir, { recursive: true, mode: 0o700 }); } catch (_) {} }
 }
 
@@ -143,13 +145,19 @@ function _masterKey() {
   return crypto.randomBytes(32); // ephemeral fallback
 }
 let _master = null;
+function _keyFileName(id) {
+  const safe = id.replace(/[^a-zA-Z0-9_-]/g, '_');
+  // Distinct ids must never collapse onto one file. Ids that needed no
+  // rewriting keep their original name so existing keys still load.
+  return 'stone-' + (safe === id ? safe : safe.slice(0, 40) + '-' + crypto.createHash('sha256').update(id).digest('hex').slice(0, 16)) + '.key.json';
+}
 function _agentKeys(agentId = 'anonymous') {
   const id = String(agentId || 'anonymous');
   if (_softKeys.has(id)) return _softKeys.get(id);
   // 1) disk-persisted per-agent key (survives restarts; 0600)
   if (_dataDir) {
     try {
-      const kf = nodePath.join(_dataDir, 'stone-' + id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.key.json');
+      const kf = nodePath.join(_dataDir, _keyFileName(id));
       if (fs.existsSync(kf)) {
         const j = JSON.parse(fs.readFileSync(kf, 'utf8'));
         const rec = {
@@ -177,7 +185,7 @@ function _agentKeys(agentId = 'anonymous') {
   const rec = { publicKey: pair.publicKey, privateKey: pair.privateKey };
   if (_dataDir) {
     try {
-      const kf = nodePath.join(_dataDir, 'stone-' + id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.key.json');
+      const kf = nodePath.join(_dataDir, _keyFileName(id));
       if (!fs.existsSync(kf)) {
         fs.writeFileSync(kf, JSON.stringify({
           public: pair.publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
@@ -197,6 +205,165 @@ function stoneSign(canonical, agentId = 'anonymous') {
   const sig = crypto.sign(null, Buffer.from(canonical), k.privateKey);
   return { signer: 'soft-stone', alg: 'ed25519', signature: sig.toString('base64url'), hardware: false, stoneId: stoneIdFor(agentId), agentId: String(agentId || 'anonymous') };
 }
+// ═════════════════════════════════════════════════════════════════════════════
+// Approver registry — binds approval to a key the requesting agent cannot use.
+//
+// Before this existed, tap() signed with the software Stone key inside this
+// process, so ANY caller of the tap route (including the agent that asked)
+// could approve its own request, and a 'hw-stone' attestation was accepted
+// without its signature being checked. Now:
+//
+//   • An approver is a provisioned Ed25519 public key: kind 'hw-stone' (a
+//     device with a secure element) or 'desktop' (the desktop app's main
+//     process, which signs only after a native OS confirmation dialog).
+//   • Once an approver exists for an agent (or for '*', every agent), an
+//     approval REQUIRES an attestation: a signature over the request's exact
+//     challenge string plus a strictly increasing counter.
+//   • Provisioning is trust-on-first-use. Adding or replacing a key afterwards
+//     requires a signature from a key that is already registered.
+//   • With KASBAH_REQUIRE_ATTESTED_TAP=1 and no approver, approvals fail closed.
+//
+// The legacy in-process signature remains only while no approver is
+// provisioned, and is reported as selfSigned so nothing mistakes it for a
+// human-bound approval.
+// ═════════════════════════════════════════════════════════════════════════════
+const APPROVER_KINDS = new Set(['hw-stone', 'desktop']);
+const MAX_BAD_ATTESTATIONS = 5;
+const DESKTOP_GRACE_MS = Math.min(Math.max(Number(process.env.KASBAH_TAP_GRACE_MS) || 60000, GRACE_MS), 300000);
+const _approvers = new Map(); // scope ('*' | agentId) -> [{ keyId, kind, pubkey (b64 spki der), counter, addedAt }]
+let _approversLoaded = false;
+
+function _approverFile() { return _dataDir ? nodePath.join(_dataDir, 'consent-approvers.json') : null; }
+function _loadApprovers() {
+  if (_approversLoaded) return;
+  _approversLoaded = true;
+  const f = _approverFile();
+  if (!f) return;
+  try {
+    const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+    for (const [scope, list] of Object.entries(j.approvers || {})) {
+      if (Array.isArray(list)) _approvers.set(scope, list.filter((a) => a && a.keyId && a.pubkey && APPROVER_KINDS.has(a.kind)));
+    }
+  } catch (e) {
+    // A registry that exists but cannot be read must not silently reopen the
+    // legacy self-signed path: fail closed until it is repaired.
+    if (e.code !== 'ENOENT') { _registryCorrupt = true; _auditLog({ event: 'APPROVER_REGISTRY_UNREADABLE', error: e.message }); }
+  }
+}
+let _registryCorrupt = false;
+function _saveApprovers() {
+  const f = _approverFile();
+  if (!f) return;
+  const body = JSON.stringify({ v: 1, approvers: Object.fromEntries(_approvers) }, null, 2);
+  const tmp = f + '.tmp';
+  fs.writeFileSync(tmp, body, { mode: 0o600 });
+  fs.renameSync(tmp, f);
+}
+function _pubFromB64(b64) {
+  const key = crypto.createPublicKey({ key: Buffer.from(String(b64), 'base64'), format: 'der', type: 'spki' });
+  if (key.asymmetricKeyType !== 'ed25519') throw new Error('approver key must be Ed25519');
+  return key;
+}
+function _keyIdFor(b64) { return crypto.createHash('sha256').update(Buffer.from(String(b64), 'base64')).digest('hex').slice(0, 16); }
+function _approversFor(agentId) {
+  _loadApprovers();
+  const id = String(agentId || 'anonymous');
+  return [...(_approvers.get(id) || []), ...(_approvers.get('*') || [])];
+}
+function approverRequired(agentId) {
+  _loadApprovers();
+  return _registryCorrupt || process.env.KASBAH_REQUIRE_ATTESTED_TAP === '1' || _approversFor(agentId).length > 0;
+}
+function approverStatus(agentId) {
+  const list = _approversFor(agentId);
+  return {
+    required: approverRequired(agentId),
+    registryUnreadable: _registryCorrupt,
+    approvers: list.map((a) => ({ keyId: a.keyId, kind: a.kind, addedAt: a.addedAt })),
+    graceMs: graceFor(agentId),
+  };
+}
+function graceFor(agentId) {
+  return _approversFor(agentId).some((a) => a.kind === 'desktop') ? DESKTOP_GRACE_MS : GRACE_MS;
+}
+/** Canonical string a current approver signs to authorise adding a key. */
+function provisionCanonical({ scope, pubkey, kind, ts }) {
+  return canonicalGate({ op: 'provision-approver', scope: String(scope), pubkey: String(pubkey), kind: String(kind), ts: Number(ts) });
+}
+function provisionApprover({ agentId = '*', pubkey, kind, proof } = {}) {
+  _loadApprovers();
+  if (_registryCorrupt) return { ok: false, reason: 'approver registry unreadable; repair or remove it first' };
+  const scope = String(agentId || '*');
+  if (!APPROVER_KINDS.has(kind)) return { ok: false, reason: 'kind must be hw-stone or desktop' };
+  if (!pubkey || typeof pubkey !== 'string' || pubkey.length > 512) return { ok: false, reason: 'pubkey (base64 SPKI DER) required' };
+  try { _pubFromB64(pubkey); } catch (e) { return { ok: false, reason: 'invalid pubkey: ' + e.message }; }
+  const keyId = _keyIdFor(pubkey);
+  const existing = [...(_approvers.get(scope) || []), ...(scope === '*' ? [] : (_approvers.get('*') || []))];
+  if ((_approvers.get(scope) || []).some((a) => a.keyId === keyId)) return { ok: true, keyId, scope, kind, alreadyRegistered: true };
+  // Anything already trusted for this scope (or globally) must authorise the
+  // addition. When scope is '*', every existing approver anywhere counts, so a
+  // global key cannot be slipped in over per-agent ones.
+  const mustAuthorise = scope === '*' ? [..._approvers.values()].flat() : existing;
+  if (mustAuthorise.length) {
+    if (!proof || !proof.signature || !proof.keyId || typeof proof.ts !== 'number') {
+      _auditLog({ event: 'APPROVER_PROVISION_REFUSED', scope, kind, keyId, why: 'no proof from an existing approver' });
+      return { ok: false, reason: 'an approver already exists: adding a key needs a signature from a registered approver' };
+    }
+    if (Math.abs(Date.now() - proof.ts) > 120000) return { ok: false, reason: 'provisioning proof expired' };
+    const signer = mustAuthorise.find((a) => a.keyId === proof.keyId);
+    let good = false;
+    if (signer) {
+      try { good = crypto.verify(null, Buffer.from(provisionCanonical({ scope, pubkey, kind, ts: proof.ts })), _pubFromB64(signer.pubkey), Buffer.from(String(proof.signature), 'base64url')); } catch (_) { good = false; }
+    }
+    if (!good) {
+      _auditLog({ event: 'APPROVER_PROVISION_REFUSED', scope, kind, keyId, why: 'bad proof' });
+      return { ok: false, reason: 'provisioning proof does not verify against a registered approver' };
+    }
+  }
+  const list = _approvers.get(scope) || [];
+  list.push({ keyId, kind, pubkey, counter: -1, addedAt: new Date().toISOString() });
+  _approvers.set(scope, list);
+  try { _saveApprovers(); } catch (e) {
+    list.pop(); if (!list.length) _approvers.delete(scope);
+    return { ok: false, reason: 'could not persist approver registry: ' + e.message };
+  }
+  _auditLog({ event: 'APPROVER_PROVISIONED', scope, kind, keyId, firstUse: mustAuthorise.length === 0 });
+  return { ok: true, keyId, scope, kind, firstUse: mustAuthorise.length === 0 };
+}
+/** What an approver signs: the exact challenge, then the counter. */
+function attestationMessage(challenge, counter) { return String(challenge) + '|' + String(counter); }
+/**
+ * Verify an external attestation for a pending request. Returns
+ * { ok, reason?, approver? }. Never throws. On success the approver's counter
+ * is advanced and persisted BEFORE returning, so a crash cannot reopen a replay.
+ */
+function verifyAttestation(gate, challenge, att) {
+  if (!att || typeof att !== 'object') return { ok: false, reason: 'ATTESTATION_REQUIRED' };
+  if (!APPROVER_KINDS.has(att.signer)) return { ok: false, reason: 'UNKNOWN_SIGNER' };
+  if (typeof att.signature !== 'string' || att.signature.length > 256) return { ok: false, reason: 'BAD_SIGNATURE_FORMAT' };
+  if (!Number.isSafeInteger(att.counter) || att.counter < 0) return { ok: false, reason: 'COUNTER_REQUIRED' };
+  if (att.agentId != null && String(att.agentId) !== String(gate.agentId)) return { ok: false, reason: 'CROSS_AGENT' };
+  const candidates = _approversFor(gate.agentId).filter((a) => a.kind === att.signer && (!att.keyId || a.keyId === att.keyId));
+  if (!candidates.length) return { ok: false, reason: 'NO_MATCHING_APPROVER' };
+  const msg = Buffer.from(attestationMessage(challenge, att.counter));
+  let sig;
+  try { sig = Buffer.from(att.signature, 'base64url'); } catch (_) { return { ok: false, reason: 'BAD_SIGNATURE_FORMAT' }; }
+  if (sig.length !== 64) return { ok: false, reason: 'BAD_SIGNATURE_FORMAT' };
+  for (const a of candidates) {
+    let good = false;
+    try { good = crypto.verify(null, msg, _pubFromB64(a.pubkey), sig); } catch (_) { good = false; }
+    if (!good) continue;
+    if (att.counter <= a.counter) return { ok: false, reason: 'STALE_COUNTER' };
+    const prev = a.counter;
+    a.counter = att.counter;
+    try { _saveApprovers(); } catch (e) { a.counter = prev; return { ok: false, reason: 'COUNTER_NOT_PERSISTED' }; }
+    return { ok: true, approver: { keyId: a.keyId, kind: a.kind } };
+  }
+  return { ok: false, reason: 'SIGNATURE_MISMATCH' };
+}
+/** Test hook: forget in-memory registry state so the next call reloads from disk. */
+function _resetApproversForTest() { _approvers.clear(); _approversLoaded = false; _registryCorrupt = false; }
+
 function stoneVerify(canonical, att, agentId = 'anonymous') {
   if (!att || att.signer === 'soft-stone') {
     try {
@@ -206,7 +373,9 @@ function stoneVerify(canonical, att, agentId = 'anonymous') {
       return crypto.verify(null, Buffer.from(canonical), k.publicKey, Buffer.from(att.signature, 'base64url'));
     } catch (_) { return false; }
   }
-  if (att.signer === 'hw-stone') return { pendingHardware: true, reason: 'no secure element attached' };
+  // External signers are verified against the provisioned registry by
+  // verifyAttestation() inside tap(); they are never accepted here, so no
+  // caller can treat a bare { signer: 'hw-stone' } object as proof.
   return false;
 }
 // Kill-switch guard: a tap for agent A NEVER authorizes agent B or a
@@ -232,7 +401,7 @@ function canonicalGate(payload) {
   return JSON.stringify(ordered);
 }
 
-function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ignition = false, coherence = false, delegationThreshold = 0.5, epsilon = 1e-6, agentId = 'anonymous', targetAgent = null } = {}) {
+function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ignition = false, coherence = false, delegationThreshold = 0.5, epsilon = 1e-6, agentId = 'anonymous', targetAgent = null, mode = 'evidence', advice = '' } = {}) {
   const id = 'tap_' + crypto.randomBytes(8).toString('hex');
   const { S, veto, vetoBy } = fuse(scalars, [], epsilon);
   const cert = certify(n, agree);
@@ -240,6 +409,14 @@ function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ign
   // rejected before a tap is even minted — no tap, no replay surface.
   const ks = killSwitchGuard({ requestingAgent: agentId, targetAgent: targetAgent || agentId, action, tool });
   const tierInfo = assess({ action, tool, args });
+  // Two ways a request can become approvable:
+  //   'evidence' — the original conjunctive gate: ignition ∧ coherence ∧ S > θ ∧ certified.
+  //   'human'    — a plain "ask the person" request with no machine evidence. The
+  //                human is the authority, so it is only approvable when a
+  //                registered approver exists; it can never fall back to the
+  //                in-process signature. Kill-switch and lockdown still veto.
+  const humanMode = mode === 'human';
+  const needsApprover = approverRequired(agentId);
   const gate = {
     id, action, tool: tool || null, agentId: String(agentId || 'anonymous'),
     targetAgent: String(targetAgent || agentId || 'anonymous'),
@@ -247,11 +424,32 @@ function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ign
     S: +S.toFixed(6), veto: !!veto, vetoBy: vetoBy ? { tier: vetoBy.tier, value: vetoBy.value } : null,
     certified: cert.certified, n: cert.n, agree: cert.a, dissent: cert.d, faultBound: cert.f,
     ignition: !!ignition, coherence: !!coherence, delegationThreshold,
-    gateReady: !!ignition && !!coherence && S > delegationThreshold && cert.certified && ks.ok,
+    mode: humanMode ? 'human' : 'evidence',
+    gateReady: humanMode
+      ? (ks.ok && needsApprover && !_registryCorrupt)
+      : (!!ignition && !!coherence && S > delegationThreshold && cert.certified && ks.ok),
+    notReadyReason: humanMode && ks.ok && !needsApprover ? 'no approver is registered; open Kasbah or pair a device' : null,
+    advice: String(advice || '').slice(0, 160),
     killSwitch: !ks.ok || !!ks.needsLocalTap,
     tier: tierInfo.tier, tierReasons: tierInfo.reasons, tapRequired: tierInfo.tapRequired,
     createdAt: Date.now(), status: ks.ok ? 'awaiting-tap' : 'denied-killswitch',
   };
+  const graceMs = graceFor(gate.agentId);
+  gate.expiresAt = gate.createdAt + graceMs;
+  gate.graceMs = graceMs;
+  gate.approverRequired = needsApprover;
+  // The challenge is fixed now, at request time, and is the ONLY thing an
+  // approver signs. It carries a fresh nonce and a hash of the arguments, so a
+  // signature for one request can never approve another, and what the human
+  // is shown is what gets signed.
+  const argsStr = typeof args === 'string' ? args : JSON.stringify(args || {});
+  gate.argsHash = crypto.createHash('sha256').update(argsStr).digest('hex');
+  const challenge = canonicalGate({
+    v: 2, id, nonce: crypto.randomBytes(16).toString('hex'), action: String(action || ''), tool: gate.tool,
+    argsHash: gate.argsHash, agentId: gate.agentId, targetAgent: gate.targetAgent, stoneId: gate.stoneId,
+    tier: gate.tier, S: gate.S, n: gate.n, agree: gate.agree, createdAt: gate.createdAt, expiresAt: gate.expiresAt,
+    mode: gate.mode, advice: gate.advice,
+  });
   let resolve;
   const done = new Promise((res) => { resolve = res; });
   const timer = setTimeout(() => {
@@ -259,11 +457,11 @@ function startTap({ action, tool, args = {}, scalars = [], n = 0, agree = 0, ign
     gate.status = 'denied-timeout';
     _auditLog({ event: 'DISCONNECT_TIMEOUT', id, action, tool, agentId: gate.agentId, stoneId: gate.stoneId });
     resolve({ ...gate, A: 0, reason: 'grace window elapsed without tap' });
-  }, GRACE_MS);
+  }, graceMs);
   if (timer.unref) timer.unref();
-  _pending.set(id, { gate, timer, resolve });
-  _auditLog({ event: 'TAP_REQUESTED', id, action, tool, S: gate.S, agentId: gate.agentId, stoneId: gate.stoneId });
-  return { gate, done };
+  _pending.set(id, { gate, timer, resolve, challenge, badAttestations: 0, argsPreview: argsStr.slice(0, 400) });
+  _auditLog({ event: 'TAP_REQUESTED', id, action, tool, S: gate.S, agentId: gate.agentId, stoneId: gate.stoneId, tier: gate.tier, approverRequired: gate.approverRequired });
+  return { gate: { ...gate, challenge }, done };
 }
 
 function requestTap(opts = {}) {
@@ -272,7 +470,7 @@ function requestTap(opts = {}) {
   return gate;
 }
 
-function tap(id, { approve = true, agentId = null } = {}) {
+function tap(id, { approve = true, agentId = null, attestation = null } = {}) {
   const p = _pending.get(id);
   if (!p) return { error: 'unknown or expired tap request' };
   const g = p.gate;
@@ -283,25 +481,62 @@ function tap(id, { approve = true, agentId = null } = {}) {
     _auditLog({ event: 'TAP_CROSS_AGENT_DENIED', id, action: g.action, actor, owner: g.agentId });
     return { ...g, A: 0, reason: 'cross-agent tap denied: remote kill-switch blocked' };
   }
-  clearTimeout(p.timer);
-  _pending.delete(id);
+  // Belt and braces: the timer normally removes an expired request, but never
+  // rely on a timer alone for a security deadline.
+  if (g.expiresAt && Date.now() > g.expiresAt) {
+    clearTimeout(p.timer); _pending.delete(id);
+    g.status = 'denied-timeout';
+    _auditLog({ event: 'DISCONNECT_TIMEOUT', id, action: g.action, tool: g.tool, agentId: g.agentId, stoneId: g.stoneId });
+    p.resolve({ ...g, A: 0, reason: 'grace window elapsed without tap' });
+    return { error: 'unknown or expired tap request' };
+  }
   if (!approve) {
+    // Denying never needs a signature: it can only make things safer.
+    clearTimeout(p.timer);
+    _pending.delete(id);
     g.status = 'denied-human';
     _auditLog({ event: 'TAP_DENIED', id, action: g.action, agentId: g.agentId, stoneId: g.stoneId });
     p.resolve({ ...g, A: 0, reason: 'human denied' });
     return { ...g, A: 0 };
   }
   const ah = auditHead();
-  const canonical = canonicalGate({ id, action: g.action, tool: g.tool, S: g.S, n: g.n, agree: g.agree, ah, ts: Date.now(), agentId: g.agentId, stoneId: g.stoneId });
-  const att = stoneSign(canonical, g.agentId);
-  const ok = stoneVerify(canonical, att, g.agentId);
+  let att, ok, approver = null, canonical;
+  if (approverRequired(g.agentId)) {
+    // Human-bound path: an external key must have signed this exact challenge.
+    const v = verifyAttestation(g, p.challenge, attestation);
+    if (!v.ok) {
+      p.badAttestations += 1;
+      _auditLog({ event: 'TAP_ATTESTATION_REJECTED', id, action: g.action, agentId: g.agentId, why: v.reason, attempt: p.badAttestations });
+      if (p.badAttestations >= MAX_BAD_ATTESTATIONS) {
+        clearTimeout(p.timer); _pending.delete(id);
+        g.status = 'denied-attestation';
+        p.resolve({ ...g, A: 0, reason: 'too many invalid attestations' });
+        return { ...g, A: 0, reason: 'too many invalid attestations' };
+      }
+      // The request stays pending so the real approver can still answer.
+      return { ...g, A: 0, status: 'awaiting-tap', reason: 'attestation rejected: ' + v.reason, attestationRequired: true };
+    }
+    canonical = p.challenge;
+    approver = v.approver;
+    att = { signer: attestation.signer, alg: 'ed25519', signature: attestation.signature, counter: attestation.counter, keyId: approver.keyId, hardware: attestation.signer === 'hw-stone', stoneId: g.stoneId, agentId: g.agentId };
+    ok = true;
+  } else {
+    // Legacy path, only while no approver is provisioned: signed in-process,
+    // so it proves the gate ran, NOT that a human approved. Labelled as such.
+    canonical = canonicalGate({ id, action: g.action, tool: g.tool, S: g.S, n: g.n, agree: g.agree, ah, ts: Date.now(), agentId: g.agentId, stoneId: g.stoneId });
+    att = { ...stoneSign(canonical, g.agentId), selfSigned: true };
+    ok = stoneVerify(canonical, att, g.agentId);
+  }
+  clearTimeout(p.timer);
+  _pending.delete(id);
   const A = g.gateReady && ok === true ? 1 : 0;
   g.status = A ? 'authorized' : 'denied-gate';
+  g.humanBound = !!approver;
   // Tap elevates epistemic tier: MODEL (statistical guess) -> RULE (human warrant).
-  g.tierElevation = A ? 'MODEL → RULE' : null;
+  g.tierElevation = A && approver ? 'MODEL → RULE' : null;
   // On authorize, mint the micro-TTL execution ticket bound to this action.
   const ticket = A ? issueTicket(g.agentId, g.tool || g.action, { action: g.action }) : null;
-  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer, ah, tierElevation: g.tierElevation, ticket: ticket ? ticket.tid.slice(0, 12) : null, agentId: g.agentId, stoneId: g.stoneId });
+  _auditLog({ event: A ? 'TAP_AUTHORIZED' : 'TAP_GATE_FAIL', id, action: g.action, A, signer: att.signer, humanBound: g.humanBound, approverKeyId: approver ? approver.keyId : null, ah, tierElevation: g.tierElevation, ticket: ticket ? ticket.tid.slice(0, 12) : null, agentId: g.agentId, stoneId: g.stoneId });
   p.resolve({ ...g, A, attestation: att, canonical, ticket });
   return { ...g, A, attestation: att, canonical, ticket };
 }
@@ -328,7 +563,8 @@ function revokeStone(agentId = 'anonymous') {
 function stoneStatus(agentId = 'anonymous') {
   const id = String(agentId || 'anonymous');
   const aura = _aura.get(id) || { glow: 'idle', color: 'soft-white', since: Date.now() };
-  return { agentId: id, stoneId: stoneIdFor(id), signer: 'soft-stone', hardware: false, pendingTaps: [..._pending.values()].filter((p) => String(p.gate.agentId) === id).length, aura, capabilities: STONE_FUNCTIONS };
+  const ap = approverStatus(id);
+  return { agentId: id, stoneId: stoneIdFor(id), signer: ap.approvers.length ? ap.approvers.map((a) => a.kind).join('+') : 'soft-stone', hardware: ap.approvers.some((a) => a.kind === 'hw-stone'), approver: ap, pendingTaps: [..._pending.values()].filter((p) => String(p.gate.agentId) === id).length, aura, capabilities: STONE_FUNCTIONS };
 }
 // ---- Aurora: ambient functions beyond tap ----
 // The Stone is an ambient presence device, not a button. Aura states drive
@@ -371,6 +607,9 @@ function gesture(agentId = 'anonymous', name = '', opts = {}) {
   const id = String(agentId || 'anonymous');
   const mine = [..._pending.entries()].filter(([, p]) => String(p.gate.agentId) === id);
   if (name === 'double-tap') {
+    // A gesture carries no signature, so it can never stand in for a signed
+    // approval once an approver is provisioned.
+    if (approverRequired(id)) return { ok: false, reason: 'a signed approval is required; gestures can only deny' };
     const soft = mine.find(([, p]) => !p.gate.killSwitch && !p.gate.highConsequence && (p.gate.tier !== 'DESTRUCTIVE' && p.gate.tier !== 'EXFIL' && !/destructive|exfil/i.test((p.gate.tierReasons || []).join(' '))));
     if (!soft) return { ok: false, reason: 'no soft tap pending (gestures never approve destructive/exfil/kill)' };
     return { ok: true, approved: tap(soft[0], { agentId: id, approve: true }) };
@@ -415,12 +654,67 @@ function presenceFor(agentId) { return _presence.get(String(agentId || 'anonymou
 // When on, every ESCALATE-tier request denies without minting a tap.
 // READ/ZERO_TOUCH unaffected. Toggle is audit-logged with actor.
 let _lockdown = false;
-function setLockdown(on, actor = 'unknown') {
-  _lockdown = !!on;
-  _auditLog({ event: _lockdown ? 'LOCKDOWN_ON' : 'LOCKDOWN_OFF', actor });
-  return _lockdown;
+let _lockdownLoaded = false;
+function _lockdownFile() { return _dataDir ? nodePath.join(_dataDir, 'consent-lockdown.json') : null; }
+function _loadLockdown() {
+  if (_lockdownLoaded) return;
+  _lockdownLoaded = true;
+  const f = _lockdownFile();
+  if (!f) return;
+  try { _lockdown = JSON.parse(fs.readFileSync(f, 'utf8')).lockdown === true; }
+  catch (e) { if (e.code !== 'ENOENT') _lockdown = true; } // unreadable state fails closed
 }
-function lockdown() { return _lockdown; }
+/** Canonical string an approver signs for a sensitive operation. */
+function opCanonical(op, ts, counter) { return canonicalGate({ op: String(op), ts: Number(ts), counter: Number(counter) }); }
+/** Verify a signed operation against ANY registered approver. Advances its counter. */
+function verifyOpProof(op, proof) {
+  _loadApprovers();
+  if (!proof || typeof proof.signature !== 'string' || typeof proof.ts !== 'number' || !Number.isSafeInteger(proof.counter)) return { ok: false, reason: 'PROOF_REQUIRED' };
+  if (Math.abs(Date.now() - proof.ts) > 120000) return { ok: false, reason: 'PROOF_EXPIRED' };
+  let sig; try { sig = Buffer.from(proof.signature, 'base64url'); } catch (_) { return { ok: false, reason: 'BAD_SIGNATURE_FORMAT' }; }
+  if (sig.length !== 64) return { ok: false, reason: 'BAD_SIGNATURE_FORMAT' };
+  const msg = Buffer.from(opCanonical(op, proof.ts, proof.counter));
+  for (const a of [..._approvers.values()].flat()) {
+    if (proof.keyId && a.keyId !== proof.keyId) continue;
+    let good = false;
+    try { good = crypto.verify(null, msg, _pubFromB64(a.pubkey), sig); } catch (_) { good = false; }
+    if (!good) continue;
+    if (proof.counter <= a.counter) return { ok: false, reason: 'STALE_COUNTER' };
+    const prev = a.counter; a.counter = proof.counter;
+    try { _saveApprovers(); } catch (_) { a.counter = prev; return { ok: false, reason: 'COUNTER_NOT_PERSISTED' }; }
+    return { ok: true, approver: { keyId: a.keyId, kind: a.kind } };
+  }
+  return { ok: false, reason: 'SIGNATURE_MISMATCH' };
+}
+/**
+ * Turning lockdown ON is always allowed (it only makes things safer). Turning
+ * it OFF is a privileged act: with approvers provisioned it needs a signed
+ * proof; without any, the caller must pass { trusted: true } (the route sets
+ * that only for an authenticated admin key). State survives restarts.
+ */
+function setLockdown(on, actor = 'unknown', { proof = null, trusted = false } = {}) {
+  _loadLockdown(); _loadApprovers();
+  const want = !!on;
+  if (!want && _lockdown) {
+    const anyApprover = [..._approvers.values()].flat().length > 0 || _registryCorrupt;
+    if (anyApprover) {
+      const v = verifyOpProof('lockdown-off', proof);
+      if (!v.ok) { _auditLog({ event: 'LOCKDOWN_OFF_REFUSED', actor, why: v.reason }); return { ok: false, lockdown: true, reason: 'lifting lockdown needs a signed approval: ' + v.reason }; }
+    } else if (!trusted) {
+      _auditLog({ event: 'LOCKDOWN_OFF_REFUSED', actor, why: 'untrusted caller' });
+      return { ok: false, lockdown: true, reason: 'lifting lockdown needs an authenticated admin key' };
+    }
+  }
+  _lockdown = want;
+  const f = _lockdownFile();
+  if (f) {
+    try { const tmp = f + '.tmp'; fs.writeFileSync(tmp, JSON.stringify({ lockdown: _lockdown, at: new Date().toISOString(), actor: String(actor) }), { mode: 0o600 }); fs.renameSync(tmp, f); }
+    catch (e) { if (!want) { _lockdown = true; return { ok: false, lockdown: true, reason: 'could not persist lockdown state: ' + e.message }; } }
+  }
+  _auditLog({ event: _lockdown ? 'LOCKDOWN_ON' : 'LOCKDOWN_OFF', actor });
+  return { ok: true, lockdown: _lockdown };
+}
+function lockdown() { _loadLockdown(); return _lockdown; }
 // Recent-tap check: was there a TAP_AUTHORIZED for this agent within windowMs?
 function recentTap(agentId = 'anonymous', windowMs = 5000) {
   const id = String(agentId || 'anonymous');
@@ -577,7 +871,12 @@ function tapHistory(agentId = 'anonymous', limit = 20) {
   return _audit.filter((e) => e.agentId === id || e.actor === id).slice(-limit).reverse();
 }
 function pending() {
-  return [..._pending.entries()].map(([id, p]) => ({ id, action: p.gate.action, tool: p.gate.tool, S: p.gate.S, ageMs: Date.now() - p.gate.createdAt, graceMs: GRACE_MS }));
+  return [..._pending.entries()].map(([id, p]) => ({
+    id, action: p.gate.action, tool: p.gate.tool, S: p.gate.S, agentId: p.gate.agentId, stoneId: p.gate.stoneId,
+    tier: p.gate.tier, tierReasons: p.gate.tierReasons, killSwitch: p.gate.killSwitch, gateReady: p.gate.gateReady,
+    approverRequired: approverRequired(p.gate.agentId), challenge: p.challenge, argsPreview: p.argsPreview,
+    ageMs: Date.now() - p.gate.createdAt, graceMs: p.gate.graceMs, expiresAt: p.gate.expiresAt,
+  }));
 }
 function auditLog(limit = 100) { return _audit.slice(-limit).reverse(); }
 
@@ -590,4 +889,7 @@ module.exports = {
   pairWearable, wearableFor, awayMode, wearableHeartbeat, queueAwayAlert,
   issueTicket, verifyTicket, TICKET_TTL_MS,
   setLockdown, lockdown, recentTap, verifyIndependent,
+  provisionApprover, provisionCanonical, approverRequired, approverStatus, attestationMessage, graceFor,
+  APPROVER_KINDS, DESKTOP_GRACE_MS, MAX_BAD_ATTESTATIONS, _resetApproversForTest,
+  opCanonical, verifyOpProof,
 };

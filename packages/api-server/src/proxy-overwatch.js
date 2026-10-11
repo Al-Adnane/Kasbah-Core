@@ -197,25 +197,20 @@ function startProxy(governanceFn) {
     clientSocket.on('close', () => recordCall(entry));
   });
 
-  let _retried = false;
-  proxyServer.on('error', (e) => {
-    if (e.code === 'EADDRINUSE' && !_retried) {
-      _retried = true;
-      console.warn(`[proxy-overwatch] port ${PROXY_PORT} in use — killing stale process and retrying…`);
-      try {
-        const { execSync } = require('child_process');
-        execSync(`lsof -ti:${PROXY_PORT} | xargs kill -9 2>/dev/null || true`, { stdio: 'ignore' });
-      } catch (_) {}
-      setTimeout(() => {
-        proxyServer = null;
-        startProxy(governanceFn).catch(() => {});
-      }, 900);
-    } else {
-      console.warn('[proxy-overwatch] error:', e.message);
-    }
-  });
-
   return new Promise((resolve) => {
+    // T8: this used to run `lsof -ti:<port> | xargs kill -9` on EADDRINUSE, which
+    // force-killed whatever held the port — another Kasbah engine, the test
+    // runner itself, or an unrelated program. Never kill; report and carry on
+    // without the proxy. Set KASBAH_PROXY_PORT to use a different port.
+    proxyServer.on('error', (e) => {
+      if (e.code === 'EADDRINUSE') {
+        console.warn(`[proxy-overwatch] port ${PROXY_PORT} is in use — proxy not started (set KASBAH_PROXY_PORT to choose another port)`);
+        proxyServer = null;
+        resolve({ ok: false, port: PROXY_PORT, reason: 'EADDRINUSE' });
+      } else {
+        console.warn('[proxy-overwatch] error:', e.message);
+      }
+    });
     proxyServer.listen(PROXY_PORT, '127.0.0.1', () => {
       stats.startedAt = Date.now();
       console.log(`[proxy-overwatch] listening on http://127.0.0.1:${PROXY_PORT} — set HTTPS_PROXY to enable`);

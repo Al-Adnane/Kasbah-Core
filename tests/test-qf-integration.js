@@ -5,7 +5,7 @@
  * Run with: node test-qf-integration.js
  */
 
-const { ChainMonitor, ToolGuard, AgentSession } = require('./src/governance-engine');
+const { ChainMonitor, ToolGuard, AgentSession } = require('../src/governance-engine');
 
 console.log('\n╔════════════════════════════════════════════════════════════╗');
 console.log('║     QuranFrontier → Kasbah Integration Test              ║');
@@ -37,14 +37,14 @@ console.log('   • Methods available:', Object.getOwnPropertyNames(Object.getPr
 
 // ── Test 4: Bridge initialization function exists ──────────────────────────
 console.log('\n✅ TEST 4: Bridge initialization');
-const app = require('./src/app');
+const app = require('../src/app');
 console.log('   • Loaded src/app.js');
 console.log('   • Exported functions:', Object.keys(app).join(', '));
 
 // ── Test 5: Routes file loads ──────────────────────────────────────────────
 console.log('\n✅ TEST 5: API routes');
 try {
-  const routes = require('./src/routes/quran-frontier-routes');
+  const routes = require('../src/routes/quran-frontier-routes');
   console.log('   • Loaded quran-frontier-routes');
   console.log('   • Router type:', routes.constructor.name);
 } catch (e) {
@@ -75,7 +75,7 @@ const requiredFiles = [
 ];
 
 const allPresent = requiredFiles.every(file => {
-  const exists = fs.existsSync(path.join(__dirname, file));
+  const exists = fs.existsSync(path.join(__dirname, '..', file));
   if (!exists) console.log(`   ✗ Missing: ${file}`);
   return exists;
 });
@@ -95,7 +95,7 @@ const envVars = [
   'ENABLE_VERIFICATION_BRIDGE'
 ];
 
-const envPath = path.join(__dirname, '.env');
+const envPath = path.join(__dirname, '..', '.env');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
   const configuredVars = envVars.filter(v => envContent.includes(v));
@@ -107,12 +107,12 @@ if (fs.existsSync(envPath)) {
 
 // ── Test 8: Dependencies ───────────────────────────────────────────────────
 console.log('\n✅ TEST 8: Dependencies');
-const pkg = require('./package.json');
+const pkg = require('../package.json');
 const requiredDeps = ['axios', 'express', 'cors', 'dotenv'];
 const presentDeps = requiredDeps.filter(dep => dep in pkg.dependencies);
 console.log(`   ✓ ${presentDeps.length}/${requiredDeps.length} required npm packages present`);
 
-if (!fs.existsSync(path.join(__dirname, 'node_modules', 'axios'))) {
+if (!fs.existsSync(path.join(__dirname, '..', 'node_modules', 'axios'))) {
   console.log('   ⚠️  Run: npm install');
 }
 

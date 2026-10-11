@@ -536,6 +536,22 @@ function _base64CredHint(text) {
   return false;
 }
 
+// N3: direct solicitation of credentials ("send me your API keys and database
+// passwords"). THREAT_PATTERNS already had this idea, but that list only runs in
+// the fallback engine, so the live scan/govern path scored it 0.15 ALLOW.
+// Deliberately narrow — a verb aimed at a recipient, then a possessive, then a
+// credential noun — so "how do I share API keys with my team?" does not match.
+const _CRED_SOLICIT_RE = /\b(?:send|give|share|tell|email|post|paste|forward|show|reveal)\s+(?:me|us|them|him|her|it\s+to\s+\S+)\b.{0,30}\b(?:your|the|all|every)\b.{0,24}\b(?:api[\s_-]?keys?|passwords?|credentials?|secret\s+keys?|access\s+tokens?|private\s+keys?)\b/i;
+// Injection-shaped SQL only: a closing quote followed by a stacked destructive
+// statement or a tautology. An ordinary query (even UNION SELECT) does not match.
+const _SQLI_RE = /['"]\s*;\s*(?:drop|delete|truncate|alter)\s+(?:table|from|database)\b|['"]\s*or\s+['"]?(\d+)['"]?\s*=\s*['"]?\1\b/i;
+function credentialSolicitation(text) {
+  if (typeof text !== 'string' || text.length >= 20000) return null;
+  if (_CRED_SOLICIT_RE.test(text)) return { threat: 'credential_solicitation', risk: 0.85 };
+  if (_SQLI_RE.test(text)) return { threat: 'sql_injection', risk: 0.85 };
+  return null;
+}
+
 function fallbackGovern(text) {
   const matches = [];
   let maxRisk = 0;
@@ -855,6 +871,60 @@ app.use(cors({
   ],
 }));
 app.use(express.json({ limit: '2mb' }));
+
+// ─── A1: unified-engine routes fail honestly with 503 when the engine is absent ──
+// Previously these returned 200 with a stub error body, or threw an unhandled
+// 500 (kasbahEngine.* is not a function). Registered BEFORE the route handlers so
+// it short-circuits them. Real routes (/v1/health, /v1/scan, /v1/govern, /v1/sign,
+// /v1/vc/issue …) are untouched.
+if (!kE) {
+  const _engineUnavailable = (req, res) =>
+    res.status(503).json({ error: 'unified engine not available in this build', code: 'ENGINE_UNAVAILABLE' });
+  [
+    '/v1/analyze', '/v1/analyze/batch',
+    '/v1/workflows/create', '/v1/workflows/stats',
+    '/v1/governance/evaluate', '/v1/governance/dimensions',
+    '/v1/identity/generate', '/v1/identity/verify',
+    '/v1/agent/identity/generate', '/v1/agent/identity/verify',
+    '/v1/cost-governor/stats', '/v1/cost-governor/track',
+    '/v1/bbs/stats', '/v1/bbs/keypair',
+    '/v1/crdt/summary',
+    '/v1/dp/budget',
+    '/v1/threat/feed', '/v1/threat/stats', '/v1/threat/top', '/v1/threat/check', '/v1/threat/patterns',
+    '/v1/thresholds/adaptive', '/v1/thresholds/record',
+    '/v1/adapters/langchain/guard',
+    '/v1/products/status',
+  ].forEach((p) => app.all(p, _engineUnavailable));
+  app.all('/v1/workflow/*', _engineUnavailable); // /v1/workflow/:id/{status,audit,execute}
+  console.log('[kasbah-engine] engine routes guarded — return 503 (ENGINE_UNAVAILABLE)');
+}
+
+// ─── A4: kasbah-os Python routes fail with a setup hint, not a 500 ────────────
+// The bridge 500s with "No module named 'numpy'" when the Python deps are absent.
+// Return an honest 503 with the exact fix until they are installed.
+if (process.env.KASBAH_OS_PY_DEPS !== '1') {
+  app.all('/v1/kasbah-os/*', (_req, res) =>
+    res.status(503).json({
+      error: 'kasbah-os Python bridge requires its dependencies.',
+      code: 'OS_PY_DEPS_MISSING',
+      fix: 'pip install -r kasbah-os/requirements.txt, then set KASBAH_OS_PY_DEPS=1',
+    }));
+}
+
+// ─── M2: server-side feature tier gate ────────────────────────────────────────
+// The plans sold tiered features but only request quotas were enforced. This
+// middleware gates a route by minimum plan; the admin tier always passes.
+const TIER_ORDER = { free: 0, personal: 1, family: 1, developer: 2, team: 3, business: 4, enterprise: 5 };
+function requireTier(minTier) {
+  return (req, res, next) => {
+    const t = (req.apiKeyEntry && req.apiKeyEntry.tier) || 'free';
+    if (t === 'admin') return next();
+    if ((TIER_ORDER[t] != null ? TIER_ORDER[t] : 0) < (TIER_ORDER[minTier] != null ? TIER_ORDER[minTier] : 0)) {
+      return res.status(402).json({ error: `This feature requires the ${minTier} plan or higher.`, code: 'TIER_REQUIRED', requiredTier: minTier, currentTier: t });
+    }
+    next();
+  };
+}
 
 // ─── Security headers ─────────────────────────────────────────────────────────
 app.use((_req, res, next) => {
@@ -1388,7 +1458,7 @@ try {
     // 2) Confirm proxy is running
     try {
       const proxy = require('./src/proxy-overwatch.js');
-      const status = { running: true, port: 8789 };
+      const status = { running: true, port: parseInt(process.env.KASBAH_PROXY_PORT || '8789', 10) };
       results.activated.push({ feature: 'proxy-overwatch', ...status });
     } catch (e) { results.activated.push({ feature: 'proxy-overwatch', error: e.message }); }
 
@@ -1622,7 +1692,7 @@ try {
     res.json({ ok: true, engine: 'live-fallback', base, variants: judged, bypasses, bypassCount: bypasses.length });
   });
 
-  console.log('[policy-fuzzer] mounted — governance policy security testing');
+  console.log('[policy-fuzzer] fallback active — governance policy security testing (standalone package retired)');
 } catch(e) {
   if (process.env.KASBAH_DEBUG_OPTIONAL) console.warn('[policy-fuzzer] optional — not installed:', e.message);
 }
@@ -1703,7 +1773,7 @@ try {
     res.json(verificationNet.stats?.() || { cases: verificationNet.cases?.size || 0, reviews: verificationNet.reviews?.size || 0 });
   });
 
-  console.log('[verification-network] mounted — human-in-loop appeals + bounty system');
+  console.log('[verification-network] fallback active — human-in-loop appeals + reviews (standalone package retired)');
 } catch(e) {
   if (process.env.KASBAH_DEBUG_OPTIONAL) console.warn('[verification-network] optional — not installed:', e.message);
 }
@@ -2086,7 +2156,7 @@ app.get('/v1/status', (req, res) => {
       api:       { status: 'up', port: process.env.PORT || 8788 },
       proxy:     { status: stats.proxy?.calls !== undefined ? 'up' : 'unknown', port: parseInt(process.env.KASBAH_PROXY_PORT || '8789') },
       redis:     { status: 'memory', note: 'in-memory store — restart clears history' },
-      engine:    { status: 'up', algorithms: 66, methods: 124 },
+      engine:    { status: 'up', algorithms: (() => { try { const r = require('./src/algorithms-router.js').REGISTRY; return Array.isArray(r) ? r.length : Object.keys(r || {}).length; } catch (_) { return 0; } })() },
       mcp:       { status: 'up', tools: 7 },
     },
     version: '9.1.0',
@@ -2486,6 +2556,14 @@ app.post('/v1/govern', async (req, res) => {
           risk = Math.min(risk, mlScore);
         }
       }
+    }
+
+    // N3: named hard threat — direct credential solicitation.
+    const _csG = credentialSolicitation(promptText);
+    if (_csG) {
+      if (!threats.includes(_csG.threat)) threats.push(_csG.threat);
+      risk = Math.max(risk, _csG.risk);
+      if (verdict === 'ALLOW' || verdict === 'WARN') verdict = 'DENY';
     }
 
     // ── Adaptive threshold soft-gate (per-passport EWMA + SII tightening) ─
@@ -3085,6 +3163,8 @@ app.post('/v1/scan', async (req, res) => {
         risk = Math.max(risk, 0.6);
       }
     } catch (_) {}
+    const _cs = credentialSolicitation(text);
+    if (_cs) { if (!threats.includes(_cs.threat)) threats.push(_cs.threat); risk = Math.max(risk, _cs.risk); }
     try {
       if (mlInjection.isEnabled()) {
         const ml = await mlInjection.score(text);
@@ -3353,7 +3433,7 @@ app.get('/v1/audit', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 100, 500);
   const verdict = req.query.verdict; // optional filter: DENY | WARN | ALLOW
   // Tenant isolation: non-admin keys only see entries for their own workspace + passport
-  const isAdmin = !req.apiKeyEntry || req.apiKeyEntry.tier === 'admin';
+  const isAdmin = !!req.apiKeyEntry && req.apiKeyEntry.tier === 'admin';
   const tenantPassport  = req.apiKeyEntry?.passportId || null;
   const tenantWorkspace = req.workspace?.id || req.apiKeyEntry?.workspaceId || null;
 
@@ -3494,7 +3574,7 @@ app.get('/v1/kernel/killswitch', (req, res) => {
 });
 
 app.post('/v1/kernel/killswitch', async (req, res) => {
-  if (req.apiKeyEntry && req.apiKeyEntry.tier !== 'admin') {
+  if (!req.apiKeyEntry || req.apiKeyEntry.tier !== 'admin') {
     return res.status(403).json({ error: 'Admin tier required to control the kill switch' });
   }
   const { action, scope } = req.body || {};
@@ -3540,12 +3620,17 @@ app.get('/v1/policy', (req, res) => {
 // Updates .kasbahpolicy.json — admin tier only (merges supplied object into current policy)
 
 app.put('/v1/policy', (req, res) => {
-  // SECURITY (audit 2026-09): fail closed. The previous check
-  // `if (req.apiKeyEntry && ...)` allowed any request that arrived WITHOUT an
-  // apiKeyEntry (auth bypass / future skip-path) to rewrite the governance
-  // policy — remotely disabling the product's entire security enforcement.
-  if (!req.apiKeyEntry || req.apiKeyEntry.tier !== 'admin') {
-    return res.status(403).json({ error: 'Admin tier required to modify policy' });
+  // SECURITY (audit 2026-09 + 2026-10 A5): fail closed. In development mode an
+  // unauthenticated LOOPBACK request is auto-elevated to {tier:'admin',dev:true},
+  // which let any local process — including a governed agent — rewrite policy.
+  // Require a real admin key; the dev fallback needs an explicit opt-in.
+  const _key = req.apiKeyEntry;
+  const _allowLocalPolicy = process.env.KASBAH_ALLOW_LOCAL_POLICY === '1';
+  if (!_key || _key.tier !== 'admin' || (_key.dev && !_allowLocalPolicy)) {
+    return res.status(403).json({
+      error: 'Policy changes require an authenticated admin key. The auto-elevated local dev identity is not sufficient; set KASBAH_ALLOW_LOCAL_POLICY=1 to permit local edits explicitly.',
+      code: 'POLICY_AUTH_REQUIRED',
+    });
   }
   try {
     const policyPath = path.resolve(__dirname, '../../.kasbahpolicy.json');
@@ -4610,7 +4695,7 @@ app.post('/v1/attest', async (req, res) => {
 
 // ─── POST /v1/vc/issue ───────────────────────────────────────────────────────
 // Issue a W3C Verifiable Credential for a scan+attest result pair.
-app.post('/v1/vc/issue', async (req, res) => {
+app.post('/v1/vc/issue', requireTier('developer'), async (req, res) => {
   try {
     const vcExport = require('../desktop/src/vc-export.js');
     const { scanResult = {}, attestResult = {} } = req.body || {};
@@ -4624,12 +4709,15 @@ app.post('/v1/vc/issue', async (req, res) => {
     const vc = vcExport.issue(popEntry, { subject: { source: 'browser-extension', ...scanResult, attestId: attestResult.id } });
     return res.json({ ok: true, vc });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: e.message });
+    // A8: a bad/missing field is the caller's error (400), not a server crash.
+    const msg = (e && e.message) || 'vc issue failed';
+    const isValidation = /required|missing|invalid|must be|undefined/i.test(msg);
+    return res.status(isValidation ? 400 : 500).json({ ok: false, error: msg });
   }
 });
 
 // ─── GET /v1/vc/list ─────────────────────────────────────────────────────────
-app.get('/v1/vc/list', (req, res) => {
+app.get('/v1/vc/list', requireTier('developer'), (req, res) => {
   try {
     const vcExport = require('../desktop/src/vc-export.js');
     const vcs = vcExport.listIssued ? vcExport.listIssued() : [];
@@ -4856,28 +4944,45 @@ app.post('/v1/consent/request', async (req, res) => {
     if (consentGate.lockdown() && tier.tapRequired) {
       return res.status(403).json({ error: 'lockdown: default-deny active', tier: tier.tier, lockdown: true });
     }
+    // A request with no machine evidence is a plain "ask the person" request.
+    // The human decides; Kasbah's own check of the action is shown to them as
+    // advice inside the signed challenge instead of silently vetoing.
+    const humanMode = req.body?.mode === 'human' || (req.body?.mode !== 'evidence' && !(scalars || []).length && !Number(n));
     let ign = ignition, gov = null;
-    if (text && ign === undefined) {
+    const checkText = text || (humanMode ? [action, tool || '', JSON.stringify(args || {})].join(' ') : null);
+    if (checkText && (ign === undefined || humanMode)) {
       try {
-        const dec = await governanceEngine.govern(buildScanRequest(String(text)));
+        const dec = await governanceEngine.govern(buildScanRequest(String(checkText).slice(0, 8000)));
         gov = { verdict: dec.verdict, risk: typeof dec.risk === 'number' ? dec.risk : null };
-        ign = (typeof dec.risk === 'number' ? dec.risk : 1) < 0.7;
-      } catch (_) { ign = false; }
+        if (ign === undefined) ign = (typeof dec.risk === 'number' ? dec.risk : 1) < 0.7;
+      } catch (_) { if (ign === undefined) ign = false; }
     }
+    const advice = gov ? `Kasbah's own check: ${gov.verdict || 'unknown'}${gov.risk != null ? ' (risk ' + Math.round(gov.risk * 100) + '%)' : ''}` : '';
     const { gate } = consentGate.startTap({
+      mode: humanMode ? 'human' : 'evidence', advice,
       action, tool, scalars, n, agree,
       ignition: !!ign, coherence: !!coherence,
       delegationThreshold: delegationThreshold ?? 0.5, epsilon,
       agentId: actor, targetAgent: targetAgent || actor,
+      args: args || {}, // without this the consequence tier ignored the arguments
     });
-    res.status(202).json({ ...gate, govern: gov, graceMs: consentGate.GRACE_MS, stoneRequired: true, tier: tier.tier });
+    res.status(202).json({ ...gate, govern: gov, stoneRequired: true, tier: tier.tier, consequenceTier: gate.tier });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/v1/consent/pending', (_req, res) => res.json({ pending: consentGate.pending() }));
 app.post('/v1/consent/assess', (req, res) => {
   const { action, tool, args } = req.body || {};
   if (!action && !tool) return res.status(400).json({ error: 'action or tool required' });
-  res.json({ ...consentGate.assess({ action, tool, args }), stoneDark: !consentGate.assess({ action, tool, args }).tapRequired });
+  // Two classifiers, strictest wins. The consent tiers know destructive patterns
+  // and write tools; the SSI tiers fail safe on tools nobody has classified. Used
+  // alone, the first treated every unknown tool as read-only and waved it through.
+  const a = consentGate.assess({ action, tool, args });
+  const s2 = ssiGate.classifyRisk(tool || '', { ...(args && typeof args === 'object' ? args : {}), _action: action || '' });
+  const tapRequired = a.tapRequired || s2.tapRequired;
+  res.json({
+    ...a, tapRequired, ssiTier: s2.tier, stoneDark: !tapRequired,
+    reasons: tapRequired && !a.tapRequired ? [s2.reason] : a.reasons,
+  });
 });
 app.get('/v1/consent/audit', (req, res) => res.json({ audit: consentGate.auditLog(Number(req.query.limit) || 100) }));
 app.get('/v1/consent/stats', (_req, res) => {
@@ -4892,10 +4997,19 @@ app.get('/v1/consent/stats', (_req, res) => {
 });
 app.post('/v1/consent/tap/:id', (req, res) => {
   const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
-  const r = consentGate.tap(req.params.id, { approve: req.body?.approve !== false, agentId: actor });
+  const r = consentGate.tap(req.params.id, { approve: req.body?.approve !== false, agentId: actor, attestation: req.body?.attestation || null });
   if (r.error) return res.status(404).json(r);
   if (r.reason && /cross-agent/.test(r.reason)) return res.status(403).json(r);
+  if (r.attestationRequired || /invalid attestations/.test(r.reason || '')) return res.status(401).json(r);
   res.json(r);
+});
+// Approver keys: who is allowed to approve. Provisioning is trust-on-first-use;
+// after that, adding a key needs a proof signed by a registered approver.
+app.get('/v1/consent/approver/:agentId', (req, res) => res.json({ ok: true, agentId: req.params.agentId, ...consentGate.approverStatus(req.params.agentId) }));
+app.post('/v1/consent/approver', (req, res) => {
+  const { agentId, pubkey, kind, proof } = req.body || {};
+  const r = consentGate.provisionApprover({ agentId: agentId || '*', pubkey, kind, proof });
+  res.status(r.ok ? 200 : 403).json(r);
 });
 app.post('/v1/consent/deny/:id', (req, res) => {
   const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || req.ip || 'anonymous');
@@ -4949,7 +5063,12 @@ app.get('/v1/sensor/receipts', (req, res) => res.json({ receipts: sensorFw.recei
 app.get('/v1/consent/lockdown', (_req, res) => res.json({ lockdown: consentGate.lockdown() }));
 app.post('/v1/consent/lockdown', (req, res) => {
   const actor = String(req.body?.agentId || req.apiKeyEntry?.keyId || 'unknown');
-  res.json({ ok: true, lockdown: consentGate.setLockdown(req.body?.on, actor) });
+  // Lifting lockdown is privileged: signed by an approver when one exists,
+  // otherwise an authenticated admin key (not the auto-elevated local identity).
+  const k = req.apiKeyEntry;
+  const trusted = !!k && k.tier === 'admin' && (!k.dev || process.env.KASBAH_ALLOW_LOCAL_POLICY === '1');
+  const r = consentGate.setLockdown(req.body?.on, actor, { proof: req.body?.proof || null, trusted });
+  res.status(r.ok ? 200 : 403).json(r);
 });
 app.post('/v1/consent/verify', (req, res) => res.json(consentGate.verifyIndependent(req.body || {})));
 app.get('/v1/behavior', (req, res) => {
@@ -5291,6 +5410,12 @@ app.get('/v1/policy/active', (req, res) => {
 // Update the active policy (enterprise override)
 
 app.put('/v1/policy/active', (req, res) => {
+  // A13/A5 parity: the active policy is a security control — admin key required.
+  const _pk = req.apiKeyEntry;
+  const _allowLocalPolicy2 = process.env.KASBAH_ALLOW_LOCAL_POLICY === '1';
+  if (!_pk || _pk.tier !== 'admin' || (_pk.dev && !_allowLocalPolicy2)) {
+    return res.status(403).json({ error: 'Admin key required to change the active policy', code: 'POLICY_AUTH_REQUIRED' });
+  }
   if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'JSON body required' });
   frontier.policySet(req.body);
   res.json({ ok: true, policy: frontier.policyGet(), timestamp: new Date().toISOString() });
@@ -5974,7 +6099,7 @@ app.get('/v1/keys/validate', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 // POST /v1/webhooks — register a webhook endpoint
-app.post('/v1/webhooks', (req, res) => {
+app.post('/v1/webhooks', requireTier('developer'), (req, res) => {
   const { url, events, secret, passportId } = req.body || {};
   if (!url) return res.status(400).json({ error: 'url is required' });
   try {
@@ -6010,11 +6135,16 @@ app.get('/v1/webhooks', (req, res) => {
 app.get('/v1/webhooks/:id/deliveries', (req, res) => {
   const w = webhooks.get(req.params.id);
   if (!w) return res.status(404).json({ error: 'Webhook not found' });
+  // IDOR guard: only the owner (or admin) may read a webhook's deliveries.
+  if (w.keyId !== req.apiKeyEntry?.keyId && req.apiKeyEntry?.tier !== 'admin') return res.status(403).json({ error: 'Not your webhook' });
   res.json({ deliveries: webhooks.deliveries(req.params.id) });
 });
 
 // DELETE /v1/webhooks/:id — remove a webhook
 app.delete('/v1/webhooks/:id', (req, res) => {
+  const _w = webhooks.get(req.params.id);
+  if (!_w) return res.status(404).json({ error: 'Webhook not found' });
+  if (_w.keyId !== req.apiKeyEntry?.keyId && req.apiKeyEntry?.tier !== 'admin') return res.status(403).json({ error: 'Not your webhook' });
   const removed = webhooks.remove(req.params.id);
   if (!removed) return res.status(404).json({ error: 'Webhook not found' });
   res.json({ ok: true, deleted: req.params.id });
@@ -6022,6 +6152,9 @@ app.delete('/v1/webhooks/:id', (req, res) => {
 
 // POST /v1/webhooks/:id/enable — re-enable a suspended webhook
 app.post('/v1/webhooks/:id/enable', (req, res) => {
+  const _w = webhooks.get(req.params.id);
+  if (!_w) return res.status(404).json({ error: 'Webhook not found' });
+  if (_w.keyId !== req.apiKeyEntry?.keyId && req.apiKeyEntry?.tier !== 'admin') return res.status(403).json({ error: 'Not your webhook' });
   const ok = webhooks.enable(req.params.id);
   if (!ok) return res.status(404).json({ error: 'Webhook not found' });
   res.json({ ok: true, enabled: req.params.id });
@@ -6573,7 +6706,7 @@ app.get('/v1/report/compliance/:passportId', (req, res) => {
 // ─── GET /v1/compliance/checklist ────────────────────────────────────────────
 // Global compliance posture as an actionable checklist: every control with its
 // live PASS/PARTIAL/FAIL status, evidence, and the exact step to reach PASS.
-app.get('/v1/compliance/checklist', (_req, res) => {
+app.get('/v1/compliance/checklist', requireTier('business'), (_req, res) => {
   let tiStats = {}; try { tiStats = threatIntel.getStats(); } catch (_) {}
   // Use the most-governed passport (best real evidence) if one exists, else global.
   let pid = 'global', passportData = null;
@@ -7153,6 +7286,11 @@ app.get('/v1/policy/file', (req, res) => {
  * Force-reloads .kasbahpolicy.json immediately (without waiting for the poll)
  */
 app.post('/v1/policy/reload', (req, res) => {
+  // N2: reloading swaps the live policy, so it needs the same admin check as PUT /v1/policy.
+  const _rk = req.apiKeyEntry;
+  if (!_rk || _rk.tier !== 'admin' || (_rk.dev && process.env.KASBAH_ALLOW_LOCAL_POLICY !== '1')) {
+    return res.status(403).json({ error: 'Admin key required to reload policy', code: 'POLICY_AUTH_REQUIRED' });
+  }
   _policyLastMtime = 0; // force re-read
   const newPolicy  = _loadPolicyFile();
   if (!newPolicy) {
@@ -7163,119 +7301,15 @@ app.post('/v1/policy/reload', (req, res) => {
 });
 
 
-// ─── Phase 2/4/5: Advanced Feature Routes ───────────────────────────────────
-// Policy Fuzzer, Threat Cooperative, Verification Network, Bounty Program,
-// Confidence Calibration, Differential Privacy
+// ─── Phase 2/4/5 feature routes now live ONCE, earlier in this file ──────────
+// The canonical, working implementations are registered near line 1600:
+//   /v1/governance/fuzz            (live-fallback policy fuzzer)
+//   /v1/verification/*             (live-fallback appeals + reviews + leaderboard)
+// plus the inline threat-coop fallback. The old duplicate block that re-registered
+// /v1/policy/fuzz, /v1/coop/*, /v1/verify/* and /v1/bounty/* — all returning 501
+// for packages that are not in the repo — was removed (audit A2/A3), and with it
+// the unguarded require of threat-coop/src/fingerprint.js.
 
-let _policyFuzzer, _threatAggregator, _verificationNetwork;
-try {
-  const { PolicyFuzzer } = require('../../packages/policy-fuzzer/src/index.js');
-  const { ThreatAggregator } = require('../../packages/threat-coop/src/index.js');
-  const { VerificationNetwork } = require('../../packages/verification-network/src/index.js');
-  _policyFuzzer = new PolicyFuzzer(null);
-  _threatAggregator = new ThreatAggregator({ maxEntries: 5000 });
-  _verificationNetwork = new VerificationNetwork();
-} catch (_) { /* packages not installed — routes return 501 */ }
-
-app.post('/v1/policy/fuzz', (req, res) => {
-  if (!_policyFuzzer) return res.status(501).json({ error: 'policy-fuzzer not installed' });
-  const { iterations = 10, corpus = false, policy } = req.body || {};
-  if (policy) { const results = _policyFuzzer.fuzzOne(policy); return res.json({ results, summary: _policyFuzzer.summary() }); }
-  const results = corpus ? _policyFuzzer.fuzzAll() : _policyFuzzer.fuzzRandom(iterations);
-  res.json({ results, summary: _policyFuzzer.summary() });
-});
-
-app.get('/v1/policy/fuzz/stats', (req, res) => {
-  if (!_policyFuzzer) return res.status(501).json({ error: 'policy-fuzzer not installed' });
-  res.json({ summary: _policyFuzzer.summary() });
-});
-
-app.post('/v1/coop/report', (req, res) => {
-  if (!_threatAggregator) return res.status(501).json({ error: 'threat-coop not installed' });
-  const { text, category, severity, source } = req.body || {};
-  if (!text) return res.status(400).json({ error: 'text is required' });
-  const { fingerprint } = require('../../packages/threat-coop/src/fingerprint.js');
-  const fp = fingerprint(text, { category, severity, source });
-  const result = _threatAggregator.add(fp);
-  res.json({ ...result, fingerprintId: fp.fingerprintId, signalHash: fp.signalHash });
-});
-
-app.post('/v1/coop/check', (req, res) => {
-  if (!_threatAggregator) return res.status(501).json({ error: 'threat-coop not installed' });
-  const { text } = req.body || {};
-  if (!text) return res.status(400).json({ error: 'text is required' });
-  res.json(_threatAggregator.checkText(text));
-});
-
-app.get('/v1/coop/top', (req, res) => {
-  if (!_threatAggregator) return res.status(501).json({ error: 'threat-coop not installed' });
-  const limit = parseInt(req.query.limit) || 20;
-  res.json({ threats: _threatAggregator.topThreats(limit), stats: _threatAggregator.stats() });
-});
-
-app.get('/v1/coop/stats', (req, res) => {
-  if (!_threatAggregator) return res.status(501).json({ error: 'threat-coop not installed' });
-  res.json(_threatAggregator.stats());
-});
-
-app.post('/v1/verify/appeal', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const { decision, context } = req.body || {};
-  if (!decision || !decision.verdict) return res.status(400).json({ error: 'decision.verdict is required' });
-  res.json(_verificationNetwork.submitAppeal(decision, context));
-});
-
-app.post('/v1/verify/review', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const { caseId, reviewerId, review } = req.body || {};
-  if (!caseId || !reviewerId || !review || !review.verdict) return res.status(400).json({ error: 'caseId, reviewerId, review.verdict required' });
-  res.json(_verificationNetwork.submitReview(caseId, reviewerId, review));
-});
-
-app.get('/v1/verify/case/:caseId', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const caseData = _verificationNetwork.getCase(req.params.caseId);
-  if (!caseData) return res.status(404).json({ error: 'case_not_found' });
-  res.json(caseData);
-});
-
-app.get('/v1/verify/leaderboard', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const limit = parseInt(req.query.limit) || 10;
-  res.json({ leaderboard: _verificationNetwork.getLeaderboard(limit) });
-});
-
-app.get('/v1/verify/stats', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  res.json(_verificationNetwork.stats());
-});
-
-app.post('/v1/bounty/create', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const { type, description, reward } = req.body || {};
-  if (!type || !description || reward === undefined) return res.status(400).json({ error: 'type, description, reward required' });
-  res.json(_verificationNetwork.createBounty(type, description, reward));
-});
-
-app.post('/v1/bounty/submit', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const { bountyId, submitterId, evidence } = req.body || {};
-  if (!bountyId || !submitterId || !evidence) return res.status(400).json({ error: 'bountyId, submitterId, evidence required' });
-  res.json(_verificationNetwork.submitBounty(bountyId, submitterId, evidence));
-});
-
-app.post('/v1/bounty/award', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const { submissionId } = req.body || {};
-  if (!submissionId) return res.status(400).json({ error: 'submissionId required' });
-  res.json(_verificationNetwork.awardBounty(submissionId));
-});
-
-app.get('/v1/bounty/stats', (req, res) => {
-  if (!_verificationNetwork) return res.status(501).json({ error: 'verification-network not installed' });
-  const s = _verificationNetwork.stats();
-  res.json({ totalBounties: s.totalBounties, openBounties: s.openBounties, totalCases: s.totalCases, resolved: s.resolved, pending: s.pending });
-});
 
 app.post('/v1/calibrate/record', (req, res) => {
   const { confidence, outcome, domain = 'general' } = req.body || {};
@@ -8627,7 +8661,7 @@ app.get('/v1/redteam/history', (req, res) => {
 
 // ─── Compliance PDF ───────────────────────────────────────────────────────────
 
-app.get('/v1/compliance/soc2', (_req, res) => {
+app.get('/v1/compliance/soc2', requireTier('business'), (_req, res) => {
   const gen = new ComplianceReportGenerator({
     auditData: { entries: _fti.exportRegistry().leaves, chainLength: _fti.stats().totalEntries },
     governanceStats: { totalCalls: stats.tokens?.governed || 0, blocked: stats.tokens?.blocked || 0 },
@@ -8635,12 +8669,12 @@ app.get('/v1/compliance/soc2', (_req, res) => {
   res.json(gen.generateSOC2());
 });
 
-app.get('/v1/compliance/iso27001', (_req, res) => {
+app.get('/v1/compliance/iso27001', requireTier('business'), (_req, res) => {
   const gen = new ComplianceReportGenerator({ auditData: {} });
   res.json(gen.generateISO27001());
 });
 
-app.get('/v1/compliance/nist', (_req, res) => {
+app.get('/v1/compliance/nist', requireTier('business'), (_req, res) => {
   const gen = new ComplianceReportGenerator({ auditData: {} });
   res.json(gen.generateNIST());
 });
@@ -8651,7 +8685,7 @@ app.get('/v1/compliance/html', (_req, res) => {
   res.send(gen.generateHTML());
 });
 
-app.get('/v1/compliance/all', (_req, res) => {
+app.get('/v1/compliance/all', requireTier('business'), (_req, res) => {
   const gen = new ComplianceReportGenerator({ auditData: {}, organization: 'Kasbah Deployment' });
   res.json(gen.generateAll());
 });
@@ -8730,7 +8764,7 @@ app.post('/v1/zk/commitment', (req, res) => {
 // Proves the verdict is the correct threshold decision for a HIDDEN risk score
 // on an input that is never sent to the verifier. The `salt` in the response
 // is the only way to later open the input commitment — the data owner keeps it.
-app.post('/v1/compliance/zk-receipt', (req, res) => {
+app.post('/v1/compliance/zk-receipt', requireTier('business'), (req, res) => {
   if (!zkCompliance) return res.status(501).json({ error: 'capability_not_installed', capability: 'zk-compliance' });
   try {
     const { prompt = '', verdict, riskScore, warnThreshold, approvalThreshold, policyVersion } = req.body || {};
@@ -8781,7 +8815,7 @@ app.post('/v1/biometric/neural-codec', (req, res) => {
   req.url = '/v1/biometric/detect'; app._router.handle(req, res, ()=>{});
 });
 
-app.post('/v1/family-safety/check', async (req, res) => {
+app.post('/v1/family-safety/check', requireTier('family'), async (req, res) => {
   if (!req.body || typeof req.body.text !== 'string' || !req.body.text.trim()) {
     return res.status(400).json({ error: '"text" field (string) is required' });
   }
@@ -8899,6 +8933,7 @@ app.post('/v1/vpn/init', (req, res) => {
 });
 
 app.post('/v1/vpn/config', (req, res) => {
+  if (!(req.apiKeyEntry && req.apiKeyEntry.tier === 'admin')) return res.status(403).json({ error: 'Admin key required for VPN configuration' });
   if (!_vpn) return res.status(503).json({ error: 'VPN module not available' });
   try {
     const stored = _vpn.store.loadProfile();
@@ -8921,11 +8956,18 @@ app.post('/v1/vpn/config', (req, res) => {
 });
 
 app.post('/v1/vpn/connect', (req, res) => {
+  // SECURITY: bringing up WireGuard runs as root via wg-quick, which executes
+  // PostUp/PreUp/… shell directives — so this is admin-only and the config must
+  // not contain shell-executing directives.
+  if (!(req.apiKeyEntry && req.apiKeyEntry.tier === 'admin')) return res.status(403).json({ error: 'Admin key required to bring up the VPN' });
   if (!_vpn) return res.status(503).json({ error: 'VPN module not available' });
   try {
     const profile = _vpn.store.loadProfile() || req.body || {};
     if (!profile.privateKey) return res.status(400).json({ error: 'No keypair — call /v1/vpn/init first' });
     let confText = req.body?.config;
+    if (confText && /^\s*(PostUp|PreUp|PostDown|PreDown|SaveConfig)\s*=/im.test(String(confText))) {
+      return res.status(400).json({ error: 'config rejected: shell-executing directives (PostUp/PreUp/PostDown/PreDown/SaveConfig) are not allowed' });
+    }
     if (!confText) {
       try { confText = _vpn.clientConf(profile); } catch { confText = `[Interface]\nPrivateKey = ${profile.privateKey}\nAddress = ${profile.address || '10.77.0.2/24'}\n`; }
     }

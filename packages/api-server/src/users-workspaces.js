@@ -228,8 +228,10 @@ function attachWorkspace(_apiKeys) {
  */
 function requireRole(minRole) {
   return (req, res, next) => {
-    const userId = req.headers['x-user-id'];
-    if (!userId) return res.status(401).json({ error: 'x-user-id required' });
+    // SECURITY: the actor is the AUTHENTICATED API key's user, never the
+    // caller-supplied x-user-id header (which let anyone spoof an admin).
+    const userId = (req.apiKeyEntry && (req.apiKeyEntry.userId || req.apiKeyEntry.keyId)) || null;
+    if (!userId) return res.status(401).json({ error: 'authenticated user required' });
     if (!req.workspace) return res.status(403).json({ error: 'No workspace context' });
     if (!hasRole(userId, req.workspace.id, minRole)) {
       return res.status(403).json({ error: `Requires role: ${minRole}`, yourRole: getRole(userId, req.workspace.id) });

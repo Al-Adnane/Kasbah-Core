@@ -690,6 +690,11 @@ contextBridge.exposeInMainWorld('kasbah', {
     status: ()     => ipcRenderer.invoke('sentinel:status'),
     scan:   (body) => ipcRenderer.invoke('sentinel:scan', body || {}),
   },
+  // Read-only view of the main-process approver. There is intentionally no
+  // approve/sign method here: approval happens in a native dialog only.
+  approver: {
+    status: () => ipcRenderer.invoke('approver:status'),
+  },
   ssi: {
     status: ()     => ipcRenderer.invoke('ssi:status'),
     screen: (body) => ipcRenderer.invoke('ssi:screen', body || {}),

@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest --forceExit --testTimeout=10000"
+    "test": "NODE_ENV=test jest --runInBand --forceExit --testTimeout=10000"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
@@ -27,7 +27,8 @@
     "forceExit": true,
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "frontier-v4\\.test\\.js"
+      "frontier-v4\\.test\\.js",
+      "/src/.*\\.test\\.js$"
     ]
   },
   "engines": {

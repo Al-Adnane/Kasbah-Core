@@ -43,6 +43,74 @@ const _lists   = new Map();   // key  → Array (head = index 0)
 const _zsets   = new Map();   // key  → Array<{ score, member }>
 const _counters = new Map();  // key  → number
 
+// ---------------------------------------------------------------------------
+// File snapshot (A12) — without Redis, state used to vanish on restart, which
+// also reset replay protection. The in-memory stores are now snapshotted to a
+// local file and reloaded at startup. Disabled under NODE_ENV=test, or with
+// KASBAH_STORE_FILE=off.
+// ---------------------------------------------------------------------------
+const _fs = require('fs');
+const _path = require('path');
+const SNAPSHOT_FILE = process.env.KASBAH_STORE_FILE
+  || _path.join(process.env.KASBAH_DATA_DIR || _path.resolve(__dirname, '../../../.kasbah'), 'store-snapshot.json');
+const SNAPSHOT_ON = process.env.NODE_ENV !== 'test' && process.env.KASBAH_STORE_FILE !== 'off';
+let _lastSnapshot = '';
+
+function _snapshotSerialize() {
+  const now = Date.now();
+  return JSON.stringify({
+    v: 1,
+    kv: [..._kv].filter(([, e]) => !e.expiresAt || e.expiresAt > now),
+    hashes: [..._hashes].map(([k, m]) => [k, [...m]]),
+    lists: [..._lists],
+    zsets: [..._zsets],
+    counters: [..._counters],
+  });
+}
+function _snapshotSave() {
+  if (!SNAPSHOT_ON || _connected) return;
+  try {
+    const body = _snapshotSerialize();
+    if (body === _lastSnapshot) return;
+    _fs.mkdirSync(_path.dirname(SNAPSHOT_FILE), { recursive: true });
+    const tmp = SNAPSHOT_FILE + '.tmp';
+    _fs.writeFileSync(tmp, body, { mode: 0o600 });
+    _fs.renameSync(tmp, SNAPSHOT_FILE);
+    _lastSnapshot = body;
+  } catch (e) { console.warn('[persistence] snapshot save failed: ' + e.message); }
+}
+function _snapshotLoad() {
+  if (!SNAPSHOT_ON) return false;
+  try {
+    const raw = _fs.readFileSync(SNAPSHOT_FILE, 'utf8');
+    const d = JSON.parse(raw);
+    if (!d || d.v !== 1) return false;
+    const now = Date.now();
+    for (const [k, e] of d.kv || []) if (!e.expiresAt || e.expiresAt > now) _kv.set(k, e);
+    for (const [k, arr] of d.hashes || []) _hashes.set(k, new Map(arr));
+    for (const [k, arr] of d.lists || []) _lists.set(k, arr);
+    for (const [k, arr] of d.zsets || []) _zsets.set(k, arr);
+    for (const [k, n] of d.counters || []) _counters.set(k, n);
+    _lastSnapshot = raw;
+    return true;
+  } catch (e) {
+    if (e.code !== 'ENOENT') console.warn('[persistence] snapshot load failed: ' + e.message);
+    return false;
+  }
+}
+let _snapshotTimer = null;
+function _snapshotStart() {
+  if (!SNAPSHOT_ON || _snapshotTimer) return;
+  const loaded = _snapshotLoad();
+  _snapshotTimer = setInterval(_snapshotSave, 15_000);
+  _snapshotTimer.unref();
+  process.once('beforeExit', _snapshotSave);
+  // Save on shutdown. Only exit ourselves when no other handler owns the signal,
+  // so an existing graceful-shutdown handler still runs.
+  for (const sig of ['SIGINT', 'SIGTERM']) process.once(sig, () => { _snapshotSave(); if (process.listenerCount(sig) === 0) process.exit(0); });
+  console.log(`[persistence] file snapshot ${loaded ? 'restored from' : 'will be written to'} ${SNAPSHOT_FILE}`);
+}
+
 function _evictOldest(store) {
   if (store.size >= MAX_MEM_ENTRIES) {
     store.delete(store.keys().next().value);
@@ -95,7 +163,8 @@ async function connect() {
   if (_connected) return;
 
   if (!redisClientLib) {
-    console.log('[persistence] Redis unavailable — using in-memory store (data will not persist across restarts)');
+    console.log('[persistence] Redis unavailable — using in-memory store' + (SNAPSHOT_ON ? ' with a local file snapshot' : ' (data will not persist across restarts)'));
+    _snapshotStart();
     return;
   }
 
@@ -126,9 +195,10 @@ async function connect() {
   } catch (err) {
     _client = null;
     _connected = false;
-    const msg = '[persistence] Redis unavailable — using in-memory store (data will not persist across restarts)';
+    const msg = '[persistence] Redis unavailable — using in-memory store' + (SNAPSHOT_ON ? ' with a local file snapshot' : ' (data will not persist across restarts)');
     // Warn when REDIS_URL was set but connection failed; plain info otherwise
     if (process.env.REDIS_URL) console.warn(msg); else console.log(msg);
+    _snapshotStart();
   }
 }
 

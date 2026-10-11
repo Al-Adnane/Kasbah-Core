@@ -77,13 +77,22 @@ function pairDevice(agentId = 'anonymous', body = {}) {
     transport: PRODUCTS[body.productId].transport[0],
     pairedAt: Date.now(), lastSeen: Date.now(),
   };
+  // A device that presents a signing key becomes an approver for this agent.
+  // First key is trust-on-first-use; later keys need a proof signed by a
+  // registered approver (see consentGate.provisionApprover).
+  let approver = null;
+  if (rec.pubkey) {
+    approver = consentGate.provisionApprover({ agentId: id, pubkey: String(rec.pubkey), kind: 'hw-stone', proof: body.proof });
+    if (!approver.ok) return { ok: false, reason: approver.reason };
+    rec.keyId = approver.keyId;
+  }
   list.push(rec);
   _devices.set(id, list);
   // Wearable-class devices also register with the away-mode subsystem.
   if (['stone-ring', 'stone-band'].includes(body.productId)) {
     try { consentGate.pairWearable(id, { wearableId: rec.deviceId, kind: body.productId, pubkey: rec.pubkey }); } catch (_) {}
   }
-  return { ok: true, agentId: id, stoneId: consentGate.stoneIdFor(id), device: rec };
+  return { ok: true, agentId: id, stoneId: consentGate.stoneIdFor(id), device: rec, approver };
 }
 function devicesFor(agentId) { return _devices.get(String(agentId || 'anonymous')) || []; }
 function heartbeat(agentId, deviceId, body = {}) {
@@ -107,28 +116,30 @@ function fanoutAlert(agentId, source, detail = {}) {
 // Attestation intake from any device: counter + agent checks, then bind.
 // Hardware attestations carry { signature, counter, stoneId }; the SE bumps
 // the counter per signature and the host rejects stale counters.
-function acceptAttestation({ tapId, attestation, agentId }) {
-  if (!tapId || !attestation) return { ok: false, reason: 'tapId + attestation required' };
+function acceptAttestation({ tapId, attestation, agentId } = {}) {
+  if (!tapId || !attestation || typeof attestation !== 'object') return { ok: false, reason: 'tapId + attestation required' };
   const pend = consentGate.pending().find((p) => p.id === tapId);
   if (!pend) return { ok: false, reason: 'unknown or expired tap' };
-  if (String(agentId || '') !== String(pend.agentId || '')) {
+  // The attestation is for the agent that owns the request. A caller naming a
+  // different agent is refused; omitting agentId no longer slips through.
+  const claimed = agentId != null ? String(agentId) : (attestation.agentId != null ? String(attestation.agentId) : null);
+  if (claimed !== null && claimed !== String(pend.agentId)) {
     return { ok: false, reason: 'cross-agent attestation denied: remote kill-switch blocked' };
   }
-  if (attestation.signer === 'hw-stone') {
-    if (typeof attestation.counter === 'number') {
-      const cc = checkCounter(attestation.stoneId || pend.stoneId, attestation.counter);
-      if (!cc.ok) return { ok: false, reason: cc.reason };
-    }
-    // Real SE verify happens in consentGate.stoneVerify hw branch once the
-    // provisioned pubkey registry lands; until then the counter + agent
-    // binding is the enforced part and software never forges hw-stone.
-    if (attestation.signer === 'hw-stone' && !attestation.counter && attestation.counter !== 0) {
-      return { ok: false, reason: 'hw attestation requires monotonic counter' };
-    }
+  if (!consentGate.APPROVER_KINDS.has(attestation.signer)) {
+    return { ok: false, reason: 'attestation must come from a registered approver (hw-stone or desktop)' };
   }
-  // Route through the owning tap (which re-verifies the signature itself).
-  const r = consentGate.tap(tapId, { agentId: pend.agentId, approve: true });
-  return { ok: !r.reason, ...r };
+  if (!consentGate.approverRequired(pend.agentId)) {
+    // No key is provisioned to check the signature against. Accepting it would
+    // mean trusting an unverifiable claim of "hardware", so refuse.
+    return { ok: false, reason: 'no approver key is provisioned for this agent; pair a device first' };
+  }
+  // The gate verifies the signature over the request's challenge and enforces
+  // the monotonic counter. Nothing is approved on the strength of the
+  // attestation's own fields.
+  const r = consentGate.tap(tapId, { agentId: pend.agentId, approve: true, attestation });
+  if (r.error) return { ok: false, reason: r.error };
+  return { ok: r.A === 1, ...r };
 }
 
 module.exports = { PRODUCTS, registerTransport, transportFor, pairDevice, devicesFor, heartbeat, fanoutAlert, acceptAttestation, checkCounter };

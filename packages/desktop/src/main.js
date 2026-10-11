@@ -208,6 +208,44 @@ let lastClip   = '';
 
 // ─── Embedded API Server ─────────────────────────────────────────────────────
 
+// D1: the embedded engine needs durable signing secrets in production
+// (server.js requires KASBAH_PROOF_KEY / KASBAH_RECEIPT_SECRET). Generate them
+// on first run and persist 0600; pass to the child so `npm start` boots.
+function ensureEngineSecrets() {
+  const crypto = require('crypto');
+  const os = require('os');
+  const dir = path.join(os.homedir(), '.kasbah-privacy');
+  const file = path.join(dir, 'engine-secrets.json');
+  // N4: keep the secrets behind the OS keychain when Electron can reach it;
+  // fall back to a 0600 file (and still read an older plain file).
+  let ss = null;
+  try { ss = require('electron').safeStorage; if (!ss || !ss.isEncryptionAvailable()) ss = null; } catch (_) { ss = null; }
+  let sec = null, wasPlain = false;
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (raw && raw.enc) { if (ss) sec = JSON.parse(ss.decryptString(Buffer.from(raw.enc, 'base64'))); }
+    else { sec = raw; wasPlain = true; }
+  } catch (_) {}
+  const complete = sec && sec.proofKey && sec.receiptSecret && sec.apiKey;
+  if (!complete || (wasPlain && ss)) {
+    sec = {
+      proofKey:      (sec && sec.proofKey)      || crypto.randomBytes(32).toString('hex'),
+      receiptSecret: (sec && sec.receiptSecret) || crypto.randomBytes(32).toString('hex'),
+      // N1: a per-install key for the embedded engine, instead of a shared literal.
+      apiKey:        (sec && sec.apiKey)        || 'kg_desktop_' + crypto.randomBytes(24).toString('hex'),
+    };
+    try {
+      fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+      const body = ss ? JSON.stringify({ enc: ss.encryptString(JSON.stringify(sec)).toString('base64') }) : JSON.stringify(sec);
+      fs.writeFileSync(file, body, { mode: 0o600 });
+    } catch (e) { log.warn('desktop', `could not persist engine secrets: ${e.message}`); }
+  }
+  process.env.KASBAH_PROOF_KEY = process.env.KASBAH_PROOF_KEY || sec.proofKey;
+  process.env.KASBAH_RECEIPT_SECRET = process.env.KASBAH_RECEIPT_SECRET || sec.receiptSecret;
+  if (State.apiKey === 'kg_desktop_builtin') State.apiKey = sec.apiKey;
+  return sec;
+}
+
 function startApiServer() {
   return new Promise(async (resolve) => {
     try {
@@ -222,6 +260,7 @@ function startApiServer() {
         }
       } catch (_) { /* not up yet — spawn */ }
 
+      ensureEngineSecrets(); // D1/N1: durable signing secrets + per-install key for the child engine
       process.env.PORT           = String(API_PORT);
       process.env.KASBAH_API_KEY = State.apiKey;
       process.env.KASBAH_EMBED   = '1';
@@ -539,7 +578,6 @@ function createWindow() {
         nodeIntegration: false,
         sandbox: true,
         javascript: true,
-        webSecurity: false,
         partition: BROWSER_PARTITION,
         backgroundThrottling: false,
         additionalArguments: [
@@ -748,14 +786,16 @@ function toggleProtection() {
 function syncRecordingGuard() {
   try {
     const enf = require('../../../src/kasbah-enforcer.js');
-    if (State.isProtected) {
-      try { if (enf.status && enf.status().action === 'alert-only') enf.setAction('tcc-reset'); } catch (_) {}
-      enf.setEnforce(true);
-      log.info('desktop', 'recording guard ON (enforce + revoke unapproved captures)');
-    } else {
-      enf.setEnforce(false);
-      log.info('desktop', 'recording guard OFF with protection');
-    }
+    // D4: enforcement is opt-in and never forced on launch. We never rewrite the
+    // user's saved action here; revoke/terminate (tcc-reset) must be an explicit
+    // choice in Settings. Default is alert-only.
+    const opts = (typeof browserStore !== 'undefined' && browserStore.settingsGet) ? (browserStore.settingsGet() || {}) : {};
+    const action = (enf.status && enf.status().action) || 'alert-only';
+    const wantEnforce = !!State.isProtected && opts.recordingGuardEnforce === true && action !== 'alert-only';
+    enf.setEnforce(wantEnforce);
+    log.info('desktop', wantEnforce
+      ? `recording guard ON (explicit opt-in, action=${action})`
+      : 'recording guard OFF (alert-only; enable enforcement in Settings)');
   } catch (e) { log.warn('desktop', `recording guard sync failed: ${e.message}`); }
 }
 
@@ -862,6 +902,34 @@ async function handleScan(text, source) {
 
 ipcMain.handle('get-state',         () => ({ ...State, server: undefined }));
 ipcMain.handle('toggle-protection', () => { toggleProtection(); return State.isProtected; });
+
+// Human-bound approvals: the main process is a registered approver for the
+// engine's consent gate. It signs a request only after a native dialog click;
+// there is deliberately no IPC call that signs, so the page cannot approve.
+let consentApprover = null;
+function startConsentApprover() {
+  if (consentApprover) return;
+  try {
+    const { dialog, safeStorage } = require('electron');
+    const { createApprover } = require('./consent-approver.js');
+    consentApprover = createApprover({
+      dir: path.join(require('os').homedir(), '.kasbah-privacy'),
+      safeStorage,
+      request: (method, apiPath, body) => apiCall(method, apiPath, body, { timeout: 8000 }).then((r) => r.body),
+      showDialog: async (opts) => {
+        const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+        try { app.focus({ steal: true }); } catch (_) {}
+        const base = { type: 'warning', noLink: true, ...opts };
+        const r = win ? await dialog.showMessageBox(win, base) : await dialog.showMessageBox(base);
+        return r.response;
+      },
+      log: { warn: (msg) => log.warn('approver', msg) },
+    });
+    consentApprover.start();
+    log.info('desktop', 'consent approver started (native-dialog approvals)');
+  } catch (e) { log.error('desktop', `consent approver failed to start: ${e.message}`); }
+}
+ipcMain.handle('approver:status', () => (consentApprover ? consentApprover.status() : { registered: false, error: 'approver not running', decisions: [] }));
 ipcMain.handle('scan-clipboard',    () => scanClipboardNow());
 
 ipcMain.handle('browser:tracker-blocklist', () => trackerBlocklist.CATEGORIES);
@@ -969,7 +1037,7 @@ try { registerOutlierHandlers(ipcMain, ctx); log.info('desktop', 'outlier handle
 
 app.whenReady().then(async () => {
   log.info('desktop', 'app.whenReady fired');
-  try { await startApiServer(); log.info('desktop', `API server ready on :${API_PORT}`); }
+  try { await startApiServer(); log.info('desktop', State.apiReady ? `API server ready on :${API_PORT}` : `API server NOT ready on :${API_PORT} — engine offline`); }
   catch (e) { log.error('desktop', `API server failed to start: ${e.message}`); }
   try { await startExtensionGateway(); }
   catch (e) { log.warn('desktop', `extension gateway: ${e.message}`); }
@@ -982,6 +1050,7 @@ app.whenReady().then(async () => {
 
   createWindow();
   createTray();
+  startConsentApprover();
   // Bring the window to front on launch regardless of what app has focus
   try { app.focus({ steal: true }); } catch (_) {}
   if (State.isProtected) startClipboardWatcher();
