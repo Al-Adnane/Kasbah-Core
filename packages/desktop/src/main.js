@@ -928,7 +928,7 @@ function startConsentApprover() {
         // Deny-only switch for automated tests: it can refuse, never approve.
         if (process.env.KASBAH_APPROVER_AUTODENY === '1') { log.info('approver', 'auto-deny (KASBAH_APPROVER_AUTODENY=1)'); return 0; }
         const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
-        try { app.focus({ steal: true }); } catch (_) {}
+        try { app.focus({ steal: true }); } catch (_) { /* focus is best-effort */ }
         const base = { type: 'warning', noLink: true, ...opts };
         const r = win ? await dialog.showMessageBox(win, base) : await dialog.showMessageBox(base);
         return r.response;

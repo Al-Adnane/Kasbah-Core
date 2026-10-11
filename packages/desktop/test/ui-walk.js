@@ -44,13 +44,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   let log = '';
   const child = spawn(ELECTRON, ['.', `--remote-debugging-port=${dbgPort}`, `--user-data-dir=${path.join(home, 'electron')}`], { cwd: DESKTOP, env, stdio: ['ignore', 'pipe', 'pipe'] });
   child.stdout.on('data', (d) => { log += d; }); child.stderr.on('data', (d) => { log += d; });
-  const cleanup = () => { try { child.kill(); } catch (_) {} setTimeout(() => { try { child.kill('SIGKILL'); } catch (_) {} }, 3000).unref(); };
+  const cleanup = () => { try { child.kill(); } catch (_) { /* already gone */ } setTimeout(() => { try { child.kill('SIGKILL'); } catch (_) { /* already gone */ } }, 3000).unref(); };
   process.on('exit', cleanup);
 
   let target = null;
   for (let i = 0; i < 60 && !target; i++) {
     await sleep(1000);
-    try { target = (await (await fetch(`http://127.0.0.1:${dbgPort}/json/list`)).json()).find((t) => t.type === 'page' && t.url.includes('index.html')); } catch (_) {}
+    try { target = (await (await fetch(`http://127.0.0.1:${dbgPort}/json/list`)).json()).find((t) => t.type === 'page' && t.url.includes('index.html')); } catch (_) { /* debug port not up yet */ }
   }
   if (!target) { ok('the app window opens', false, log.slice(-400)); cleanup(); process.exit(1); }
   const ws = new WebSocket(target.webSocketDebuggerUrl);
@@ -109,7 +109,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   ws.close(); cleanup();
   await sleep(1500);
-  try { fs.rmSync(home, { recursive: true, force: true }); fs.rmSync(data, { recursive: true, force: true }); } catch (_) {}
+  try { fs.rmSync(home, { recursive: true, force: true }); fs.rmSync(data, { recursive: true, force: true }); } catch (_) { /* temp dirs are best-effort */ }
   console.log(`\n${pass} passed · ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error('ui-walk crashed: ' + e.message); process.exit(1); });
