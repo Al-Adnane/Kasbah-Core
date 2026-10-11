@@ -1,23 +1,79 @@
 name: ci
+
 on:
   push:
-    branches: [main]
+    branches: [main, "audit-hardening-*"]
   pull_request:
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-      - run: npm test
-      - run: node tests/capabilities.test.js
-      - run: node tests/capability-packages.test.js
-      - run: node packages/control/tests/run-tests.js
-      - run: node -e "const d=require('./src/detector.js');const t=d.selfTest();if(t.passed!==t.total)throw new Error(t.passed+'/'+t.total);console.log('detector',t.passed+'/'+t.total)"
-      - run: node bench/detection-scorecard.js
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Lint (ratchet)
+        run: node scripts/lint.js
+
+      - name: Core test suite
+        run: npm test
+
+      - name: SSI gate
+        run: node tests/ssi.test.js
+
+      - name: Consent (attested + approver)
+        run: node tests/consent-attested.test.js && node tests/consent-approver.test.js
+
+      - name: Capabilities and packages
+        run: node tests/capabilities.test.js && node tests/capability-packages.test.js
+
+      - name: API-server tests
+        run: npm --prefix packages/api-server test --silent
+
+      - name: Receipts, VPN, MCP, SDK, cost-watch
+        run: |
+          node packages/kasbah-receipts/test.js
+          node packages/kasbah-mcp/test.js
+          node packages/kasbah-sdk/src/test.js
+          node packages/agent-cost-watch/src/test.js
+
+      - name: Desktop smoke
+        run: node packages/desktop/test/run-tests.js && node packages/desktop/test/smoke.js
+
+      - name: Detection scorecard
+        run: node bench/detection-scorecard.js
+
+  ui-walk:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    # Electron with a real window requires macOS; skip on forks that have no secrets
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: UI walk (production mode, 17 checks)
+        run: node packages/desktop/test/ui-walk.js

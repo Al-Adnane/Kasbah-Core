@@ -62,8 +62,7 @@ Thumbs.db
 *.swp
 *.swo
 
-# Internal Documentation (Strategy, Planning)
-docs/
+# Temp archives only
 *.zip
 _archive/
 
