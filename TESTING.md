@@ -14,21 +14,17 @@ Thank you for trying this. Kasbah is an early build. This page tells you how to 
 
 ## Run it
 
+From the folder you downloaded:
+
 ```bash
 npm install
 ```
 
 ```bash
-npm install --prefix packages/api-server
-```
-
-```bash
-npm install --prefix packages/desktop
-```
-
-```bash
 npm run dev --prefix packages/desktop
 ```
+
+The first command takes about a minute and prints some deprecation warnings; those are expected.
 
 A developer-tools window opens alongside the app; you can close it.
 

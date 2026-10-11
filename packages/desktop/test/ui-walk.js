@@ -25,12 +25,13 @@ const path = require('path');
 const net = require('net');
 
 const DESKTOP = path.join(__dirname, '..');
-const ELECTRON = path.join(DESKTOP, 'node_modules', '.bin', 'electron');
+// With npm workspaces the binary is hoisted to the repo root; without, it is local.
+const ELECTRON = [path.join(DESKTOP, 'node_modules', '.bin', 'electron'), path.join(DESKTOP, '..', '..', 'node_modules', '.bin', 'electron')].find((p) => fs.existsSync(p)) || '';
 let pass = 0, fail = 0;
 const ok = (name, cond, detail) => { cond ? pass++ : fail++; console.log((cond ? '  ✓ ' : '  ✗ ') + name + (cond || !detail ? '' : '\n      ' + String(detail).slice(0, 300))); };
 
 if (typeof WebSocket === 'undefined') { console.log('ui-walk: skipped — needs Node 22+ for the built-in WebSocket'); process.exit(0); }
-if (!fs.existsSync(ELECTRON)) { console.log('ui-walk: skipped — Electron is not installed (npm install --prefix packages/desktop)'); process.exit(0); }
+if (!ELECTRON) { console.log('ui-walk: skipped — Electron is not installed (run npm install)'); process.exit(0); }
 
 const freePort = () => new Promise((res, rej) => { const s = net.createServer(); s.once('error', rej); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => res(p)); }); });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

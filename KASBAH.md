@@ -69,6 +69,8 @@ Only what is in this table may be claimed. Status is as of 2026-10-11.
 | Tower | Hardware approval device | Blueprint and host-side verification only | **Not built** |
 | Privacy | Checks run locally; nothing uploaded by default | CLI, both SDKs and the MCP server default to `127.0.0.1` (verified). The MCP server prints a hosted verify link but does not call it. | **Proven for defaults** |
 | Tower | An agent's risky action waits for the person | End to end 2026-10-11: real MCP call → engine → desktop approval → agent. Allow, deny, read-only, unknown-tool and no-approver cases all correct | **Proven for agents that call the consent tool.** An agent that skips the tool is not stopped. |
+| — | Runs from a clean download | Fresh clone, one `npm install` (about a minute), all 25 suites pass, and the UI test passes 17 of 17 in production mode | **Proven on this Mac** (macOS, Node 25, Python 3.14) |
+| — | The app is honest about its own state | UI test: engine accepts the app, badge matches reality, no page shows error text, the page cannot approve its own request | **Proven** |
 | — | Paid plans | 1 of 10 entitlements enforced | **Not ready to sell** |
 
 Forbidden until evidence exists: "exclusive", "no competitor has this", "military grade", any detection superlative, any claim about the hardware device as a product, and anything from the removed research detectors.
@@ -85,7 +87,7 @@ Forbidden until evidence exists: "exclusive", "no competitor has this", "militar
 
 In order. Nothing later matters until the earlier item is done.
 
-1. **It runs and tells the truth.** Scans work in production mode; a signed, notarised build; the installed app matches the source.
+1. **It runs and tells the truth.** Done for running from source (2026-10-11): scans work in production mode and the badge is truthful. Still needed: a signed, notarised build, and the installed app matching the source.
 2. **Agent actions actually pass through the tower.** The MCP server and proxy call the gate for every risky tool call.
 3. **Hardware approval without a custom device.** Add Touch ID and security keys (WebAuthn) as an approver kind. The registry already supports multiple kinds.
 4. **Receipts align with the public drafts**, with a public verifier page.
