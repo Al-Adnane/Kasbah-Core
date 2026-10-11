@@ -1805,7 +1805,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     try {
       const http = require('http');
       const data = await new Promise((resolve, reject) => {
-        const req = http.get('http://127.0.0.1:8788/v1/kernel/trace/list', (res) => {
+        const req = http.get(`http://127.0.0.1:${Number(process.env.KASBAH_API_PORT) || 8788}/v1/kernel/trace/list`, (res) => {
           let body = '';
           res.on('data', (c) => { body += c; });
           res.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve(null); } });
@@ -1855,7 +1855,7 @@ module.exports = function registerFeatureHandlers(ipcMain, ctx) {
     try {
       const http = require('http');
       const body = JSON.stringify({ reason: 'fire_button', actorId: 'desktop-session' });
-      const req = http.request({ host: '127.0.0.1', port: 8788, path: '/v1/kernel/killswitch', method: 'POST',
+      const req = http.request({ host: '127.0.0.1', port: Number(process.env.KASBAH_API_PORT) || 8788, path: '/v1/kernel/killswitch', method: 'POST',
         headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } });
       req.write(body); req.end();
     } catch (_) {}

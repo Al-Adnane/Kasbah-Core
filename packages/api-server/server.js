@@ -847,7 +847,9 @@ function sentinelSingleton() {
 // loopback dev bypass in the auth middleware works again (it was dead when
 // trust proxy was set unconditionally: every local request appeared to come
 // from "behind a proxy" and was forced through full auth).
-if (process.env.NODE_ENV === 'production' || process.env.KASBAH_TRUST_PROXY === '1') {
+// The engine embedded in the desktop app (KASBAH_EMBED=1) listens on loopback
+// with no proxy in front of it, so it must not trust forwarded headers either.
+if ((process.env.NODE_ENV === 'production' && process.env.KASBAH_EMBED !== '1') || process.env.KASBAH_TRUST_PROXY === '1') {
   app.set('trust proxy', 1);
 }
 
@@ -1237,6 +1239,20 @@ app.use('/v1', (req, res, next) => {
   if (process.env.NODE_ENV !== 'production' && !process.env.REQUIRE_API_KEY && peerIsLoopback && !trustProxyConfigured) {
     req.apiKeyEntry = { keyId: 'dev-localhost', tier: 'admin', dev: true };
     return next();
+  }
+
+  // N1: the desktop app spawns this engine as a child with KASBAH_EMBED=1 and a
+  // per-install KASBAH_API_KEY. Accept exactly that key, from a direct loopback
+  // connection only, in every NODE_ENV — otherwise production mode rejects the
+  // app's own requests. It is the machine owner's own key, so it carries the
+  // same tier the local development identity already has.
+  const embedKey = process.env.KASBAH_EMBED === '1' ? process.env.KASBAH_API_KEY : null;
+  if (embedKey && embedKey.length >= 32 && typeof key === 'string' && peerIsLoopback && !trustProxyConfigured) {
+    const a = Buffer.from(key), b = Buffer.from(embedKey);
+    if (a.length === b.length && require('crypto').timingSafeEqual(a, b)) {
+      req.apiKeyEntry = { keyId: 'desktop-embedded', tier: 'admin', embedded: true };
+      return next();
+    }
   }
 
   if (!key) return res.status(401).json({ error: 'API key required. Get one at https://kasbah-api.fly.dev/signup', docs: 'https://kasbah-api.fly.dev/docs' });

@@ -37,16 +37,35 @@ function applyA11yNames(root) {
     const ptxt = prev ? (prev.textContent || '').trim() : '';
     return ptxt && ptxt.length <= 60 ? ptxt : '';
   };
+  const toggleName = (el) => {
+    // Checkboxes and radios are named by the text beside them.
+    const sib = el.nextElementSibling || el.nextSibling;
+    const st = sib ? (sib.textContent || '').trim() : '';
+    if (st && st.length <= 80) return st;
+    const pt = el.parentElement ? (el.parentElement.textContent || '').trim() : '';
+    return pt && pt.length <= 80 ? pt : '';
+  };
   scope.querySelectorAll('input, select, textarea').forEach((el) => {
     if (el.type === 'hidden' || el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || (el.labels && el.labels.length)) return;
-    const n = nameFrom(el); if (n) el.setAttribute('aria-label', n);
+    const n = (el.type === 'checkbox' || el.type === 'radio' ? toggleName(el) : '') || nameFrom(el) || (el.id ? el.id.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[-_]+/g, ' ').toLowerCase() : '');
+    if (n) el.setAttribute('aria-label', n);
   });
   scope.querySelectorAll('button').forEach((el) => {
     if (el.getAttribute('aria-label') || (el.textContent || '').trim()) return;
     const n = el.title || nameFrom(el); if (n) el.setAttribute('aria-label', n);
   });
 }
-document.addEventListener('DOMContentLoaded', () => { try { applyA11yNames(document); } catch (e) { __quiet(e); } });
+document.addEventListener('DOMContentLoaded', () => {
+  try { applyA11yNames(document); } catch (e) { __quiet(e); }
+  // Much of the UI is rendered later, so name new controls as they appear.
+  try {
+    let pending = false;
+    new MutationObserver(() => {
+      if (pending) return; pending = true;
+      setTimeout(() => { pending = false; try { applyA11yNames(document); } catch (e) { __quiet(e); } }, 250);
+    }).observe(document.body, { childList: true, subtree: true });
+  } catch (e) { __quiet(e); }
+});
 
 const _bwrIsElectron = navigator.userAgent.toLowerCase().includes('electron');
 const mk = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -228,9 +247,10 @@ function countUp(el, target, durationMs=900) {
 
 /* ── Sidebar render ───────────────────────────────────────────────────────── */
 // D2: the sidebar must not claim "AI watch on" while the engine is unreachable.
-function applyEngineState(ready) {
-  if (S.engineReady === ready) return;
+function applyEngineState(ready, reason) {
+  if (S.engineReady === ready && S.engineReason === (reason || '')) return;
   S.engineReady = ready;
+  S.engineReason = reason || '';
   renderSidebar();
 }
 function startEngineHealthPoll() {
@@ -240,8 +260,18 @@ function startEngineHealthPoll() {
       const r = await probe();
       const status = r && typeof r === 'object' ? (r.status != null ? r.status : 200) : 0;
       const bodyStatus = r && r.body ? String(r.body.status || '').toLowerCase() : '';
-      applyEngineState(status !== 503 && status < 500 && bodyStatus !== 'error');
-    } catch (_) { applyEngineState(false); }
+      let up = status !== 503 && status < 500 && bodyStatus !== 'error';
+      let reason = up ? '' : 'down';
+      if (up && window.kasbah?.api) {
+        // Health answers without a key. Scans do not: check that the engine
+        // actually accepts this app, or the badge would lie while scans fail.
+        try {
+          const who = await window.kasbah.api('GET', '/v1/usage/me');
+          if (who && (who.status === 401 || who.status === 403)) { up = false; reason = 'locked'; }
+        } catch (__e) { __quiet(__e); }
+      }
+      applyEngineState(up, reason);
+    } catch (_) { applyEngineState(false, 'down'); }
   };
   tick();
   setInterval(tick, 5000);
@@ -250,8 +280,9 @@ function renderSidebar() {
   if (S.engineReady === false) {
     const dot0 = $('guardDot'); if (dot0) dot0.className = 'status-dot off';
     const pill0 = $('guardPill'); if (pill0) pill0.className = 'status-bar off';
-    const gl0 = $('guardLabel'); if (gl0) gl0.textContent = 'Engine offline';
-    const gs0 = $('guardSub'); if (gs0) gs0.textContent = 'Local engine not responding — VPN still works';
+    const locked = S.engineReason === 'locked';
+    const gl0 = $('guardLabel'); if (gl0) gl0.textContent = locked ? 'Engine locked' : 'Engine offline';
+    const gs0 = $('guardSub'); if (gs0) gs0.textContent = locked ? 'The engine refused this app — checks are not running. Restart Kasbah.' : 'Local engine not responding — VPN still works';
     const hb0 = $('homeHeroBadge'); if (hb0) { hb0.className = 'home-hero-badge off'; hb0.innerHTML = '<span class="home-hero-dot"></span> Engine offline'; }
     return;
   }
@@ -8343,7 +8374,19 @@ async function agStatus() {
     const s = await window.kasbah.agentGuard.status();
     if ($('agRequireVpn')) $('agRequireVpn').checked = !!s.policy.requireVpn;
     if ($('agEnabled')) $('agEnabled').checked = s.policy.enabled !== false;
-    if ($('agMsg')) $('agMsg').textContent = JSON.stringify(s, null, 2);
+    if ($('agMsg')) {
+      const pol = s.policy || {}, lock = s.lock || {};
+      const list = (v) => (Array.isArray(v) && v.length ? v.join(', ') : 'none');
+      const lines = [
+        'Guard: ' + (pol.enabled !== false ? 'on' : 'off') + ' · VPN required: ' + (pol.requireVpn ? 'yes' : 'no'),
+        'Blocked tools: ' + list(pol.blockTools),
+        'Allowed tools: ' + (Array.isArray(pol.allowTools) && pol.allowTools.length ? pol.allowTools.join(', ') : 'any that is not blocked'),
+        'Blocked sites: ' + list(pol.blockDomains),
+        typeof pol.maxCostCents === 'number' ? 'Spend limit: $' + (pol.maxCostCents / 100).toFixed(2) : null,
+        'Right now: ' + (lock.blocked ? 'AI helpers are blocked' + (lock.reason ? ' — ' + lock.reason : '') : 'AI helpers may run'),
+      ].filter(Boolean);
+      $('agMsg').textContent = lines.join('\n');
+    }
   } catch (e) { if ($('agMsg')) $('agMsg').textContent = e.message; }
   govRefresh();
 }

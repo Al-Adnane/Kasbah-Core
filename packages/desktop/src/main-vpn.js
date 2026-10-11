@@ -104,7 +104,7 @@ module.exports = function registerVpnHandlers(ipcMain, ctx) {
   // ─── Tier check ──────────────────────────────────────────────────────────────
   async function currentTier() {
     try {
-      const r = await fetch(`http://127.0.0.1:8788/v1/usage/me`, { signal: AbortSignal.timeout(4000) });
+      const r = await fetch(`http://127.0.0.1:${Number(process.env.KASBAH_API_PORT) || 8788}/v1/usage/me`, { signal: AbortSignal.timeout(4000) });
       const body = await r.json();
       return body.tier || 'free';
     } catch { return 'free'; }
@@ -818,7 +818,7 @@ module.exports = function registerVpnHandlers(ipcMain, ctx) {
     if (vpnState.aiLaneHandle) return { ok: true, already: true, port: vpnState.aiLaneHandle.port, gateway: vpnState.aiLaneHandle.gateway };
     vpnState.aiLaneEvents = [];
     // Prefer the local gateway (desktop-spawned API on :8788); explicit body.gateway or env wins.
-    const localGw = 'http://127.0.0.1:8788';
+    const localGw = `http://127.0.0.1:${Number(process.env.KASBAH_API_PORT) || 8788}`;
     let gw = body.gateway || process.env.KASBAH_GATEWAY_URL || localGw;
     let lane;
     try {

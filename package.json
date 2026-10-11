@@ -17,6 +17,7 @@
     "bench:injection": "python3 bench/injection-classifier/benchmark.py",
     "train:injection": "python3 bench/injection-classifier/train.py",
     "bench:injection:js": "node bench/injection-classifier/benchmark-js.js",
+    "test:ui": "node packages/desktop/test/ui-walk.js",
     "test:consent": "node tests/consent-attested.test.js && node tests/consent-approver.test.js",
     "test:ssi": "node tests/ssi.test.js",
     "test:capabilities": "node tests/capabilities.test.js",

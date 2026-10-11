@@ -112,7 +112,9 @@ const _fsAudit = new ForwardSecureAudit();
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const IS_DEV   = process.env.NODE_ENV === 'development';
-const API_PORT = 8788;
+// Overridable so tests and a second copy can run beside a live install.
+const API_PORT = Number(process.env.KASBAH_API_PORT) || 8788;
+process.env.KASBAH_API_PORT = String(API_PORT); // preload and feature modules read this
 const API_BASE = `http://127.0.0.1:${API_PORT}`;
 
 // Register IPC handlers at module scope so they're ready when preload runs
@@ -218,8 +220,14 @@ function ensureEngineSecrets() {
   const file = path.join(dir, 'engine-secrets.json');
   // N4: keep the secrets behind the OS keychain when Electron can reach it;
   // fall back to a 0600 file (and still read an older plain file).
+  // The keychain is opt-in (KASBAH_USE_KEYCHAIN=1). safeStorage calls are
+  // synchronous and, on an unsigned build or a profile without a login
+  // keychain, macOS answers them with a blocking system prompt — which froze
+  // start-up before the window appeared. Signed builds should turn this on.
   let ss = null;
-  try { ss = require('electron').safeStorage; if (!ss || !ss.isEncryptionAvailable()) ss = null; } catch (_) { ss = null; }
+  if (process.env.KASBAH_USE_KEYCHAIN === '1') {
+    try { ss = require('electron').safeStorage; if (!ss || !ss.isEncryptionAvailable()) ss = null; } catch (_) { ss = null; }
+  }
   let sec = null, wasPlain = false;
   try {
     const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -914,9 +922,11 @@ function startConsentApprover() {
     const { createApprover } = require('./consent-approver.js');
     consentApprover = createApprover({
       dir: path.join(require('os').homedir(), '.kasbah-privacy'),
-      safeStorage,
+      safeStorage: process.env.KASBAH_USE_KEYCHAIN === '1' ? safeStorage : null, // opt-in: see ensureEngineSecrets
       request: (method, apiPath, body) => apiCall(method, apiPath, body, { timeout: 8000 }).then((r) => r.body),
       showDialog: async (opts) => {
+        // Deny-only switch for automated tests: it can refuse, never approve.
+        if (process.env.KASBAH_APPROVER_AUTODENY === '1') { log.info('approver', 'auto-deny (KASBAH_APPROVER_AUTODENY=1)'); return 0; }
         const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
         try { app.focus({ steal: true }); } catch (_) {}
         const base = { type: 'warning', noLink: true, ...opts };

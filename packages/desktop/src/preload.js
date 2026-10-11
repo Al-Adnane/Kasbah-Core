@@ -74,7 +74,7 @@ contextBridge.exposeInMainWorld('kasbah', {
   // Generic request helper used by premium feature controllers
   request: (method, endpoint, body) => ipcRenderer.invoke('api', method, endpoint, body),
   // Base URL for direct browser navigation (compliance PDF)
-  get apiBase() { return `http://127.0.0.1:8788`; },
+  get apiBase() { return `http://127.0.0.1:${Number(process.env.KASBAH_API_PORT) || 8788}`; },
 
   // ── Convenience wrappers ───────────────────────────────────────────────────
   govern:   (body)        => ipcRenderer.invoke('api', 'POST', '/v1/govern', body),
